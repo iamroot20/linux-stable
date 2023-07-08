@@ -37,9 +37,12 @@
 
 #include "efi-header.S"
 
+/* IAMROOT20_START 20230708 */
+
 #if (PAGE_OFFSET & 0x1fffff) != 0
 #error PAGE_OFFSET must be at least 2MB aligned
 #endif
+
 
 /*
  * Kernel startup entry point.
@@ -52,6 +55,12 @@
  * Note that the callee-saved registers are used for storing variables
  * that are useful before the MMU is enabled. The allocations are described
  * in the entry routines.
+ */
+/* IAMROOT20 20230708
+	callee-saved register: https://developer.arm.com/documentation/den0024/a/The-ABI-for-ARM-64-bit-Architecture/Register-use-in-the-AArch64-Procedure-Call-Standard/Parameters-in-general-purpose-registers
+	section 관련 syntax : https://developer.arm.com/documentation/100068/0612/migrating-from-armasm-to-the-armclang-integrated-assembler/sections
+	linker script (entry,section 등) : arch/arm64/kernel/vmlinux.lds.S
+	kernel image 64-byte header : Documentation/arm64/booting.rst 4절 참조
  */
 	__HEAD
 	/*
@@ -70,6 +79,7 @@
 
 	__EFI_PE_HEADER
 
+/* IAMROOT20_END 20230708 */
 	.section ".idmap.text","a"
 
 	/*
