@@ -96,8 +96,24 @@
 	 *  x25        primary_entry() .. start_kernel()        supported VA size
 	 *  x28        create_idmap()                           callee preserved temp register
 	 */
+
+/* 
+ * IAMROOT20 20230715
+ * - 'SYM_CODE_START'는 인자로 전달된 심볼을 정의 및 align. (링커에 정보 전달)
+ * - 참고: linux-stable/Documentation/core-api/asm-annotations.rst
+ *
+ * - Cache ON - MMU On : no need for cache invalidation
+ *   Cache ON - MMU OFF: need to invalidate cache
+ *   Cache Off - MMU ON/OFF : Cache hasn't been used, no need for invalidation
+ */
 SYM_CODE_START(primary_entry)
 	bl	record_mmu_state
+	/* 
+	 * IAMROOT20 20230715
+	 * 'record_mmu_state'에서 return 시 x19의 값이
+	 * 		- 0: cache maintenance 필요
+	 * 		- 1: cache maintenance 필요X
+	 */
 	bl	preserve_boot_args
 	bl	create_idmap
 
@@ -138,11 +154,22 @@ SYM_CODE_START_LOCAL(record_mmu_state)
 	mrs	x19, CurrentEL
 	cmp	x19, #CurrentEL_EL2
 	mrs	x19, sctlr_el1
-	b.ne	0f
+	b.ne	0f		/* IAMROOT20 20230715 여기 0은 주소가 아닌 레이블 */
 	mrs	x19, sctlr_el2
 0:
+/* 
+ * IAMROOT20 20230715
+ * - Endianness 디폴트 세팅은 Little endian. 잘못 세팅되어있다면 예외처리를
+ * 위한 레이블로 점프. 
+ * - CPU_LE 매크로 인자로 사용된 '1f' 는 전방(forward)의 레이블 '1'이라는
+ * 의미.
+ */
 CPU_LE( tbnz	x19, #SCTLR_ELx_EE_SHIFT, 1f	)
 CPU_BE( tbz	x19, #SCTLR_ELx_EE_SHIFT, 1f	)
+	/* 
+	 * IAMROOT20 20230715
+	 * Endianness 세팅에 이상이 없다면 이어서 아래 코드 실행.
+	 */
 	tst	x19, #SCTLR_ELx_C		// Z := (C == 0)
 	and	x19, x19, #SCTLR_ELx_M		// isolate M bit
 	csel	x19, xzr, x19, eq		// clear x19 if Z
@@ -153,6 +180,15 @@ CPU_BE( tbz	x19, #SCTLR_ELx_EE_SHIFT, 1f	)
 	 * before init_kernel_el() occur in the correct byte order. Note that
 	 * this means the MMU must be disabled, or the active ID map will end
 	 * up getting interpreted with the wrong byte order.
+	 */
+
+	/* 
+	 * IAMROOT20 20230715
+	 * - 아래 코드는 endianness가 잘못 설정되어있을 시 수행하는 예외처리.
+	 * 		- x19의 'SCTLR_ELx_EE' 비트 반전
+	 * 		- x19의 'SCTLR_ELx_M' 비트 clear
+	 * 		- 수정된 x19의 내용을 sctlr_el1 (또는 sctlr_el2)에 업데이트
+	 * - 'pre_disable_mmu_workaround' 는 특정 칩을 위한 예외처리 매크로.
 	 */
 1:	eor	x19, x19, #SCTLR_ELx_EE
 	bic	x19, x19, #SCTLR_ELx_M
