@@ -175,8 +175,21 @@ lr	.req	x30		// link register
 	 * @dst: destination register (64 bit wide)
 	 * @sym: name of the symbol
 	 */
+
+	 /* IAMROOT20 2023.07.22
+	  * 심볼의 주소를 dst에 저장한다.
+	  */
 	.macro	adr_l, dst, sym
+	/* IAMROOT20 2023.07.22
+         * symbol이 있는 page의 주소를 dst에 저장한다. 
+         * arm64에서 모든 명령어는 4바이트이기 때문에, 명령어 내에 주소를 포함하지 못한다.
+         */
 	adrp	\dst, \sym
+
+	/* IAMROOT20 2023.07.22
+	 * symbol의 하위 12비트 주소(page offset)를 dst에 더한 후 dst에 저장한다.
+	 * 페이지 크기가 4K 이므로 하위 12비트가 page offset이 된다.
+	 */
 	add	\dst, \dst, :lo12:\sym
 	.endm
 
@@ -270,6 +283,9 @@ alternative_endif
 	.macro	read_ctr, reg
 #ifndef __KVM_NVHE_HYPERVISOR__
 alternative_if_not ARM64_MISMATCHED_CACHE_TYPE
+	/* IAMROOT20 2023.07.22
+	 * ctr_el0 레지스터 값을 reg 레지스터에 넣는다.
+	 */
 	mrs	\reg, ctr_el0			// read CTR
 	nop
 alternative_else
@@ -303,10 +319,33 @@ alternative_cb_end
 /*
  * dcache_line_size - get the safe D-cache line size across all CPUs
  */
+	/* IAMROOT20 2023.07.22
+	 * 캐시 라인 사이즈를 얻는 매크로
+	 */
 	.macro	dcache_line_size, reg, tmp
+
+	/* IAMROOT20 2023.07.22
+         * ctr_el0의 값을 tmp 레지스터에 넣는다.
+	 * 매크로 위치 : arch/arm64/include/asm/assembler.h
+         */
 	read_ctr	\tmp
+
+	/* IAMROOT20 2023.07.22
+	 * ctr_el0 레지스터에서 캐시 라인 사이즈 부분을 얻어온다.
+	 * ctr_el0[19:16]은 DminLine으로 데이터 캐시 라인 사이즈를 나타내는 비트이다. 2^n 워드 단위로 저장된다.
+	 */
 	ubfm		\tmp, \tmp, #16, #19	// cache line size encoding
+	
+	/* IAMROOT20 2023.07.22
+         * reg 레지스터에 4를 넣는다. 이 때, 4는 word 크기를 의미한다. 
+         */
 	mov		\reg, #4		// bytes per word
+
+	/* IAMROOT20 2023.07.22
+         * reg 레지스터에 캐시 라인 크기를 넣는다. 
+	 * 워드 사이즈: 4, 캐시 라인 당 데이터 저장 개수 : 16, ctr_el0[19:16] : 4
+	 * 계산 : 4 << 4 => 4 * 2^4 => 64
+         */
 	lsl		\reg, \reg, \tmp	// actual cache line size
 	.endm
 

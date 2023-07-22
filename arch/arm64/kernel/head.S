@@ -101,19 +101,28 @@
  * IAMROOT20 20230715
  * - 'SYM_CODE_START'는 인자로 전달된 심볼을 정의 및 align. (링커에 정보 전달)
  * - 참고: linux-stable/Documentation/core-api/asm-annotations.rst
- *
- * - Cache ON - MMU On : no need for cache invalidation
- *   Cache ON - MMU OFF: need to invalidate cache
- *   Cache Off - MMU ON/OFF : Cache hasn't been used, no need for invalidation
  */
 SYM_CODE_START(primary_entry)
+/* 
+ * IAMROOT20 20230715
+ * - Cache On / MMU On   : x19=1 -> cache invalidation 필요하지 않다. 
+ * 			   MMU와 Cache 둘 다 On 이면 cache에 적절한 값이 들어가 있을 것이므로
+ * - Cache On / MMU Off  : x19=0 -> cache invalidation 필요 
+ *			   (MMU를 켰을 때 Cache에 들어있는 값은 적절하지 않으므로, 주소 변환)          
+ *  			   -----> MMU가 꺼져있을 때 Cache를 사용하지 않는다.는 것 확인해보기
+ * - Cache Off / MMU On  : x19=0 -> cache invalidation 필요 
+ *			   Cache가 Off라면 Cache를 사용하지 않았다는 건데, 쓰레기 값이 들어가있을 수 있으므로
+ * - Cache Off / MMU Off : x19=0 -> cache invalidation 필요 
+ *			   Cache가 Off라면 Cache를 사용하지 않았다는 건데, 쓰레기 값이 들어가있을 수 있으므로
+ * - 즉, 원래는 Cache 사용 여부에 상관 없이 모두 invalidation을 해줘야하는 것이 맞지만(v6.3 이전까지 그래왔다) 
+ *   v6.3 이후부터는 MMU가 켜져있는 상태에서의 부팅 지원이다.
+ * - MMU가 켜진 상태에서의 부팅을 지원하는 이유는 boot time이 유의미하게 빨라질 수 있기 때문이다.
+ *
+ * 'record_mmu_state'에서 return 시 x19의 값이
+ *              - 0: cache maintenance 필요
+ *              - 1: cache maintenance 필요X
+ */
 	bl	record_mmu_state
-	/* 
-	 * IAMROOT20 20230715
-	 * 'record_mmu_state'에서 return 시 x19의 값이
-	 * 		- 0: cache maintenance 필요
-	 * 		- 1: cache maintenance 필요X
-	 */
 	bl	preserve_boot_args
 	bl	create_idmap
 
@@ -206,19 +215,70 @@ SYM_CODE_END(record_mmu_state)
 /*
  * Preserve the arguments passed by the bootloader in x0 .. x3
  */
+
+/* 
+ * IAMROOT20_START 2023.07.22
+ * - 1) DTB : booting 시 kernel이  device 들을 인식할 때(어느 device가 어느 주소에 mapping되어 있는지)
+              유의미한 정보들을 tree 형태로 저장해놓은 구조
+ * - DTB와 FDT 차이점에 대한 논의 (미결)
+ * - 2) POC와 POU? 
+ *      https://developer.arm.com/documentation/den0024/a/Caches/Point-of-coherency-and-unification
+ * - 3) cache invalidation과 clean? 
+ *      https://developer.arm.com/documentation/den0024/a/Caches/Cache-maintenance
+ * - 4) MMU가 Off 일 때, D-cache는 어떻게 사용되는가? 
+ *      https://community.arm.com/support-forums/f/architectures-and-processors-forum/45760/can-i-enable-and-use-d-cache-with-disabled-mmu
+ */
+
 SYM_CODE_START_LOCAL(preserve_boot_args)
-	mov	x21, x0				// x21=FDT
+	/* 
+	* IAMROOT20 2023.07.22 
+	* x0에 들어있는 DTB 시작 주소를 x21에 저장한다. (DTB와 FDT의 차이?)
+	*/
+	mov	x21, x0				// x21=FDT			
 
-	adr_l	x0, boot_args			// record the contents of
-	stp	x21, x1, [x0]			// x0 .. x3 at kernel entry
-	stp	x2, x3, [x0, #16]
+	/* 
+	* IAMROOT20 2023.07.22
+	* x0에 boot_args 주소를 넣는다. (u64 __cachline_aligned boot_args[4], 4개의 index를 가진 배열의 형태) global variable
+        * arm64에서는 심볼의 주소를 가져올 때, 이런 식으로 동작을 한다.
+        * 매크로 위치(adr_l) : /arch/arm64/include/asm/assembler.h
+        * 심볼 정의 위치(boot_args) : /arch/arm64/include/asm/setup.c 
+	*/
+	adr_l	x0, boot_args			// record the contents of 		
+         	                                                                                
+	/* IAMROOT20 2023.07.22  
+	 * x0에는 boot_args의 주소가 있고, 이 주소에 x21(DTB 주소)과 x1(reserved 0)의 값을 차례로 저장한다.
+	 * 그 뒤로 x2(reserved 0)과 x3(reserved 0)을 차례로 저장한다.
+         * cf) stp : store pair
+         * cf) [ ] : addressing mode (programmer's guide 참고)
+         */
+	stp	x21, x1, [x0]			// x0 .. x3 at kernel entry	
+	stp	x2, x3, [x0, #16]							
 
-	cbnz	x19, 0f				// skip cache invalidation if MMU is on
-	dmb	sy				// needed before dc ivac with
-						// MMU off
+	/* IAMROOT20 2023.07.22  
+	 * x19가 0이 아니라면 레이블 0으로 이동한다. x19가 1인 경우는 MMU On & Cache On 이다.
+	 */
+	cbnz	x19, 0f				// skip cache invalidation if MMU is on 
 
-	add	x1, x0, #0x20			// 4 x 8 bytes
-	b	dcache_inval_poc		// tail call
+	/* IAMROOT20 2023.07.22  
+	 * 앞에 있는 stp 명령어가 내부 버퍼에서 완전히 처리되도록 보장하기 위해 배리어 명령어를 사용한다.
+	 * data memory barrier : CPU가 최적화를 위해 명령어의 순서를 바꿔서 처리할 때, 문제가 생길 수 있다. 
+         * 이 때, 메모리에 접근하는 명령어(load, store)는 reordering 되지 않도록 순서를 보장하는 명령어이다.
+	 */
+	dmb	sy				// needed before dc ivac with		
+						// MMU off				
+											
+ 	/* IAMROOT20 2023.07.22  
+ 	 * boot_args의 끝 주소를 x1에 저장한다. (이후에 invalidation 과정에서 필요할 것으로 예상)
+ 	 */
+	add	x1, x0, #0x20			// 4 x 8 bytes				
+
+	/* IAMROOT20 2023.07.22  
+	 * dcache_inval_poc로 이동한다.
+	 * 위치 : /arch/arm64/mm/cache.S
+	 */
+	b	dcache_inval_poc		// tail call				
+											
+
 0:	str_l   x19, mmu_enabled_at_boot, x0
 	ret
 SYM_CODE_END(preserve_boot_args)
