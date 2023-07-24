@@ -46,6 +46,13 @@
  * PMD_SHIFT determines the size a level 2 page table entry can map.
  */
 #if CONFIG_PGTABLE_LEVELS > 2
+/*
+ * IAMROOT20 20230722: 
+ * PMD_SHIFT	21
+ * PMD_SIZE	0x20_0000	1 << 21
+ * PMD_MASK	0xffff_ffff_ffe0_0000
+ * PTRS_PER_PMD	0x200	512
+ */
 #define PMD_SHIFT		ARM64_HW_PGTABLE_LEVEL_SHIFT(2)
 #define PMD_SIZE		(_AC(1, UL) << PMD_SHIFT)
 #define PMD_MASK		(~(PMD_SIZE-1))
@@ -56,6 +63,12 @@
  * PUD_SHIFT determines the size a level 1 page table entry can map.
  */
 #if CONFIG_PGTABLE_LEVELS > 3
+ /*
+  * IAMROOT20 20230722: 
+  * PUD_SHIFT	30
+  * PUD_SIZE	0x4000_0000	1 << 30	SZ_1GB
+  * PTRS_PER_PUD	0x200	512	
+  */
 #define PUD_SHIFT		ARM64_HW_PGTABLE_LEVEL_SHIFT(1)
 #define PUD_SIZE		(_AC(1, UL) << PUD_SHIFT)
 #define PUD_MASK		(~(PUD_SIZE-1))

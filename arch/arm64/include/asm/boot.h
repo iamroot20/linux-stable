@@ -10,7 +10,7 @@
  * not exceed 2MB in size.
  */
 #define MIN_FDT_ALIGN		8
-#define MAX_FDT_SIZE		SZ_2M
+#define MAX_FDT_SIZE		SZ_2M	/* IAMROOT20 20230722: 0x200000 */
 
 /*
  * arm64 requires the kernel image to placed at a 2 MB aligned base address

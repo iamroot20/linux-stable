@@ -143,6 +143,30 @@ SYM_FUNC_END(dcache_clean_pou)
  *	- end     - kernel end address of region
  */
 SYM_FUNC_START(__pi_dcache_inval_poc)
+/*
+ * IAMROOT20 20230722: 
+ *	x2 = dcache_line_size();
+ *	x3 = x2  - 1;
+ *	if(x1 & x3 != 0) {	// end cache line aligned?
+ *		// not aligned
+ *		x1 &= ~x3;
+ *		dc_civac(x1);	// clean & invalidate D / U line
+ *	}
+ *	// 1:
+ *	if(x0 & x3 != 0) {	// start cache line aligned?
+ *		// not aligned
+ *		x0 &= ~x3;
+ *		dc_civac(x0);	// clean & invalidate D / U line
+ *	}
+ *
+ *	// 2: 3:
+ *	do {
+ *		dc_ivac(x0);
+ *		x0 += x2;	// x0 += dcache_line_size
+ *	} while(x0 < x1) {	// cmp     x0, x1;	b.lo    2b;
+ *	dsb_sy();
+ *	return;
+ */
 	dcache_line_size x2, x3
 	sub	x3, x2, #1
 	tst	x1, x3				// end cache line aligned?
@@ -161,6 +185,11 @@ SYM_FUNC_START(__pi_dcache_inval_poc)
 	dsb	sy
 	ret
 SYM_FUNC_END(__pi_dcache_inval_poc)
+/*
+ * IAMROOT20 20230722: 
+ * globl dcache_inval_poc;
+ * .set dcache_inval_poc, __pi_dcache_inval_poc;
+ */
 SYM_FUNC_ALIAS(dcache_inval_poc, __pi_dcache_inval_poc)
 
 /*

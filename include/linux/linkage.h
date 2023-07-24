@@ -256,6 +256,11 @@
 /*
  * SYM_FUNC_ALIAS -- define a global alias for an existing function
  */
+ /*
+  * IAMROOT20 20230722: 
+  *	global	alias;
+  *	.set alias, name;
+  */
 #ifndef SYM_FUNC_ALIAS
 #define SYM_FUNC_ALIAS(alias, name)					\
 	SYM_ALIAS(alias, name, SYM_L_GLOBAL)

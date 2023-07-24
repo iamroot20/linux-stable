@@ -87,7 +87,7 @@
 	 *  x28        create_idmap()                           callee preserved temp register
 	 */
 SYM_CODE_START(primary_entry)
-	bl	record_mmu_state
+	bl	record_mmu_state	/* IAMROOT20 20230721: x19 = MMU state*/
 	bl	preserve_boot_args
 	bl	create_idmap
 
@@ -125,12 +125,31 @@ SYM_CODE_END(primary_entry)
 
 	__INIT
 SYM_CODE_START_LOCAL(record_mmu_state)
+/*
+ * IAMROOT20 20230719: 
+ *	x19 = CurrentEL;
+ *	if(x19 != EL2)
+ *		x19 = sctlr_el1;
+ *	else
+ *		x19 = sctlr_el2;
+ */
 	mrs	x19, CurrentEL
 	cmp	x19, #CurrentEL_EL2
 	mrs	x19, sctlr_el1
 	b.ne	0f
 	mrs	x19, sctlr_el2
 0:
+/*
+ * IAMROOT20 20230719: 
+ *	if(x19 & SCTLR_ELx_EE_SHIFT == 0) {
+ *		x19_MMU = x19 & SCTLR_ELx_M;
+ *		if(x19 & SCTLR_ELx_C)
+ *			x19 = x19_MMU;
+ *		else
+ *			x19 = xzr;
+ *		return;
+ *	}
+ */
 CPU_LE( tbnz	x19, #SCTLR_ELx_EE_SHIFT, 1f	)
 CPU_BE( tbz	x19, #SCTLR_ELx_EE_SHIFT, 1f	)
 	tst	x19, #SCTLR_ELx_C		// Z := (C == 0)
@@ -144,6 +163,21 @@ CPU_BE( tbz	x19, #SCTLR_ELx_EE_SHIFT, 1f	)
 	 * this means the MMU must be disabled, or the active ID map will end
 	 * up getting interpreted with the wrong byte order.
 	 */
+/*
+ * IAMROOT20 20230719: 
+ *	// 1:
+ *	x19 ^= SCTLR_ELx_EE;	// reverse ENDIAN
+ *	x19 &= ^SCTLR_ELx_M;	// disable MMU
+ *	if(CurrentEL == EL2) {
+ *		sctlr_el2 = x19
+ *	}
+ *	else {
+ *		sctlr_el1 = x19 // 2:
+ *	}
+ *	isb();			// 3:
+ *	x19 = xzr;
+ *	return;
+ */
 1:	eor	x19, x19, #SCTLR_ELx_EE
 	bic	x19, x19, #SCTLR_ELx_M
 	b.ne	2f
@@ -161,6 +195,26 @@ SYM_CODE_END(record_mmu_state)
  * Preserve the arguments passed by the bootloader in x0 .. x3
  */
 SYM_CODE_START_LOCAL(preserve_boot_args)
+/*
+ * IAMROOT20 20230722: 
+ *	x21 = x0;	// x21 = FDT
+ *	u64 * x0 = &boot_args[0];
+ *	x0[0] = x21;
+ *	x0[1] = x1;
+ *	x0[2] = x2;
+ *	x0[3] = x3;
+ *
+ *	// static u64 mmu_enabled_at_boot = 0;
+ *	if(x19 == 0) {
+ *		dmb_sy();
+ *		x1 = &boot_args[4];
+ *		dcache_inval_poc(x0, x1);
+ *		return;
+ *	}
+ *
+ *	mmu_enabled_at_boot = x19;
+ *	return;
+ */
 	mov	x21, x0				// x21=FDT
 
 	adr_l	x0, boot_args			// record the contents of
@@ -380,7 +434,13 @@ SYM_FUNC_START_LOCAL(create_idmap)
 	 */
 #endif
 	adrp	x0, init_idmap_pg_dir
-	adrp	x3, _text
+	adrp	x3, _text	/* IAMROOT20 20230722: 0xffff800008000000 */
+	/*
+	 * IAMROOT20 20230722:
+	 *	x6 = 0xffff_8000_0aaf_0000 <_end+0x40_0000> * /
+	 *		MAX_FDT_SIZE = 0x20_0000
+	 *		SWAPPER_BLOCK_SIZE = 0x20_0000
+	 */
 	adrp	x6, _end + MAX_FDT_SIZE + SWAPPER_BLOCK_SIZE
 	mov	x7, SWAPPER_RX_MMUFLAGS
 

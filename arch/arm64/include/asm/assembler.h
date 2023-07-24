@@ -303,6 +303,15 @@ alternative_cb_end
 /*
  * dcache_line_size - get the safe D-cache line size across all CPUs
  */
+ /*
+  * IAMROOT20 20230722: 
+  *	// reg = x2, tmp = x3
+  *	mrs	x3, ctr_el0		// x3 = ctr_el0; cache type register.
+  *	nop
+  *	ubfx	x3, x3, #16, #4		// x3 = (x3 >> 16) & 0x1111;
+  *	mov	x2, #0x4
+  *	lsl	x2, x2, x3		// x2 = 4 << x3;
+  */
 	.macro	dcache_line_size, reg, tmp
 	read_ctr	\tmp
 	ubfm		\tmp, \tmp, #16, #19	// cache line size encoding
