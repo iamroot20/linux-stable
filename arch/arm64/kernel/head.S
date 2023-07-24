@@ -141,12 +141,12 @@ SYM_CODE_START_LOCAL(record_mmu_state)
 0:
 /*
  * IAMROOT20 20230719: 
- *	if(x19 & SCTLR_ELx_EE_SHIFT == 0) {
+ *	if(ENDIAN is correct) {
  *		x19_MMU = x19 & SCTLR_ELx_M;
  *		if(x19 & SCTLR_ELx_C)
  *			x19 = x19_MMU;
  *		else
- *			x19 = xzr;
+ *			x19 = xzr;	// MMU off
  *		return;
  *	}
  */
@@ -166,16 +166,14 @@ CPU_BE( tbz	x19, #SCTLR_ELx_EE_SHIFT, 1f	)
 /*
  * IAMROOT20 20230719: 
  *	// 1:
- *	x19 ^= SCTLR_ELx_EE;	// reverse ENDIAN
+ *	x19 ^= SCTLR_ELx_EE;	// invert(fix) ENDIAN
  *	x19 &= ^SCTLR_ELx_M;	// disable MMU
- *	if(CurrentEL == EL2) {
+ *	if(CurrentEL == EL2)
  *		sctlr_el2 = x19
- *	}
- *	else {
+ *	else
  *		sctlr_el1 = x19 // 2:
- *	}
- *	isb();			// 3:
- *	x19 = xzr;
+ *	isb();			// 3:	InStruction Berrier
+ *	x19 = xzr;		// MMU off
  *	return;
  */
 1:	eor	x19, x19, #SCTLR_ELx_EE
