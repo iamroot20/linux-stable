@@ -202,15 +202,15 @@ SYM_CODE_START_LOCAL(preserve_boot_args)
  *	x0[2] = x2;
  *	x0[3] = x3;
  *
- *	// static u64 mmu_enabled_at_boot = 0;
- *	if(x19 == 0) {
- *		dmb_sy();
- *		x1 = &boot_args[4];
+ *	// static u64 mmu_enabled_at_boot = 0;	// default : MMU off
+ *	if(x19 == 0) {		// If MMU is off
+ *		dmb_sy();	// Data Memory Barrier
+ *		x1 = boot_args[4];	// 0x20 = 32 bytes = 8bytes * 4
  *		dcache_inval_poc(x0, x1);
  *		return;
  *	}
  *
- *	mmu_enabled_at_boot = x19;
+ *	mmu_enabled_at_boot = x19;	// x19 = 1 -> MMU on
  *	return;
  */
 	mov	x21, x0				// x21=FDT
