@@ -148,10 +148,23 @@ SYM_FUNC_START(__pi_dcache_inval_poc)
 	 * 매크로 위치 : /arch/arm64/include/asm/assembler.h
 	 */	
 	dcache_line_size x2, x3
+	/* 
+	 * IAMROOT20 20230729
+	 * 하위 비트를 mask off 하기 위한 준비.
+	*/
 	sub	x3, x2, #1
 	tst	x1, x3				// end cache line aligned?
 	bic	x1, x1, x3
+	/*
+	 * IAMROOT20 20230729
+	 * bic 다음에 b.eq 가 나오는 이유 : 파이프라인 flush로 인한 reload 방지
+	 * - https://developer.arm.com/documentation/ddi0337/e/BABBCJII
+	*/
 	b.eq	1f
+	/*
+	 * IAMROOT20 20230729
+	 * DC CIVAC : 지정한 주소의 데이터 캐시를 PoC까지 Clean & Invalidate를 수행.
+	*/
 	dc	civac, x1			// clean & invalidate D / U line
 1:	tst	x0, x3				// start cache line aligned?
 	bic	x0, x0, x3
@@ -162,6 +175,10 @@ SYM_FUNC_START(__pi_dcache_inval_poc)
 3:	add	x0, x0, x2
 	cmp	x0, x1
 	b.lo	2b
+	/*
+	 * IAMROOT20 20230729
+	 * dsb : https://developer.arm.com/documentation/dui0473/m/arm-and-thumb-instructions/dsb
+	*/
 	dsb	sy
 	ret
 SYM_FUNC_END(__pi_dcache_inval_poc)
