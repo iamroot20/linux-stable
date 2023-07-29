@@ -79,6 +79,13 @@
  * PGDIR_SHIFT determines the size a top-level page table entry can map
  * (depending on the configuration, this level can be 0, 1 or 2).
  */
+ /*
+  * IAMROOT20 20230728: 
+  *	PGDIR_SHIFT		39
+  *	PGDIR_SIZE		0x_0000_0080_0000_0000
+  *	PGDIR_MASK		0x_ffff_ff80_0000_0000
+  *	PTRS_PER_PGD		0x200	512
+  */
 #define PGDIR_SHIFT		ARM64_HW_PGTABLE_LEVEL_SHIFT(4 - CONFIG_PGTABLE_LEVELS)
 #define PGDIR_SIZE		(_AC(1, UL) << PGDIR_SHIFT)
 #define PGDIR_MASK		(~(PGDIR_SIZE-1))
@@ -191,6 +198,11 @@
 /*
  * Highest possible physical address supported.
  */
+ /*
+  * IAMROOT20 20230728: 
+  *	PHYS_MASK_SHIFT		48	if ARM64_PA_BITS_48
+  *	PHYS_MASK		0x0000_ffff_ffff_ffff
+  */
 #define PHYS_MASK_SHIFT		(CONFIG_ARM64_PA_BITS)
 #define PHYS_MASK		((UL(1) << PHYS_MASK_SHIFT) - 1)
 

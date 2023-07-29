@@ -205,7 +205,7 @@ SYM_CODE_START_LOCAL(preserve_boot_args)
  *	// static u64 mmu_enabled_at_boot = 0;	// default : MMU off
  *	if(x19 == 0) {		// If MMU is off
  *		dmb_sy();	// Data Memory Barrier
- *		x1 = boot_args[4];	// 0x20 = 32 bytes = 8bytes * 4
+ *		x1 = &boot_args[4];	// 0x20 = 32 bytes = 8bytes * 4
  *		dcache_inval_poc(x0, x1);
  *		return;
  *	}
@@ -311,6 +311,39 @@ SYM_FUNC_END(clear_page_tables)
  * Preserves:	vstart, flags
  * Corrupts:	tbl, rtbl, vend, istart, iend, tmp, count, sv
  */
+ /*
+  * IAMROOT20 20230729: 
+  *void map_memory(U64 * tbl, const U64 vstart, U64 vend, U64 flags, const U64 phys, int order)
+  *{                                                                               
+  *  vend = vend - 1;                                                            
+  *  U64 * rtbl = tbl + (PAGE_SIZE / sizeof(U64));                               
+  *                                                                              
+  *  U64 istart;                                                                 
+  *  U64 iend;                                                                   
+  *  U64 count = 0;                                                              
+  *                                                                              
+  *  // compute_indices(vstart, vend, 39, 9, &istart, &iend, &count);            
+  *  compute_indices(vstart, vend, PGDIR_SHIFT, order, &istart, &iend, &count);  
+  *  U64 *sv = rtbl;                                                             
+  *                                                                              
+  *  populate_entries(tbl, &rtbl, istart, iend, PMD_TYPE_TABLE, PAGE_SIZE);      
+  *  tbl = sv;                                                                   
+  *                                                                              
+  *  const long SWAPPER_TABLE_SHIFT = 30;                                        
+  *  const long PAGE_SHIFT  = 12;                                                
+  *  // compute_indices(vstart, vend, 30, 9, &istart, &iend, &count)             
+  *  compute_indices(vstart, vend, SWAPPER_TABLE_SHIFT, PAGE_SHIFT - 3, &istart, &iend, &count);
+  *  sv = rtbl;                                                                  
+  *  populate_entries(tbl, &rtbl, istart, iend, PMD_TYPE_TABLE, PAGE_SIZE);         
+  *  tbl = sv;                                                                      
+  *                                                                                 
+  *  // compute_indices(vstart, vend, 29, 9, &istart, &iend, &count)             
+  *  compute_indices(vstart, vend, SWAPPER_BLOCK_SHIFT, PAGE_SHIFT - 3, &istart, &iend, &count);
+  *                                                                              
+  *  rtbl = (U64 *)(phys & ~((U64)SWAPPER_BLOCK_SIZE - 1));// bic rtbl, phys, SWAPPER_BLOCK_SIZE - 1
+  *  populate_entries(tbl, &rtbl, istart, iend, flags, SWAPPER_BLOCK_SIZE);         
+  *}        
+  */
 	.macro map_memory, tbl, rtbl, vstart, vend, flags, phys, order, istart, iend, tmp, count, sv, extra_shift
 	sub \vend, \vend, #1
 	add \rtbl, \tbl, #PAGE_SIZE
@@ -383,6 +416,12 @@ SYM_FUNC_START_LOCAL(remap_region)
 	ret
 SYM_FUNC_END(remap_region)
 
+/*
+ * IAMROOT20 20230725: 
+ * .balign 4
+ * create_idmap:
+ * bti c
+ */
 SYM_FUNC_START_LOCAL(create_idmap)
 	mov	x28, lr
 	/*
@@ -424,6 +463,10 @@ SYM_FUNC_START_LOCAL(create_idmap)
 #error "Mismatch between VA_BITS and page size/number of translation levels"
 #endif
 #else
+/*
+ * IAMROOT20 20230728: 
+ *	IDMAP_PGD_ORDER 9	: 48-39
+ */
 #define IDMAP_PGD_ORDER	(PHYS_MASK_SHIFT - PGDIR_SHIFT)
 #define EXTRA_SHIFT
 	/*
@@ -436,8 +479,8 @@ SYM_FUNC_START_LOCAL(create_idmap)
 	/*
 	 * IAMROOT20 20230722:
 	 *	x6 = 0xffff_8000_0aaf_0000 <_end+0x40_0000> * /
-	 *		MAX_FDT_SIZE = 0x20_0000
-	 *		SWAPPER_BLOCK_SIZE = 0x20_0000
+	 *		MAX_FDT_SIZE = 0x0020_0000		SZ_2M
+	 *		SWAPPER_BLOCK_SIZE = 0x0020_0000	SZ_2M
 	 */
 	adrp	x6, _end + MAX_FDT_SIZE + SWAPPER_BLOCK_SIZE
 	mov	x7, SWAPPER_RX_MMUFLAGS
