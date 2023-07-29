@@ -143,7 +143,7 @@ SYM_FUNC_END(dcache_clean_pou)
  *	- end     - kernel end address of region
  */
 SYM_FUNC_START(__pi_dcache_inval_poc)
-	/* IAMROOT20 2023.07.22
+	/* IAMROOT20 20230722
 	 * x2에 cache line-size를 저장하고(64byte), x3에는 ctr_el0[19:16]의 값이 저장되어있다. 
 	 * 매크로 위치 : /arch/arm64/include/asm/assembler.h
 	 */	

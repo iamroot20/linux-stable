@@ -217,7 +217,7 @@ SYM_CODE_END(record_mmu_state)
  */
 
 /* 
- * IAMROOT20_START 2023.07.22
+ * IAMROOT20_START 20230722
  * - 1) DTB : booting 시 kernel이  device 들을 인식할 때(어느 device가 어느 주소에 mapping되어 있는지)
               유의미한 정보들을 tree 형태로 저장해놓은 구조
  * - DTB와 FDT 차이점에 대한 논의 (미결)
@@ -231,13 +231,13 @@ SYM_CODE_END(record_mmu_state)
 
 SYM_CODE_START_LOCAL(preserve_boot_args)
 	/* 
-	* IAMROOT20 2023.07.22 
+	* IAMROOT20 20230722 
 	* x0에 들어있는 DTB 시작 주소를 x21에 저장한다. (DTB와 FDT의 차이?)
 	*/
 	mov	x21, x0				// x21=FDT			
 
 	/* 
-	* IAMROOT20 2023.07.22
+	* IAMROOT20 20230722
 	* x0에 boot_args 주소를 넣는다. (u64 __cachline_aligned boot_args[4], 4개의 index를 가진 배열의 형태) global variable
         * arm64에서는 심볼의 주소를 가져올 때, 이런 식으로 동작을 한다.
         * 매크로 위치(adr_l) : /arch/arm64/include/asm/assembler.h
@@ -245,7 +245,7 @@ SYM_CODE_START_LOCAL(preserve_boot_args)
 	*/
 	adr_l	x0, boot_args			// record the contents of 		
          	                                                                                
-	/* IAMROOT20 2023.07.22  
+	/* IAMROOT20 20230722  
 	 * x0에는 boot_args의 주소가 있고, 이 주소에 x21(DTB 주소)과 x1(reserved 0)의 값을 차례로 저장한다.
 	 * 그 뒤로 x2(reserved 0)과 x3(reserved 0)을 차례로 저장한다.
          * cf) stp : store pair
@@ -254,30 +254,30 @@ SYM_CODE_START_LOCAL(preserve_boot_args)
 	stp	x21, x1, [x0]			// x0 .. x3 at kernel entry	
 	stp	x2, x3, [x0, #16]							
 
-	/* IAMROOT20 2023.07.22  
+	/* IAMROOT20 20230722  
 	 * x19가 0이 아니라면 레이블 0으로 이동한다. x19가 1인 경우는 MMU On & Cache On 이다.
 	 */
 	cbnz	x19, 0f				// skip cache invalidation if MMU is on 
 
-	/* IAMROOT20 2023.07.22  
+	/* IAMROOT20 20230722  
 	 * 앞에 있는 stp 명령어가 내부 버퍼에서 완전히 처리되도록 보장하기 위해 배리어 명령어를 사용한다.
 	 * data memory barrier : CPU가 최적화를 위해 명령어의 순서를 바꿔서 처리할 때, 문제가 생길 수 있다. 
-         * 이 때, 메모리에 접근하는 명령어(load, store)는 reordering 되지 않도록 순서를 보장하는 명령어이다.
+	 	* 이 때, 메모리에 접근하는 명령어(load, store)는 reordering 되지 않도록 순서를 보장하는 명령어이다.
 	 */
 	dmb	sy				// needed before dc ivac with		
 						// MMU off				
 											
- 	/* IAMROOT20 2023.07.22  
+ 	/* IAMROOT20 20230722  
  	 * boot_args의 끝 주소를 x1에 저장한다. (이후에 invalidation 과정에서 필요할 것으로 예상)
  	 */
 	add	x1, x0, #0x20			// 4 x 8 bytes				
 
-	/* IAMROOT20 2023.07.22  
+	/* IAMROOT20 20230722  
 	 * dcache_inval_poc로 이동한다.
 	 * 위치 : /arch/arm64/mm/cache.S
 	 */
 	b	dcache_inval_poc		// tail call				
-											
+
 
 0:	str_l   x19, mmu_enabled_at_boot, x0
 	ret
