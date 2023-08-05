@@ -478,6 +478,10 @@ SYM_FUNC_START_LOCAL(create_idmap)
 #error "Mismatch between VA_BITS and page size/number of translation levels"
 #endif
 #else
+	/* IAMROOT20 20230805
+	 * PGDIR_SHIFT : PGD의 인덱스를 가져오기 위해 shift 해야 하는 횟수.
+	 * IDMAP_PGD_ORDER : PGD의 사이즈를 의미한다.
+	 */
 #define IDMAP_PGD_ORDER	(PHYS_MASK_SHIFT - PGDIR_SHIFT)
 #define EXTRA_SHIFT
 	/*
@@ -485,6 +489,10 @@ SYM_FUNC_START_LOCAL(create_idmap)
 	 * translation level, but the top-level table has more entries.
 	 */
 #endif
+	/* IAMROOT20 20230805
+	 * _text : 커널의 시작 주소
+	 * _end : 커널의 끝 주소
+	 */
 	adrp	x0, init_idmap_pg_dir
 	adrp	x3, _text
 	adrp	x6, _end + MAX_FDT_SIZE + SWAPPER_BLOCK_SIZE
