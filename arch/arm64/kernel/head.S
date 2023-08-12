@@ -87,7 +87,12 @@
 	 *  x28        create_idmap()                           callee preserved temp register
 	 */
 SYM_CODE_START(primary_entry)
-	bl	record_mmu_state	/* IAMROOT20 20230721: x19 = MMU state*/
+	/*
+	 * IAMROOT20 20230721: 
+	 * x19 = record_mmu_state();
+	 * x19 = MMU on(1) or off(0)
+	 */
+	bl	record_mmu_state
 	bl	preserve_boot_args
 	bl	create_idmap
 
@@ -313,7 +318,7 @@ SYM_FUNC_END(clear_page_tables)
  */
  /*
   * IAMROOT20 20230729: 
-  *void map_memory(U64 * tbl, const U64 vstart, U64 vend, U64 flags, const U64 phys, int order)
+  *U64 map_memory(U64 * tbl, const U64 vstart, U64 vend, U64 flags, const U64 phys, int order)
   *{                                                                               
   *  vend = vend - 1;                                                            
   *  U64 * rtbl = tbl + (PAGE_SIZE / sizeof(U64));                               
@@ -342,6 +347,7 @@ SYM_FUNC_END(clear_page_tables)
   *                                                                              
   *  rtbl = (U64 *)(phys & ~((U64)SWAPPER_BLOCK_SIZE - 1));// bic rtbl, phys, SWAPPER_BLOCK_SIZE - 1
   *  populate_entries(tbl, &rtbl, istart, iend, flags, SWAPPER_BLOCK_SIZE);         
+  *  return tbl;
   *}        
   */
 	.macro map_memory, tbl, rtbl, vstart, vend, flags, phys, order, istart, iend, tmp, count, sv, extra_shift
@@ -475,9 +481,10 @@ SYM_FUNC_START_LOCAL(create_idmap)
 	 */
 #endif
 	adrp	x0, init_idmap_pg_dir
-	adrp	x3, _text	/* IAMROOT20 20230722: 0xffff800008000000 */
+	adrp	x3, _text
 	/*
 	 * IAMROOT20 20230722:
+	 *	x0 = _text = 0xffff800008000000
 	 *	x6 = 0xffff_8000_0aaf_0000 <_end+0x40_0000> * /
 	 *		MAX_FDT_SIZE = 0x0020_0000		SZ_2M
 	 *		SWAPPER_BLOCK_SIZE = 0x0020_0000	SZ_2M
