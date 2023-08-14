@@ -261,6 +261,22 @@ SYM_FUNC_END(clear_page_tables)
  * Corrupts:	index, tmp1
  * Returns:	rtbl
  */
+ /*
+  * IAMROOT20 20230814: 
+  *
+  * void populate_entries(IN U64 * tbl, IN_OUT U64 ** rtbl, U64 index, U64 eindex,  
+  *     U64 flags, U64 inc)                                                         
+  * {                                                                               
+  *     U64 tmp1;                                                                   
+  *     do {                                                                        
+  *         tmp1 = phys_to_pte((U64)*rtbl);                                         
+  *         tmp1 |= flags;                  // tmp1 = table entry                   
+  *         tbl[index] = tmp1;               // str tmp1, [tbl, index, lsl #3]   
+  *         *rtbl += (inc/sizeof(U64));     // rtbl = pa next level                 
+  *         ++index;                                                                
+  *     } while(index < eindex);                                                    
+  * }
+  */
 	.macro populate_entries, tbl, rtbl, index, eindex, flags, inc, tmp1
 .Lpe\@:	phys_to_pte \tmp1, \rtbl
 	orr	\tmp1, \tmp1, \flags	// tmp1 = table entry
@@ -289,6 +305,25 @@ SYM_FUNC_END(clear_page_tables)
  * Preserves:	vstart, vend
  * Returns:	istart, iend, count
  */
+ /*
+  * IAMROOT20 20230814: 
+  *
+  * void compute_indices(const U64 vstart, const U64 vend, const int shift,
+  *     const int order, OUT U64 * istart, OUT U64 * iend, IN_OUT U64 * count)
+  * {
+  *    *istart = (vstart >> shift) & ((1 << order) -1);    // 48 기준으로 48~39 비트
+  *    *iend = (vend >> shift) & ((1 << order) -1);
+  *    *iend += (*count << order);
+  *    *count = *iend - *istart;
+  * }
+  *
+  *  exam) shift = 39, order = 9
+  *    *istart = (vstart >> 39 & 0x1ff;
+  *    *iend = (vend >> 39) & 0x1ff;
+  *    *iend += (*count << 9);
+  *    *count = *iend - *istart;
+  */
+
 	.macro compute_indices, vstart, vend, shift, order, istart, iend, count
 	ubfx	\istart, \vstart, \shift, \order
 	ubfx	\iend, \vend, \shift, \order
