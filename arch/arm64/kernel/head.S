@@ -96,7 +96,7 @@
 	 *  x25        primary_entry() .. start_kernel()        supported VA size
 	 *  x28        create_idmap()                           callee preserved temp register
 	 */
-
+/* IAMROOT20_START 20230715 */
 /* 
  * IAMROOT20 20230715
  * - 'SYM_CODE_START'는 인자로 전달된 심볼을 정의 및 align. (링커에 정보 전달)
@@ -123,7 +123,11 @@ SYM_CODE_START(primary_entry)
  *              - 1: cache maintenance 필요X
  */
 	bl	record_mmu_state
+/* IAMROOT20_END 20230715 */
+/* IAMROOT20_START 20230722 */
 	bl	preserve_boot_args
+/* IAMROOT20_END 20230722 */
+/* IAMROOT20_START 20230805 */
 	bl	create_idmap
 
 	/*
@@ -217,7 +221,7 @@ SYM_CODE_END(record_mmu_state)
  */
 
 /* 
- * IAMROOT20_START 20230722
+ * IAMROOT20 20230722
  * - 1) DTB : booting 시 kernel이  device 들을 인식할 때(어느 device가 어느 주소에 mapping되어 있는지)
               유의미한 정보들을 tree 형태로 저장해놓은 구조
  * - DTB와 FDT 차이점에 대한 논의 (미결)
@@ -493,6 +497,7 @@ SYM_FUNC_START_LOCAL(create_idmap)
 	 * _text : 커널의 시작 주소
 	 * _end : 커널의 끝 주소
 	 */
+	/* IAMROOT20_END 20230805 */
 	adrp	x0, init_idmap_pg_dir
 	adrp	x3, _text
 	adrp	x6, _end + MAX_FDT_SIZE + SWAPPER_BLOCK_SIZE
