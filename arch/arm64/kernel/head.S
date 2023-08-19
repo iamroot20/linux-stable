@@ -314,6 +314,10 @@ SYM_FUNC_END(clear_page_tables)
  * Corrupts:	index, tmp1
  * Returns:	rtbl
  */
+/* 
+ * IAMROOT20 20230819 
+ * index부터 eindex까지 각 level page table entry를 채운다.
+ */
 	.macro populate_entries, tbl, rtbl, index, eindex, flags, inc, tmp1
 .Lpe\@:	phys_to_pte \tmp1, \rtbl
 	orr	\tmp1, \tmp1, \flags	// tmp1 = table entry
@@ -342,6 +346,11 @@ SYM_FUNC_END(clear_page_tables)
  * Preserves:	vstart, vend
  * Returns:	istart, iend, count
  */
+/* 
+ * IAMROOT20 20230819 
+ * vstart, vend에서 shift+order부터 shift까지 bit를 추출해 istart, iend 설정
+ * 각 level page table index 범위가 계산됨
+ */
 	.macro compute_indices, vstart, vend, shift, order, istart, iend, count
 	ubfx	\istart, \vstart, \shift, \order
 	ubfx	\iend, \vend, \shift, \order
@@ -369,11 +378,19 @@ SYM_FUNC_END(clear_page_tables)
  * Preserves:	vstart, flags
  * Corrupts:	tbl, rtbl, vend, istart, iend, tmp, count, sv
  */
+/* 
+ * IAMROOT20 20230812
+ * map_meory: page table 생성
+ */
 	.macro map_memory, tbl, rtbl, vstart, vend, flags, phys, order, istart, iend, tmp, count, sv, extra_shift
 	sub \vend, \vend, #1
 	add \rtbl, \tbl, #PAGE_SIZE
 	mov \count, #0
 
+/* 
+ * IAMROOT20 20230812
+ * 48 va bit, 4k page를 사용할 경우 extra_shift가 define되지 않으므로 extra page table을 생성하지 않음
+ */
 	.ifnb	\extra_shift
 	tst	\vend, #~((1 << (\extra_shift)) - 1)
 	b.eq	.L_\@
@@ -383,11 +400,22 @@ SYM_FUNC_END(clear_page_tables)
 	mov \tbl, \sv
 	.endif
 .L_\@:
+/* 
+ * IAMROOT20 20230812 
+ * PGD table 생성
+ */
 	compute_indices \vstart, \vend, #PGDIR_SHIFT, #\order, \istart, \iend, \count
 	mov \sv, \rtbl
 	populate_entries \tbl, \rtbl, \istart, \iend, #PMD_TYPE_TABLE, #PAGE_SIZE, \tmp
 	mov \tbl, \sv
+/* IAMROOT20_END 20230812 */
 
+/* IAMROOT20_START 20230819 */
+/* 
+ * IAMROOT20 20230819
+ * 4 level page table일 경우 PUD table 생성
+ * 3 level page table일 경우 실행 안됨
+ */
 #if SWAPPER_PGTABLE_LEVELS > 3
 	compute_indices \vstart, \vend, #PUD_SHIFT, #(PAGE_SHIFT - 3), \istart, \iend, \count
 	mov \sv, \rtbl
@@ -395,6 +423,11 @@ SYM_FUNC_END(clear_page_tables)
 	mov \tbl, \sv
 #endif
 
+/* 
+ * IAMROOT20 20230819
+ * 4 level page table일 경우 PMD table 생성
+ * 3 level page table일 경우 PUD table 생성
+ */
 #if SWAPPER_PGTABLE_LEVELS > 2
 	compute_indices \vstart, \vend, #SWAPPER_TABLE_SHIFT, #(PAGE_SHIFT - 3), \istart, \iend, \count
 	mov \sv, \rtbl
@@ -402,6 +435,11 @@ SYM_FUNC_END(clear_page_tables)
 	mov \tbl, \sv
 #endif
 
+/* 
+ * IAMROOT20 20230819
+ * PTE table 생성 (마지막 level page table)
+ * 3 level page table일 경우 PUD table이 PTE 역할을 함
+ */
 	compute_indices \vstart, \vend, #SWAPPER_BLOCK_SHIFT, #(PAGE_SHIFT - 3), \istart, \iend, \count
 	bic \rtbl, \phys, #SWAPPER_BLOCK_SIZE - 1
 	populate_entries \tbl, \rtbl, \istart, \iend, \flags, #SWAPPER_BLOCK_SIZE, \tmp
@@ -503,7 +541,9 @@ SYM_FUNC_START_LOCAL(create_idmap)
 	adrp	x6, _end + MAX_FDT_SIZE + SWAPPER_BLOCK_SIZE
 	mov	x7, SWAPPER_RX_MMUFLAGS
 
+	/* IAMROOT20_START 20230812 */
 	map_memory x0, x1, x3, x6, x7, x3, IDMAP_PGD_ORDER, x10, x11, x12, x13, x14, EXTRA_SHIFT
+	/* IAMROOT20_END 20230819 */
 
 	/* Remap the kernel page tables r/w in the ID map */
 	adrp	x1, _text

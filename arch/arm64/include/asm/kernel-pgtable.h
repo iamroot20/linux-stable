@@ -29,6 +29,10 @@
  * VA range, so pages required to map highest possible PA are reserved in all
  * cases.
  */
+/* 
+ * IAMROOT20 20230819 
+ * 4k page를 사용할 경우 SWAPPER_PGTABLE_LEVELS를 1줄여서 page table level을 한단계 낮춘다.
+ */
 #ifdef CONFIG_ARM64_4K_PAGES
 #define SWAPPER_PGTABLE_LEVELS	(CONFIG_PGTABLE_LEVELS - 1)
 #else
