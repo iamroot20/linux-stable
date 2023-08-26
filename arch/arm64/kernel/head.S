@@ -318,6 +318,9 @@ SYM_FUNC_END(clear_page_tables)
  * IAMROOT20 20230819 
  * index부터 eindex까지 각 level page table entry를 채운다.
  */
+/* IAMROOT20 20230826
+ * tbl(page table)의 22번째 인덱스에 flags를 적용한 rtbl(page table entry)의 주소를 저장한다.
+ */
 	.macro populate_entries, tbl, rtbl, index, eindex, flags, inc, tmp1
 .Lpe\@:	phys_to_pte \tmp1, \rtbl
 	orr	\tmp1, \tmp1, \flags	// tmp1 = table entry
@@ -327,6 +330,7 @@ SYM_FUNC_END(clear_page_tables)
 	cmp	\index, \eindex
 	b.ls	.Lpe\@
 	.endm
+/* IAMROOT20_END 20230826 */
 
 /*
  * Compute indices of table entries from virtual address range. If multiple entries
@@ -458,6 +462,9 @@ SYM_FUNC_END(clear_page_tables)
  * x5: attributes to set on the updated region
  * x6: order of the last level mappings
  */
+/* IAMROOT20 20230826
+ * populate_entries 매크로를 통한 매핑을 수행하기 전에, 매핑에서 사용할 요소를 초기화한다.
+ */
 SYM_FUNC_START_LOCAL(remap_region)
 	sub	x3, x3, #1		// make end inclusive
 
@@ -545,6 +552,9 @@ SYM_FUNC_START_LOCAL(create_idmap)
 	map_memory x0, x1, x3, x6, x7, x3, IDMAP_PGD_ORDER, x10, x11, x12, x13, x14, EXTRA_SHIFT
 	/* IAMROOT20_END 20230819 */
 
+	/* IAMROOT20_START 20230826
+	 * 초기 커널 페이지 테이블 용도로 사용하는 init_pg_dir 영역을 R/W로 리매핑한다.
+	 */
 	/* Remap the kernel page tables r/w in the ID map */
 	adrp	x1, _text
 	adrp	x2, init_pg_dir
