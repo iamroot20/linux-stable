@@ -316,7 +316,7 @@ SYM_FUNC_END(clear_page_tables)
  * index부터 eindex까지 각 level page table entry를 채운다.
  */
 /* IAMROOT20 20230826
- * tbl(page table)의 22번째 인덱스에 flags를 적용한 rtbl(page table entry)의 주소를 저장한다.
+ * tbl의 index 위치에 flags를 적용한 rtbl의 주소를 저장한다.
  */
 	.macro populate_entries, tbl, rtbl, index, eindex, flags, inc, tmp1
 .Lpe\@:	phys_to_pte \tmp1, \rtbl
@@ -457,10 +457,10 @@ SYM_FUNC_END(clear_page_tables)
  * x5: attributes to set on the updated region
  * x6: order of the last level mappings
  */
-/* IAMROOT20 20230826
- * populate_entries 매크로를 통한 매핑을 수행하기 전에, 매핑에서 사용할 요소를 초기화한다.
- */
 SYM_FUNC_START_LOCAL(remap_region)
+	/* IAMROOT20 20230826
+	* populate_entries 매크로를 통한 매핑을 수행하기 전에, 매핑에서 사용할 요소를 초기화한다.
+	*/
 	sub	x3, x3, #1		// make end inclusive
 
 	// Get the index offset for the start of the last level table
