@@ -148,6 +148,7 @@ SYM_FUNC_START(__pi_dcache_inval_poc)
 	 * 매크로 위치 : /arch/arm64/include/asm/assembler.h
 	 */	
 	dcache_line_size x2, x3
+/* IAMROOT20_END 20230722 *//* IAMROOT20_START 20230729 */
 	/* 
 	 * IAMROOT20 20230729
 	 * 하위 비트를 mask off 하기 위한 준비.

@@ -79,9 +79,9 @@
 
 	__EFI_PE_HEADER
 
-/* IAMROOT20_END 20230708 */
 	.section ".idmap.text","a"
 
+/* IAMROOT20_END 20230708 *//* IAMROOT20_START 20230715 */
 	/*
 	 * The following callee saved general purpose registers are used on the
 	 * primary lowlevel boot path:
@@ -96,7 +96,6 @@
 	 *  x25        primary_entry() .. start_kernel()        supported VA size
 	 *  x28        create_idmap()                           callee preserved temp register
 	 */
-/* IAMROOT20_START 20230715 */
 /* 
  * IAMROOT20 20230715
  * - 'SYM_CODE_START'는 인자로 전달된 심볼을 정의 및 align. (링커에 정보 전달)
@@ -123,11 +122,9 @@ SYM_CODE_START(primary_entry)
  *              - 1: cache maintenance 필요X
  */
 	bl	record_mmu_state
-/* IAMROOT20_END 20230715 */
-/* IAMROOT20_START 20230722 */
+/* IAMROOT20_END 20230715 *//* IAMROOT20_START 20230722 */
 	bl	preserve_boot_args
-/* IAMROOT20_END 20230722 */
-/* IAMROOT20_START 20230805 */
+/* IAMROOT20_END 20230729 *//* IAMROOT20_START 20230805 */
 	bl	create_idmap
 
 	/*
@@ -330,7 +327,6 @@ SYM_FUNC_END(clear_page_tables)
 	cmp	\index, \eindex
 	b.ls	.Lpe\@
 	.endm
-/* IAMROOT20_END 20230826 */
 
 /*
  * Compute indices of table entries from virtual address range. If multiple entries
@@ -412,9 +408,8 @@ SYM_FUNC_END(clear_page_tables)
 	mov \sv, \rtbl
 	populate_entries \tbl, \rtbl, \istart, \iend, #PMD_TYPE_TABLE, #PAGE_SIZE, \tmp
 	mov \tbl, \sv
-/* IAMROOT20_END 20230812 */
+/* IAMROOT20_END 20230812 *//* IAMROOT20_START 20230819 */
 
-/* IAMROOT20_START 20230819 */
 /* 
  * IAMROOT20 20230819
  * 4 level page table일 경우 PUD table 생성
@@ -542,17 +537,16 @@ SYM_FUNC_START_LOCAL(create_idmap)
 	 * _text : 커널의 시작 주소
 	 * _end : 커널의 끝 주소
 	 */
-	/* IAMROOT20_END 20230805 */
 	adrp	x0, init_idmap_pg_dir
 	adrp	x3, _text
 	adrp	x6, _end + MAX_FDT_SIZE + SWAPPER_BLOCK_SIZE
 	mov	x7, SWAPPER_RX_MMUFLAGS
 
-	/* IAMROOT20_START 20230812 */
+	/* IAMROOT20_END 20230805 *//* IAMROOT20_START 20230812 */
 	map_memory x0, x1, x3, x6, x7, x3, IDMAP_PGD_ORDER, x10, x11, x12, x13, x14, EXTRA_SHIFT
-	/* IAMROOT20_END 20230819 */
+	/* IAMROOT20_END 20230819 *//* IAMROOT20_START 20230826 */
 
-	/* IAMROOT20_START 20230826
+	/* IAMROOT20 20230826
 	 * 초기 커널 페이지 테이블 용도로 사용하는 init_pg_dir 영역을 R/W로 리매핑한다.
 	 */
 	/* Remap the kernel page tables r/w in the ID map */
@@ -563,6 +557,7 @@ SYM_FUNC_START_LOCAL(create_idmap)
 	mov	x5, SWAPPER_RW_MMUFLAGS
 	mov	x6, #SWAPPER_BLOCK_SHIFT
 	bl	remap_region
+	/* IAMROOT20_END 20230826 */
 
 	/* Remap the FDT after the kernel image */
 	adrp	x1, _text
