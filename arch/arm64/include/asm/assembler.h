@@ -175,9 +175,16 @@ lr	.req	x30		// link register
 	 * @dst: destination register (64 bit wide)
 	 * @sym: name of the symbol
 	 */
+	// void adr_l(u64 dst,void *sym)  
 	.macro	adr_l, dst, sym
+	//{
+	// #define PAGE_SHIFT 12
+	// #define PAGE_OFFSET_MASK (~0UL)<<PAGE_SHIFT   
+	// dst = sym & PAGE_OFFSET_MASK;
 	adrp	\dst, \sym
+	// dst += (sym  & ~PAGE_OFFSET_MASK);
 	add	\dst, \dst, :lo12:\sym
+	//}
 	.endm
 
 	/*

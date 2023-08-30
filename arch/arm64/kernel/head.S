@@ -37,6 +37,8 @@
 
 #include "efi-header.S"
 
+/* IAMROOT20_REVIEW_START 20230825 */
+
 #if (PAGE_OFFSET & 0x1fffff) != 0
 #error PAGE_OFFSET must be at least 2MB aligned
 #endif
@@ -86,14 +88,19 @@
 	 *  x25        primary_entry() .. start_kernel()        supported VA size
 	 *  x28        create_idmap()                           callee preserved temp register
 	 */
+
+// int main(void)
 SYM_CODE_START(primary_entry)
 	/*
 	 * IAMROOT20 20230721: 
 	 * x19 = record_mmu_state();
 	 * x19 = MMU on(1) or off(0)
 	 */
+	// record_mmu_state();
 	bl	record_mmu_state
+	// preserve_boot_args();
 	bl	preserve_boot_args
+	// create_idmap();
 	bl	create_idmap
 
 	/*
@@ -138,11 +145,17 @@ SYM_CODE_START_LOCAL(record_mmu_state)
  *	else
  *		x19 = sctlr_el2;
  */
+	// x[19] = CurrentEL;
 	mrs	x19, CurrentEL
+	// ARM_ASM(cmp,x[19],CurrentEL_EL2);	// x19==EL2 ? Z=1 : Z=0
 	cmp	x19, #CurrentEL_EL2
+	// x[19] = SCTLR_EL[1];	
 	mrs	x19, sctlr_el1
+	// if( COND_NE ) goto lable_0;			// Z==0? goto 0
 	b.ne	0f
+	// x[19] = SCTLR_EL[2];	
 	mrs	x19, sctlr_el2
+//lable_0:
 0:
 /*
  * IAMROOT20 20230719: 
@@ -155,11 +168,17 @@ SYM_CODE_START_LOCAL(record_mmu_state)
  *		return;
  *	}
  */
+// CPU_LE( if(x[19] & 0x1<<SCTLR_ELx_EE_SHIFT) goto lable_1);
 CPU_LE( tbnz	x19, #SCTLR_ELx_EE_SHIFT, 1f	)
+// CPU_BE( if(!(x[19] & 0x1<<SCTLR_ELx_EE_SHIFT)) goto lable_1);
 CPU_BE( tbz	x19, #SCTLR_ELx_EE_SHIFT, 1f	)
+	// ARM_ASM(tst,x[19],SCTLR_ELx_C);	// x19 & C ? Z=0 : Z=1
 	tst	x19, #SCTLR_ELx_C		// Z := (C == 0)
+	// x[19] &= SCTLR_ELx_M;
 	and	x19, x19, #SCTLR_ELx_M		// isolate M bit
+	// x[19] = (COND_EQ)? xzr : x19;		// x19 = Z==1?xzr:x19
 	csel	x19, xzr, x19, eq		// clear x19 if Z
+	// return 1;
 	ret
 
 	/*
@@ -181,16 +200,29 @@ CPU_BE( tbz	x19, #SCTLR_ELx_EE_SHIFT, 1f	)
  *	x19 = xzr;		// MMU off
  *	return;
  */
+ //lable_1:
+	// x[19] ^= SCTLR_ELx_EE;
 1:	eor	x19, x19, #SCTLR_ELx_EE
+	// x[19] &= ~SCTLR_ELx_M;
 	bic	x19, x19, #SCTLR_ELx_M
+	// if( COND_NE ) goto lable_2;		// Z==0
 	b.ne	2f
+	// pre_disable_mmu_workaround();
 	pre_disable_mmu_workaround
+	// SCTLR_EL[2] = x[19];	
 	msr	sctlr_el2, x19
+	// goto lable_3;
 	b	3f
+//lable_2:
+	// pre_disable_mmu_workaround();
 2:	pre_disable_mmu_workaround
+	// SCTLR_EL[1] = x[19];	
 	msr	sctlr_el1, x19
+//lable_3:
 3:	isb
+	// x[19] = xzr;
 	mov	x19, xzr
+	// return 1;
 	ret
 SYM_CODE_END(record_mmu_state)
 
@@ -218,17 +250,26 @@ SYM_CODE_START_LOCAL(preserve_boot_args)
  *	mmu_enabled_at_boot = x19;	// x19 = 1 -> MMU on
  *	return;
  */
+	// TODO change for compile 
+	// x21 = x0;
 	mov	x21, x0				// x21=FDT
-
+	// adr_l(x0, boot_args);
 	adr_l	x0, boot_args			// record the contents of
+	// x0[0] = x21;
+	// x0[1] = x1;		
 	stp	x21, x1, [x0]			// x0 .. x3 at kernel entry
-	stp	x2, x3, [x0, #16]
+	// x0[2] = x2;
+	// x0[3] = x3;				
+	stp	x2, x3, [x0, #16]		
 
+	// if (x19 != 0) goto lable0;
 	cbnz	x19, 0f				// skip cache invalidation if MMU is on
+	//
 	dmb	sy				// needed before dc ivac with
 						// MMU off
-
+	// x1 = x0 + 0x20;
 	add	x1, x0, #0x20			// 4 x 8 bytes
+/* IAMROOT20_REVIEW_END 20230825 */
 	b	dcache_inval_poc		// tail call
 0:	str_l   x19, mmu_enabled_at_boot, x0
 	ret
