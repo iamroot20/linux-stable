@@ -38,7 +38,7 @@
 #include "efi-header.S"
 
 /* IAMROOT20_START 20230708 */
-
+/* IAMROOT20_REVIEW_START 20230831 */
 #if (PAGE_OFFSET & 0x1fffff) != 0
 #error PAGE_OFFSET must be at least 2MB aligned
 #endif
@@ -121,8 +121,10 @@ SYM_CODE_START(primary_entry)
  *              - 0: cache maintenance 필요
  *              - 1: cache maintenance 필요X
  */
+	// record_mmu_state()
 	bl	record_mmu_state
 /* IAMROOT20_END 20230715 *//* IAMROOT20_START 20230722 */
+/* IAMROOT20_REVIEW_END 20230831 */
 	bl	preserve_boot_args
 /* IAMROOT20_END 20230729 *//* IAMROOT20_START 20230805 */
 	bl	create_idmap
@@ -159,13 +161,20 @@ SYM_CODE_START(primary_entry)
 	b	__primary_switch
 SYM_CODE_END(primary_entry)
 
+// int record_mmu_state(void);
 	__INIT
 SYM_CODE_START_LOCAL(record_mmu_state)
+	// x[19] = CurrentEL;
 	mrs	x19, CurrentEL
+	// ARM_ASM(cmp,x[19],CurrentEL_EL2);	// x19==EL2 ? Z=1 : Z=0
 	cmp	x19, #CurrentEL_EL2
+	// x[19] = SCTLR_EL[1];
 	mrs	x19, sctlr_el1
+	// if( COND_NE ) goto lable_0;			// Z==0? goto 0			// EL1
 	b.ne	0f		/* IAMROOT20 20230715 여기 0은 주소가 아닌 레이블 */
+	// x[19] = SCTLR_EL[2];
 	mrs	x19, sctlr_el2
+//lable_0:
 0:
 /* 
  * IAMROOT20 20230715
@@ -174,15 +183,21 @@ SYM_CODE_START_LOCAL(record_mmu_state)
  * - CPU_LE 매크로 인자로 사용된 '1f' 는 전방(forward)의 레이블 '1'이라는
  * 의미.
  */
+// CPU_LE( if(x[19] & 0x1<<SCTLR_ELx_EE_SHIFT) goto lable_1; )
 CPU_LE( tbnz	x19, #SCTLR_ELx_EE_SHIFT, 1f	)
+// CPU_BE( if(!(x[19] & 0x1<<SCTLR_ELx_EE_SHIFT)) goto lable_1; )
 CPU_BE( tbz	x19, #SCTLR_ELx_EE_SHIFT, 1f	)
 	/* 
 	 * IAMROOT20 20230715
 	 * Endianness 세팅에 이상이 없다면 이어서 아래 코드 실행.
 	 */
+	// ARM_ASM(tst,x[19],SCTLR_ELx_C);		// x19 & C ? Z=0 : Z=1	// Z = (C==0)
 	tst	x19, #SCTLR_ELx_C		// Z := (C == 0)
+	// x[19] &= SCTLR_ELx_M;
 	and	x19, x19, #SCTLR_ELx_M		// isolate M bit
+	// x[19] = (COND_EQ)? xzr : x[19];		// x19 = Z==1?xzr:x19	// cache off
 	csel	x19, xzr, x19, eq		// clear x19 if Z
+	// return 1;
 	ret
 
 	/*
@@ -200,16 +215,30 @@ CPU_BE( tbz	x19, #SCTLR_ELx_EE_SHIFT, 1f	)
 	 * 		- 수정된 x19의 내용을 sctlr_el1 (또는 sctlr_el2)에 업데이트
 	 * - 'pre_disable_mmu_workaround' 는 특정 칩을 위한 예외처리 매크로.
 	 */
+//lable_1:
+	// x[19] ^= SCTLR_ELx_EE;
 1:	eor	x19, x19, #SCTLR_ELx_EE
+	// x[19] &= ~SCTLR_ELx_M;
 	bic	x19, x19, #SCTLR_ELx_M
+	// if( COND_NE ) goto lable_2;			// Z==0? goto 2			// EL1
 	b.ne	2f
+	// pre_disable_mmu_workaround();
 	pre_disable_mmu_workaround
+	// SCTLR_EL[2] = x[19];
 	msr	sctlr_el2, x19
+	// goto lable_3;
 	b	3f
+//lable_2:
+	// pre_disable_mmu_workaround();
 2:	pre_disable_mmu_workaround
+	// SCTLR_EL[1] = x[19];
 	msr	sctlr_el1, x19
+// lable_3:
+	// ARM_ASM(isb);
 3:	isb
+    // x[19] = xzr;						// x19 = 0
 	mov	x19, xzr
+	// return 1;
 	ret
 SYM_CODE_END(record_mmu_state)
 

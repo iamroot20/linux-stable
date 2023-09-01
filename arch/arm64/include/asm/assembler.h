@@ -704,8 +704,10 @@ alternative_endif
  * Errata workaround prior to disable MMU. Insert an ISB immediately prior
  * to executing the MSR that will change SCTLR_ELn[M] from a value of 1 to 0.
  */
+	// static inline void pre_disable_mmu_workaround(void)
 	.macro pre_disable_mmu_workaround
 #ifdef CONFIG_QCOM_FALKOR_ERRATUM_E1041
+	// ARM_ASM(isb);
 	isb
 #endif
 	.endm
