@@ -38,6 +38,7 @@
 #include "efi-header.S"
 
 /* IAMROOT20_START 20230708 */
+/* IAMROOT20_REVIEW_START 20230902 */
 
 #if (PAGE_OFFSET & 0x1fffff) != 0
 #error PAGE_OFFSET must be at least 2MB aligned
@@ -161,10 +162,16 @@ SYM_CODE_END(primary_entry)
 
 	__INIT
 SYM_CODE_START_LOCAL(record_mmu_state)
+	// x19 = CurrentEL;
 	mrs	x19, CurrentEL
+	// if ( (x19-CurrentEL_EL2) == 0 ) Z=1 else Z=0
 	cmp	x19, #CurrentEL_EL2
+	// x19 = sctlr_el1;
 	mrs	x19, sctlr_el1
+	// branch not equal 0 forward
+	// if ( Z==0 ) goto 0
 	b.ne	0f		/* IAMROOT20 20230715 여기 0은 주소가 아닌 레이블 */
+	// x19 = sctlr_el2
 	mrs	x19, sctlr_el2
 0:
 /* 
@@ -174,14 +181,20 @@ SYM_CODE_START_LOCAL(record_mmu_state)
  * - CPU_LE 매크로 인자로 사용된 '1f' 는 전방(forward)의 레이블 '1'이라는
  * 의미.
  */
+// Test bit and Branch if Non-Zero
+// CPU_LE( if ( (x19 & ( 0x1 << SCTLR_ELx_EE_SHIFT )) ) goto 1f )
 CPU_LE( tbnz	x19, #SCTLR_ELx_EE_SHIFT, 1f	)
+// CPU_BE( if ( !(x19 & ( 0x1 << SCTLR_ELx_EE_SHIFT )) ) goto 1f )
 CPU_BE( tbz	x19, #SCTLR_ELx_EE_SHIFT, 1f	)
 	/* 
 	 * IAMROOT20 20230715
 	 * Endianness 세팅에 이상이 없다면 이어서 아래 코드 실행.
 	 */
+	// if ( x19 & C ) Z=0 else Z=1
 	tst	x19, #SCTLR_ELx_C		// Z := (C == 0)
+	// x19 &= M
 	and	x19, x19, #SCTLR_ELx_M		// isolate M bit
+	// x19 = ( Z == 1 ) ? ( 0 ) : x19;
 	csel	x19, xzr, x19, eq		// clear x19 if Z
 	ret
 
@@ -200,15 +213,23 @@ CPU_BE( tbz	x19, #SCTLR_ELx_EE_SHIFT, 1f	)
 	 * 		- 수정된 x19의 내용을 sctlr_el1 (또는 sctlr_el2)에 업데이트
 	 * - 'pre_disable_mmu_workaround' 는 특정 칩을 위한 예외처리 매크로.
 	 */
+	// x19 ^= EE;
 1:	eor	x19, x19, #SCTLR_ELx_EE
+	// x19 = x19 & ~M;
 	bic	x19, x19, #SCTLR_ELx_M
+	// if ( Z==0 ) goto 2
 	b.ne	2f
 	pre_disable_mmu_workaround
+	// sctlr_el2 = x19;
 	msr	sctlr_el2, x19
+	// goto 3
 	b	3f
 2:	pre_disable_mmu_workaround
+	// sctlr_el1 = x19;
 	msr	sctlr_el1, x19
+	// barrier
 3:	isb
+	// x19 = 0
 	mov	x19, xzr
 	ret
 SYM_CODE_END(record_mmu_state)
