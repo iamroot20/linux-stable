@@ -147,40 +147,60 @@ SYM_FUNC_START(__pi_dcache_inval_poc)
 	 * x2에 cache line-size를 저장하고(64byte), x3에는 ctr_el0[19:16]의 값이 저장되어있다. 
 	 * 매크로 위치 : /arch/arm64/include/asm/assembler.h
 	 */	
+	 // dcache_line_size(&x[2], &x[3]);
 	dcache_line_size x2, x3
 /* IAMROOT20_END 20230722 *//* IAMROOT20_START 20230729 */
 	/* 
 	 * IAMROOT20 20230729
 	 * 하위 비트를 mask off 하기 위한 준비.
 	*/
+	// x[3] = x[2] - 1;
 	sub	x3, x2, #1
+	// ARM_ASM(tst, x[1], x[3]);
 	tst	x1, x3				// end cache line aligned?
+	// x[1] = x[1]&(~x[3]);
 	bic	x1, x1, x3
 	/*
 	 * IAMROOT20 20230729
 	 * bic 다음에 b.eq 가 나오는 이유 : 파이프라인 flush로 인한 reload 방지
 	 * - https://developer.arm.com/documentation/ddi0337/e/BABBCJII
 	*/
+	// if ( COND_EQ ) goto lable_1;
 	b.eq	1f
 	/*
 	 * IAMROOT20 20230729
 	 * DC CIVAC : 지정한 주소의 데이터 캐시를 PoC까지 Clean & Invalidate를 수행.
 	*/
+	// ARM_ASM(dc, CIVAC, x[1]);
 	dc	civac, x1			// clean & invalidate D / U line
+//lable_1:
+	// ARM_ASM(tst, x[0], x[3]);
 1:	tst	x0, x3				// start cache line aligned?
+	// x[0] &= ~x[3];
 	bic	x0, x0, x3
+	// if ( COND_EQ ) goto lable_2;
 	b.eq	2f
+	// ARM_ASM(dc, CIVAC, x[0]);
 	dc	civac, x0			// clean & invalidate D / U line
+	// goto lable_3;
 	b	3f
+//lable_2:
+	// ARM_ASM(dc, IVAC, x[0]);
 2:	dc	ivac, x0			// invalidate D / U line
+//lable_3:
+	// x[0] += x[2];		// walker + cache line size
 3:	add	x0, x0, x2
+	// ARM_ASM(cmp, x[0], x[1]);
 	cmp	x0, x1
+	// if ( COND_LO ) goto lable_2;
 	b.lo	2b
 	/*
 	 * IAMROOT20 20230729
 	 * dsb : https://developer.arm.com/documentation/dui0473/m/arm-and-thumb-instructions/dsb
 	*/
+	// ARM_ASM(dsb,ARM_ASM_B_SY);
 	dsb	sy
+	// return 1;
 	ret
 SYM_FUNC_END(__pi_dcache_inval_poc)
 SYM_FUNC_ALIAS(dcache_inval_poc, __pi_dcache_inval_poc)

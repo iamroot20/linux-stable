@@ -121,12 +121,14 @@ SYM_CODE_START(primary_entry)
  *              - 0: cache maintenance 필요
  *              - 1: cache maintenance 필요X
  */
-	// record_mmu_state()
+	// record_mmu_state();
 	bl	record_mmu_state
 /* IAMROOT20_END 20230715 *//* IAMROOT20_START 20230722 */
-/* IAMROOT20_REVIEW_END 20230831 */
+/* IAMROOT20_REVIEW_END 20230831 *//* IAMROOT20_REVIEW_START 20230907 */
+	// preserve_boot_args();
 	bl	preserve_boot_args
 /* IAMROOT20_END 20230729 *//* IAMROOT20_START 20230805 */
+/* IAMROOT20_REVIEW_END 20230907 */
 	bl	create_idmap
 
 	/*
@@ -264,6 +266,7 @@ SYM_CODE_START_LOCAL(preserve_boot_args)
 	* IAMROOT20 20230722 
 	* x0에 들어있는 DTB 시작 주소를 x21에 저장한다. (DTB와 FDT의 차이?)
 	*/
+	// x[21] = x[0];
 	mov	x21, x0				// x21=FDT			
 
 	/* 
@@ -273,6 +276,7 @@ SYM_CODE_START_LOCAL(preserve_boot_args)
         * 매크로 위치(adr_l) : /arch/arm64/include/asm/assembler.h
         * 심볼 정의 위치(boot_args) : /arch/arm64/include/asm/setup.c 
 	*/
+	// x[0] = boot_args;
 	adr_l	x0, boot_args			// record the contents of 		
          	                                                                                
 	/* IAMROOT20 20230722  
@@ -281,12 +285,17 @@ SYM_CODE_START_LOCAL(preserve_boot_args)
          * cf) stp : store pair
          * cf) [ ] : addressing mode (programmer's guide 참고)
          */
+	// boot_args[0] = x[21];
+	// boot_args[1] = x[1];
 	stp	x21, x1, [x0]			// x0 .. x3 at kernel entry	
+	// boot_args[2] = x[2];
+	// boot_args[3] = x[3];
 	stp	x2, x3, [x0, #16]							
 
 	/* IAMROOT20 20230722  
 	 * x19가 0이 아니라면 레이블 0으로 이동한다. x19가 1인 경우는 MMU On & Cache On 이다.
 	 */
+	// if ( x[19] != 0 )  goto lable_0;
 	cbnz	x19, 0f				// skip cache invalidation if MMU is on 
 
 	/* IAMROOT20 20230722  
@@ -294,22 +303,26 @@ SYM_CODE_START_LOCAL(preserve_boot_args)
 	 * data memory barrier : CPU가 최적화를 위해 명령어의 순서를 바꿔서 처리할 때, 문제가 생길 수 있다. 
 	 	* 이 때, 메모리에 접근하는 명령어(load, store)는 reordering 되지 않도록 순서를 보장하는 명령어이다.
 	 */
+	// ARM_ASM(dmb,ARM_ASM_B_SY);
 	dmb	sy				// needed before dc ivac with		
 						// MMU off				
 											
  	/* IAMROOT20 20230722  
  	 * boot_args의 끝 주소를 x1에 저장한다. (이후에 invalidation 과정에서 필요할 것으로 예상)
  	 */
+	// x[1] = x[0] + 0x20;
 	add	x1, x0, #0x20			// 4 x 8 bytes				
 
 	/* IAMROOT20 20230722  
 	 * dcache_inval_poc로 이동한다.
 	 * 위치 : /arch/arm64/mm/cache.S
 	 */
+	// return dcache_inval_poc();	// b는 lr를 갱신하지X -> preserve_boot_args 호출 위치로 바로 리턴
 	b	dcache_inval_poc		// tail call				
-
-
+//lable_0:
+	// mmu_enabled_at_boot = x[19]; 
 0:	str_l   x19, mmu_enabled_at_boot, x0
+	// return 1;
 	ret
 SYM_CODE_END(preserve_boot_args)
 
