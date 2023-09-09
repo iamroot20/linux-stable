@@ -146,22 +146,29 @@ SYM_FUNC_START(__pi_dcache_inval_poc)
 	/* IAMROOT20 20230722
 	 * x2에 cache line-size를 저장하고(64byte), x3에는 ctr_el0[19:16]의 값이 저장되어있다. 
 	 * 매크로 위치 : /arch/arm64/include/asm/assembler.h
-	 */	
+	 */
+	// #define cache_line_size 64;
+	// x2 = cache_line_size;
 	dcache_line_size x2, x3
 /* IAMROOT20_END 20230722 *//* IAMROOT20_START 20230729 */
 	/* 
 	 * IAMROOT20 20230729
 	 * 하위 비트를 mask off 하기 위한 준비.
 	*/
+	// x3 = 0b111111;
 	sub	x3, x2, #1
+	// if (!(x1 & x3)) Z = 1 else Z = 0;
 	tst	x1, x3				// end cache line aligned?
+	// x1 = x1 & ~x3;
 	bic	x1, x1, x3
 	/*
 	 * IAMROOT20 20230729
 	 * bic 다음에 b.eq 가 나오는 이유 : 파이프라인 flush로 인한 reload 방지
 	 * - https://developer.arm.com/documentation/ddi0337/e/BABBCJII
 	*/
+	// if (Z == 1) goto 1f;
 	b.eq	1f
+	/* IAMROOT20_REVIEW_END 20230909 */
 	/*
 	 * IAMROOT20 20230729
 	 * DC CIVAC : 지정한 주소의 데이터 캐시를 PoC까지 Clean & Invalidate를 수행.

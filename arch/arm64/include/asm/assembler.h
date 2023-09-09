@@ -286,6 +286,8 @@ alternative_if_not ARM64_MISMATCHED_CACHE_TYPE
 	/* IAMROOT20 20230722
 	 * ctr_el0 레지스터 값을 reg 레지스터에 넣는다.
 	 */
+
+	// reg = ctr_el0;
 	mrs	\reg, ctr_el0			// read CTR
 	nop
 alternative_else
@@ -328,17 +330,22 @@ alternative_cb_end
          * ctr_el0의 값을 tmp 레지스터에 넣는다.
 	 * 매크로 위치 : arch/arm64/include/asm/assembler.h
          */
+	
+	// tmp = ctr_el0;
 	read_ctr	\tmp
 
 	/* IAMROOT20 20230722
 	 * ctr_el0 레지스터에서 캐시 라인 사이즈 부분을 얻어온다.
 	 * ctr_el0[19:16]은 DminLine으로 데이터 캐시 라인 사이즈를 나타내는 비트이다. 2^n 워드 단위로 저장된다.
 	 */
+	// tmp = tmp >> 16;
+	// tmp = tmp & 0xf; 		// tmp & ((0x1 << (19-16+1)) -1)
 	ubfm		\tmp, \tmp, #16, #19	// cache line size encoding
 	
 	/* IAMROOT20 20230722
          * reg 레지스터에 4를 넣는다. 이 때, 4는 word 크기를 의미한다. 
          */
+	// reg = 4;
 	mov		\reg, #4		// bytes per word
 
 	/* IAMROOT20 20230722
@@ -346,6 +353,8 @@ alternative_cb_end
 	 * 워드 사이즈: 4, 캐시 라인 당 데이터 저장 개수 : 16, ctr_el0[19:16] : 4
 	 * 계산 : 4 << 4 => 4 * 2^4 => 64
          */
+	
+	// reg = reg << tmp;
 	lsl		\reg, \reg, \tmp	// actual cache line size
 	.endm
 
