@@ -589,9 +589,14 @@ SYM_FUNC_START_LOCAL(create_idmap)
 	mov	x5, SWAPPER_RW_MMUFLAGS
 	mov	x6, #SWAPPER_BLOCK_SHIFT
 	bl	remap_region
-	/* IAMROOT20_END 20230826 */
+	/* IAMROOT20_END 20230826 *//* IAMROOT20_START 20230909 */
 
 	/* Remap the FDT after the kernel image */
+	/* IAMROOT20 20230909
+	 * 커널의 끝 주소를 2MB를 더해준 다음, 내림 연산을 하여 2MB 단위로 정렬한다.
+	 * 매핑한 FDT의 물리 주소를 2MB 단위로 정렬한다.
+	 * FDT의 영역을 4MB 크기로 잡아서, 물리 주소에 RW 속성으로 매핑한다.
+	*/
 	adrp	x1, _text
 	adrp	x22, _end + SWAPPER_BLOCK_SIZE
 	bic	x2, x22, #SWAPPER_BLOCK_SIZE - 1
@@ -610,6 +615,8 @@ SYM_FUNC_START_LOCAL(create_idmap)
 	cbnz	x19, 0f				// skip cache invalidation if MMU is on
 	dmb	sy
 
+	/*
+	 * 
 	adrp	x0, init_idmap_pg_dir
 	adrp	x1, init_idmap_pg_end
 	bl	dcache_inval_poc
