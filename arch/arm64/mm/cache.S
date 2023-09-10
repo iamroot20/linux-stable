@@ -215,6 +215,12 @@ SYM_FUNC_ALIAS(dcache_inval_poc, __pi_dcache_inval_poc)
  *	- end     - virtual end address of region
  */
 SYM_FUNC_START(__pi_dcache_clean_poc)
+/*
+ * IAMROOT20 20230909: 
+ *
+ * dcache_line_size x2, x3		;	x2 = 64
+ * dcache_by_myline_op cvac, sy, x0, x1, x2, x3
+ */
 	dcache_by_line_op cvac, sy, x0, x1, x2, x3
 	ret
 SYM_FUNC_END(__pi_dcache_clean_poc)

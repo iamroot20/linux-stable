@@ -441,7 +441,19 @@ alternative_endif
  * 	fixup:		optional label to branch to on user fault
  * 	Corrupts:       start, end, tmp
  */
+ /*
+  * IAMROOT20 20230909: 
+  * cache.S::dcache_clean_poc dcache_by_line_op cvac, sy, x0, x1, x2, x3
+  * 
+  */
 	.macro dcache_by_myline_op op, domain, start, end, linesz, tmp, fixup
+	/*
+	 * IAMROOT20 20230909: 
+	 *	tmp = linesz - 1;	tmp = 63
+	 *	start = start & ~(tmp);	// start을 캐쉬라인 사이즈로 align
+	 * dcache_op@:
+	 *	dc civac start
+	 */
 	sub	\tmp, \linesz, #1
 	bic	\start, \start, \tmp
 .Ldcache_op\@:
@@ -462,11 +474,20 @@ alternative_endif
 	.endif
 	.endif
 	.endif
+	/*
+	 * IAMROOT20 20230909: 
+	 * start += linesz;		start += 64
+	 * if(start < end)	goto dcache_op@;
+	 * dsb domain;		dsb sy
+	 */
 	add	\start, \start, \linesz
 	cmp	\start, \end
 	b.lo	.Ldcache_op\@
 	dsb	\domain
 
+/*
+ * IAMROOT20_END 20230909
+ */
 	_cond_uaccess_extable .Ldcache_op\@, \fixup
 	.endm
 
@@ -674,6 +695,10 @@ alternative_endif
 	orr	\pte, \phys, \phys, lsr #36
 	and	\pte, \pte, #PTE_ADDR_MASK
 #else
+	/*
+	 * IAMROOT20 20230909: 
+	 * pte = phys;
+	 */
 	mov	\pte, \phys
 #endif
 	.endm
