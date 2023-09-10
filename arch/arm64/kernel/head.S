@@ -132,6 +132,11 @@ SYM_CODE_START(primary_entry)
 	 * of the primary boot code to the PoC so we can safely execute it with
 	 * the MMU off.
 	 */
+	 /*
+	  * IAMROOT20 20230909: 
+	  * MMU가 ON 상태이면 __idmap_text_start부터 __idmap_text_end 까지
+	  * cache clean 한다.
+	  */
 	cbz	x19, 0f
 	adrp	x0, __idmap_text_start
 	adr_l	x1, __idmap_text_end
@@ -465,6 +470,10 @@ SYM_FUNC_START_LOCAL(remap_region)
 
 	// Get the index offset for the start of the last level table
 	lsr	x1, x1, x6
+	/*
+	 * IAMROOT20 20230909: 
+	 *	bic x1, x1, 0x1ff	// PAGE_SHIFT = 12일 경우.
+	 */
 	bfi	x1, xzr, #0, #PAGE_SHIFT - 3
 
 	// Derive the start and end indexes into the last level table
@@ -557,8 +566,9 @@ SYM_FUNC_START_LOCAL(create_idmap)
 	mov	x5, SWAPPER_RW_MMUFLAGS
 	mov	x6, #SWAPPER_BLOCK_SHIFT
 	bl	remap_region
-	/* IAMROOT20_END 20230826 *//* IAMROOT20_START 20230909 */
+	/* IAMROOT20_END 20230826 */
 
+	/* IAMROOT20_START 20230909 */
 	/* Remap the FDT after the kernel image */
 	/* IAMROOT20 20230909
 	 * 커널의 끝 주소를 2MB를 더해준 다음, 내림 연산을 하여 2MB 단위로 정렬한다.
@@ -583,8 +593,6 @@ SYM_FUNC_START_LOCAL(create_idmap)
 	cbnz	x19, 0f				// skip cache invalidation if MMU is on
 	dmb	sy
 
-	/*
-	 * 
 	adrp	x0, init_idmap_pg_dir
 	adrp	x1, init_idmap_pg_end
 	bl	dcache_inval_poc
