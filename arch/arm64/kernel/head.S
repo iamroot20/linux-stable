@@ -128,7 +128,8 @@ SYM_CODE_START(primary_entry)
 	// preserve_boot_args();
 	bl	preserve_boot_args
 /* IAMROOT20_END 20230729 *//* IAMROOT20_START 20230805 */
-/* IAMROOT20_REVIEW_END 20230907 */
+/* IAMROOT20_REVIEW_END 20230907 *//* IAMROOT20_REVIEW_START 20230914 */
+	// create_idmap();
 	bl	create_idmap
 
 	/*
@@ -429,6 +430,7 @@ SYM_FUNC_END(clear_page_tables)
  * IAMROOT20 20230812
  * map_meory: page table 생성
  */
+	//map_memory        x0, x1, x3, x6, x7, x3, IDMAP_PGD_ORDER, x10,  x11, x12,   x13,x14, EXTRA_SHIFT
 	.macro map_memory, tbl, rtbl, vstart, vend, flags, phys, order, istart, iend, tmp, count, sv, extra_shift
 	sub \vend, \vend, #1
 	add \rtbl, \tbl, #PAGE_SIZE
@@ -533,6 +535,7 @@ SYM_FUNC_START_LOCAL(remap_region)
 SYM_FUNC_END(remap_region)
 
 SYM_FUNC_START_LOCAL(create_idmap)
+	// x[28] = lr;
 	mov	x28, lr
 	/*
 	 * The ID map carries a 1:1 mapping of the physical address range
@@ -588,12 +591,16 @@ SYM_FUNC_START_LOCAL(create_idmap)
 	 * _text : 커널의 시작 주소
 	 * _end : 커널의 끝 주소
 	 */
+	// x[0] = init_idmap_pg_dir;
 	adrp	x0, init_idmap_pg_dir
+	// x[3] = _text;
 	adrp	x3, _text
+	// x[6] = (char *)_end + MAX_FDT_SIZE + SWAPPER_BLOCK_SIZE
 	adrp	x6, _end + MAX_FDT_SIZE + SWAPPER_BLOCK_SIZE
+	// x[7] = SWAPPER_RX_MMUFLAGS;
 	mov	x7, SWAPPER_RX_MMUFLAGS
-
 	/* IAMROOT20_END 20230805 *//* IAMROOT20_START 20230812 */
+	/* IAMROOT20_REVIEW_END 20230914 */
 	map_memory x0, x1, x3, x6, x7, x3, IDMAP_PGD_ORDER, x10, x11, x12, x13, x14, EXTRA_SHIFT
 	/* IAMROOT20_END 20230819 *//* IAMROOT20_START 20230826 */
 
