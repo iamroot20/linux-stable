@@ -415,7 +415,28 @@ alternative_cb_end
 	csel	\tmp0, \tmp1, \tmp0, hi
 	bfi	\tcr, \tmp0, \pos, #3
 	.endm
-
+	
+	/* IAMROOT20 20230916:
+	 * __dcache_op_workaround_clean_cache cvac __idmap_text_start
+	 *	.pushsection .altinstructions, "a"
+	 *		// arm64/include/asm/alternative.h 
+	 *		.word 661f - .                                                  
+	 *		.word 663f - .                                                   
+	 *		.hword ARM64_WORKAROUND_CLEAN_CACHE                                                       
+	 *		.byte 662f-661f                                                        
+	 *		.byte 664f-663f	
+         *	.popsection
+	 * 661:
+	 *       dc      cvac, __idmap_text_start
+	 * 662:
+	 *       .subsection 1
+	 *		663:
+	 * 		        dc      civac, __idmap_text_start
+	 * 		664:
+         * 		.org    . - (664b-663b) + (662b-661b)
+         * 		.org    . - (662b-661b) + (664b-663b)
+	 *         .previous
+	 */
 	.macro __dcache_op_workaround_clean_cache, op, addr
 alternative_if_not ARM64_WORKAROUND_CLEAN_CACHE
 	dc	\op, \addr
@@ -439,7 +460,7 @@ alternative_endif
  /*
   * IAMROOT20 20230909: 
   * cache.S::dcache_clean_poc dcache_by_line_op cvac, sy, x0, x1, x2, x3
-  * 
+  *  exam)  dcache_by_myline_op(cvac, sy, __idmap_text_start, __idmap_text_end, x2, x3)
   */
 	.macro dcache_by_myline_op op, domain, start, end, linesz, tmp, fixup
 	/*
@@ -498,7 +519,17 @@ alternative_endif
  * 	Corrupts:       start, end, tmp1, tmp2
  */
 	.macro dcache_by_line_op op, domain, start, end, tmp1, tmp2, fixup
+	/*
+	 * IAMROOT20 20230916: 
+	 * tmp1 = cache_line_size	예) 64
+	 */
 	dcache_line_size \tmp1, \tmp2
+	/*
+	 * IAMROOT20 20230916: 
+	 * exam)  dcache_by_line_op cvac, sy, x0, x1, x2, x3
+	 *	x2 = 64
+	 *	dcache_by_myline_op cvac, sy, __idmap_text_start, __idmap_text_end, x2, x3
+	 */
 	dcache_by_myline_op \op, \domain, \start, \end, \tmp1, \tmp2, \fixup
 	.endm
 
@@ -687,6 +718,10 @@ alternative_endif
 	 * We assume \phys is 64K aligned and this is guaranteed by only
 	 * supporting this configuration with 64K pages.
 	 */
+	 /*
+	  * IAMROOT20 20230916: 
+	  * pte = (phys | (phys >> 36) & 0x0000_ffff_ffff_f000);
+	  */
 	orr	\pte, \phys, \phys, lsr #36
 	and	\pte, \pte, #PTE_ADDR_MASK
 #else

@@ -46,6 +46,12 @@
  * PMD_SHIFT determines the size a level 2 page table entry can map.
  */
 #if CONFIG_PGTABLE_LEVELS > 2
+ /*
+  * IAMROOT20 20230916: 
+  * exam) 39 VA_BITS, 4k
+  *	PMD_SHIFT	21
+  *	PMD_SIZE	SZ_2M
+  */
 #define PMD_SHIFT		ARM64_HW_PGTABLE_LEVEL_SHIFT(2)
 #define PMD_SIZE		(_AC(1, UL) << PMD_SHIFT)
 #define PMD_MASK		(~(PMD_SIZE-1))
@@ -66,6 +72,14 @@
  * PGDIR_SHIFT determines the size a top-level page table entry can map
  * (depending on the configuration, this level can be 0, 1 or 2).
  */
+ /*
+  * IAMROOT20 20230916: 
+  *	exam) VA_BITS==36 on 16k(14bit) CONFIG_PGTABLE_LEVELS = 2
+  *		PGDIR_SHIFT : 25
+  *		PGDIR_SIZE : 1 << 25	SZ_32M
+  *		PGDIR_MASK : 0xffff_ffff_fe00_0000
+  *		PTRS_PER_PGD : 11 (36 - 25)
+  */
 #define PGDIR_SHIFT		ARM64_HW_PGTABLE_LEVEL_SHIFT(4 - CONFIG_PGTABLE_LEVELS)
 #define PGDIR_SIZE		(_AC(1, UL) << PGDIR_SHIFT)
 #define PGDIR_MASK		(~(PGDIR_SIZE-1))
@@ -155,8 +169,19 @@
 #define PTE_PXN			(_AT(pteval_t, 1) << 53)	/* Privileged XN */
 #define PTE_UXN			(_AT(pteval_t, 1) << 54)	/* User XN */
 
+/*
+ * IAMROOT20 20230916: 
+ *  CONFIG_ARM64_PA_BITS_52 일경우
+ *	PAGE_SHIFT 16	
+ *	PTE_ADDR_LOW	0x0000_ffff_ffff_0000	((1 << (48 - 16)) - 1) << 16
+ */
 #define PTE_ADDR_LOW		(((_AT(pteval_t, 1) << (48 - PAGE_SHIFT)) - 1) << PAGE_SHIFT)
 #ifdef CONFIG_ARM64_PA_BITS_52
+/*
+ * IAMROOT20 20230916: 
+ *	PTE_ADDR_HIGH	0xf << 12	0xf000
+ *	PTE_ADDR_MASK	0x0000_ffff_ffff_f000
+ */
 #define PTE_ADDR_HIGH		(_AT(pteval_t, 0xf) << 12)
 #define PTE_ADDR_MASK		(PTE_ADDR_LOW | PTE_ADDR_HIGH)
 #define PTE_ADDR_HIGH_SHIFT	36
