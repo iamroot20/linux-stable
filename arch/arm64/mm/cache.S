@@ -168,28 +168,39 @@ SYM_FUNC_START(__pi_dcache_inval_poc)
 	*/
 	// if (Z == 1) goto 1f;
 	b.eq	1f
-	/* IAMROOT20_REVIEW_END 20230909 */
+	/* IAMROOT20_REVIEW_END 20230909 *//* IAMROOT20_REVIEW_START 20230916 */
 	/*
 	 * IAMROOT20 20230729
 	 * DC CIVAC : 지정한 주소의 데이터 캐시를 PoC까지 Clean & Invalidate를 수행.
 	*/
+	
+	// x1에 해당하는 캐시 라인을 invalidate & clean
 	dc	civac, x1			// clean & invalidate D / U line
+	// if (x0 & x3) Z = 0; else Z = 1;
 1:	tst	x0, x3				// start cache line aligned?
+	// x0 = x0 & ~x3
 	bic	x0, x0, x3
+	// if (Z == 1) goto 2;
 	b.eq	2f
+	// x0에 해당하는 캐시 라인을 invalidate & clean
 	dc	civac, x0			// clean & invalidate D / U line
+	// goto 3
 	b	3f
+	// x0에 해당하는 캐시 라인을 invalidate
 2:	dc	ivac, x0			// invalidate D / U line
+	// x0 += x2;
 3:	add	x0, x0, x2
+	// if (x0 < x1) goto 2
 	cmp	x0, x1
 	b.lo	2b
 	/*
 	 * IAMROOT20 20230729
 	 * dsb : https://developer.arm.com/documentation/dui0473/m/arm-and-thumb-instructions/dsb
 	*/
+	// instruction, data 처리에 있어서 순서를 보장하는 배리어
 	dsb	sy
 	ret
-SYM_FUNC_END(__pi_dcache_inval_poc)
+
 SYM_FUNC_ALIAS(dcache_inval_poc, __pi_dcache_inval_poc)
 
 /*

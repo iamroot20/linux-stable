@@ -314,7 +314,7 @@ SYM_CODE_START_LOCAL(preserve_boot_args)
 	 * 위치 : /arch/arm64/mm/cache.S
 	 */
 	b	dcache_inval_poc		// tail call				
-
+	// ret
 
 	// mmu_enabled_at_boot = x19;
 0:	str_l   x19, mmu_enabled_at_boot, x0
@@ -523,6 +523,7 @@ SYM_FUNC_START_LOCAL(remap_region)
 SYM_FUNC_END(remap_region)
 
 SYM_FUNC_START_LOCAL(create_idmap)
+	// x28 = lr;
 	mov	x28, lr
 	/*
 	 * The ID map carries a 1:1 mapping of the physical address range
@@ -548,6 +549,7 @@ SYM_FUNC_START_LOCAL(create_idmap)
 	 *   VA_BITS==39/4k pages with 5-level paging, where the input address
 	 *   requires more than 47 or 48 bits, respectively.
 	 */
+/* IAMROOT20_REVIEW_END 20230916 */
 #if (VA_BITS < 48)
 #define IDMAP_PGD_ORDER	(VA_BITS - PGDIR_SHIFT)
 #define EXTRA_SHIFT	(PGDIR_SHIFT + PAGE_SHIFT - 3)
