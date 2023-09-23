@@ -388,6 +388,7 @@ SYM_FUNC_END(clear_page_tables)
  * vstart, vend에서 shift+order부터 shift까지 bit를 추출해 istart, iend 설정
  * 각 level page table index 범위가 계산됨
  */
+/* IAMROOT20_REVIEW_END 20230923 */
 	.macro compute_indices, vstart, vend, shift, order, istart, iend, count
 	ubfx	\istart, \vstart, \shift, \order
 	ubfx	\iend, \vend, \shift, \order
@@ -410,7 +411,7 @@ SYM_FUNC_END(clear_page_tables)
  *
  * If extra_shift is set, an extra level will be populated if the end address does
  * not fit in 'extra_shift' bits. This assumes vend is in the TTBR0 range.
- *
+ *	
  * Temporaries:	istart, iend, tmp, count, sv - these need to be different registers
  * Preserves:	vstart, flags
  * Corrupts:	tbl, rtbl, vend, istart, iend, tmp, count, sv
@@ -419,17 +420,24 @@ SYM_FUNC_END(clear_page_tables)
  * IAMROOT20 20230812
  * map_meory: page table 생성
  */
+
 	.macro map_memory, tbl, rtbl, vstart, vend, flags, phys, order, istart, iend, tmp, count, sv, extra_shift
+	// vend -= 1;
 	sub \vend, \vend, #1
+	// rtbl = tbl + PAGE_SIZE;
 	add \rtbl, \tbl, #PAGE_SIZE
+	// count = 0;
 	mov \count, #0
 
 /* 
  * IAMROOT20 20230812
  * 48 va bit, 4k page를 사용할 경우 extra_shift가 define되지 않으므로 extra page table을 생성하지 않음
  */
+/* IAMROOT20_REVIEW 20230923 */
 	.ifnb	\extra_shift
+	// if (vend & ~((1 << extra_shift) - 1) == 0) Z = 1; else Z = 0;
 	tst	\vend, #~((1 << (\extra_shift)) - 1)
+	// if (Z == 1) goto L_\@
 	b.eq	.L_\@
 	compute_indices \vstart, \vend, #\extra_shift, #(PAGE_SHIFT - 3), \istart, \iend, \count
 	mov \sv, \rtbl
@@ -549,7 +557,8 @@ SYM_FUNC_START_LOCAL(create_idmap)
 	 *   VA_BITS==39/4k pages with 5-level paging, where the input address
 	 *   requires more than 47 or 48 bits, respectively.
 	 */
-/* IAMROOT20_REVIEW_END 20230916 */
+/* IAMROOT20_REVIEW_END 20230916 *//* IAMROOT20_REVIEW_START 20230923 */
+
 #if (VA_BITS < 48)
 #define IDMAP_PGD_ORDER	(VA_BITS - PGDIR_SHIFT)
 #define EXTRA_SHIFT	(PGDIR_SHIFT + PAGE_SHIFT - 3)
@@ -580,9 +589,13 @@ SYM_FUNC_START_LOCAL(create_idmap)
 	 * _text : 커널의 시작 주소
 	 * _end : 커널의 끝 주소
 	 */
+	// x0 = init_idmap_pg_dir;
 	adrp	x0, init_idmap_pg_dir
+	// x3 = _text;
 	adrp	x3, _text
+	// x6 = _end + MAX_FDT_SIZE + SWAPPER_BLOCK_SIZE
 	adrp	x6, _end + MAX_FDT_SIZE + SWAPPER_BLOCK_SIZE
+	// x7 = SWAPPER_RX_MMUFLAGS
 	mov	x7, SWAPPER_RX_MMUFLAGS
 
 	/* IAMROOT20_END 20230805 *//* IAMROOT20_START 20230812 */

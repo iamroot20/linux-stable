@@ -248,6 +248,9 @@ SECTIONS
 	__inittext_end = .;
 	__initdata_begin = .;
 
+	/* IAMROOT20_REVIEW 20230923
+	 * char init_idmap_pg_dir[INIT_IDMAP_DIR_SIZE];
+	 */
 	init_idmap_pg_dir = .;
 	. += INIT_IDMAP_DIR_SIZE;
 	init_idmap_pg_end = .;
