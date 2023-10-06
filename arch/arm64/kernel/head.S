@@ -562,6 +562,15 @@ SYM_FUNC_START_LOCAL(create_idmap)
 	 *   requires more than 47 or 48 bits, respectively.
 	 */
 #if (VA_BITS < 48)
+	 /*
+	  * IAMROOT20 20230916: 
+	  *  exam) VA_BITS=47 on 16k(14bit)
+	  *		IDMAP_PGD_ORDER = (47-36) = 11
+	  *		EXTRA_SHIFT	= (36 + 14 - 3) = 47
+	  *	   VA_BITS=39 on 4k(12bit)
+	  *		IDMAP_PGD_ORDER = 30
+	  *		EXTRA_SHIFT = 39
+	  */
 #define IDMAP_PGD_ORDER	(VA_BITS - PGDIR_SHIFT)
 #define EXTRA_SHIFT	(PGDIR_SHIFT + PAGE_SHIFT - 3)
 
@@ -579,6 +588,8 @@ SYM_FUNC_START_LOCAL(create_idmap)
 	/* IAMROOT20 20230805
 	 * PGDIR_SHIFT : PGD의 인덱스를 가져오기 위해 shift 해야 하는 횟수.
 	 * IDMAP_PGD_ORDER : PGD의 사이즈를 의미한다.
+	 *	exam) 9 : 48bit, 4k page : 48-39 
+	 *	exam) 10: 52bit, 64k : 52 - 42
 	 */
 #define IDMAP_PGD_ORDER	(PHYS_MASK_SHIFT - PGDIR_SHIFT)
 #define EXTRA_SHIFT
@@ -642,10 +653,12 @@ SYM_FUNC_START_LOCAL(create_idmap)
 	cbnz	x19, 0f				// skip cache invalidation if MMU is on
 	dmb	sy
 
+	/* IAMROOT20_START 20230916 */
 	adrp	x0, init_idmap_pg_dir
 	adrp	x1, init_idmap_pg_end
 	bl	dcache_inval_poc
 0:	ret	x28
+	/* IAMROOT20_END 20230916 */
 SYM_FUNC_END(create_idmap)
 
 SYM_FUNC_START_LOCAL(create_kernel_mapping)
