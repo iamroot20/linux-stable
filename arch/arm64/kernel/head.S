@@ -38,7 +38,7 @@
 #include "efi-header.S"
 
 /* IAMROOT20_START 20230708 */
-
+/* IAMROOT20_REVIEW_START 20230831 */
 #if (PAGE_OFFSET & 0x1fffff) != 0
 #error PAGE_OFFSET must be at least 2MB aligned
 #endif
@@ -121,10 +121,15 @@ SYM_CODE_START(primary_entry)
  *              - 0: cache maintenance 필요
  *              - 1: cache maintenance 필요X
  */
+	// record_mmu_state();
 	bl	record_mmu_state
 /* IAMROOT20_END 20230715 *//* IAMROOT20_START 20230722 */
+/* IAMROOT20_REVIEW_END 20230831 *//* IAMROOT20_REVIEW_START 20230907 */
+	// preserve_boot_args();
 	bl	preserve_boot_args
 /* IAMROOT20_END 20230729 *//* IAMROOT20_START 20230805 */
+/* IAMROOT20_REVIEW_END 20230907 *//* IAMROOT20_REVIEW_START 20230914 */
+	// create_idmap();
 	bl	create_idmap
 
 	/*
@@ -164,13 +169,20 @@ SYM_CODE_START(primary_entry)
 	b	__primary_switch
 SYM_CODE_END(primary_entry)
 
+// int record_mmu_state(void);
 	__INIT
 SYM_CODE_START_LOCAL(record_mmu_state)
+	// x[19] = CurrentEL;
 	mrs	x19, CurrentEL
+	// ARM_ASM(cmp,x[19],CurrentEL_EL2);	// x19==EL2 ? Z=1 : Z=0
 	cmp	x19, #CurrentEL_EL2
+	// x[19] = SCTLR_EL[1];
 	mrs	x19, sctlr_el1
+	// if( COND_NE ) goto lable_0;			// Z==0? goto 0			// EL1
 	b.ne	0f		/* IAMROOT20 20230715 여기 0은 주소가 아닌 레이블 */
+	// x[19] = SCTLR_EL[2];
 	mrs	x19, sctlr_el2
+//lable_0:
 0:
 /* 
  * IAMROOT20 20230715
@@ -179,15 +191,21 @@ SYM_CODE_START_LOCAL(record_mmu_state)
  * - CPU_LE 매크로 인자로 사용된 '1f' 는 전방(forward)의 레이블 '1'이라는
  * 의미.
  */
+// CPU_LE( if(x[19] & 0x1<<SCTLR_ELx_EE_SHIFT) goto lable_1; )
 CPU_LE( tbnz	x19, #SCTLR_ELx_EE_SHIFT, 1f	)
+// CPU_BE( if(!(x[19] & 0x1<<SCTLR_ELx_EE_SHIFT)) goto lable_1; )
 CPU_BE( tbz	x19, #SCTLR_ELx_EE_SHIFT, 1f	)
 	/* 
 	 * IAMROOT20 20230715
 	 * Endianness 세팅에 이상이 없다면 이어서 아래 코드 실행.
 	 */
+	// ARM_ASM(tst,x[19],SCTLR_ELx_C);		// x19 & C ? Z=0 : Z=1	// Z = (C==0)
 	tst	x19, #SCTLR_ELx_C		// Z := (C == 0)
+	// x[19] &= SCTLR_ELx_M;
 	and	x19, x19, #SCTLR_ELx_M		// isolate M bit
+	// x[19] = (COND_EQ)? xzr : x[19];		// x19 = Z==1?xzr:x19	// cache off
 	csel	x19, xzr, x19, eq		// clear x19 if Z
+	// return 1;
 	ret
 
 	/*
@@ -205,16 +223,30 @@ CPU_BE( tbz	x19, #SCTLR_ELx_EE_SHIFT, 1f	)
 	 * 		- 수정된 x19의 내용을 sctlr_el1 (또는 sctlr_el2)에 업데이트
 	 * - 'pre_disable_mmu_workaround' 는 특정 칩을 위한 예외처리 매크로.
 	 */
+//lable_1:
+	// x[19] ^= SCTLR_ELx_EE;
 1:	eor	x19, x19, #SCTLR_ELx_EE
+	// x[19] &= ~SCTLR_ELx_M;
 	bic	x19, x19, #SCTLR_ELx_M
+	// if( COND_NE ) goto lable_2;			// Z==0? goto 2			// EL1
 	b.ne	2f
+	// pre_disable_mmu_workaround();
 	pre_disable_mmu_workaround
+	// SCTLR_EL[2] = x[19];
 	msr	sctlr_el2, x19
+	// goto lable_3;
 	b	3f
+//lable_2:
+	// pre_disable_mmu_workaround();
 2:	pre_disable_mmu_workaround
+	// SCTLR_EL[1] = x[19];
 	msr	sctlr_el1, x19
+// lable_3:
+	// ARM_ASM(isb);
 3:	isb
+    // x[19] = xzr;						// x19 = 0
 	mov	x19, xzr
+	// return 1;
 	ret
 SYM_CODE_END(record_mmu_state)
 
@@ -240,6 +272,7 @@ SYM_CODE_START_LOCAL(preserve_boot_args)
 	* IAMROOT20 20230722 
 	* x0에 들어있는 DTB 시작 주소를 x21에 저장한다. (DTB와 FDT의 차이?)
 	*/
+	// x[21] = x[0];
 	mov	x21, x0				// x21=FDT			
 
 	/* 
@@ -249,6 +282,7 @@ SYM_CODE_START_LOCAL(preserve_boot_args)
         * 매크로 위치(adr_l) : /arch/arm64/include/asm/assembler.h
         * 심볼 정의 위치(boot_args) : /arch/arm64/include/asm/setup.c 
 	*/
+	// x[0] = boot_args;
 	adr_l	x0, boot_args			// record the contents of 		
          	                                                                                
 	/* IAMROOT20 20230722  
@@ -257,12 +291,17 @@ SYM_CODE_START_LOCAL(preserve_boot_args)
          * cf) stp : store pair
          * cf) [ ] : addressing mode (programmer's guide 참고)
          */
+	// boot_args[0] = x[21];
+	// boot_args[1] = x[1];
 	stp	x21, x1, [x0]			// x0 .. x3 at kernel entry	
+	// boot_args[2] = x[2];
+	// boot_args[3] = x[3];
 	stp	x2, x3, [x0, #16]							
 
 	/* IAMROOT20 20230722  
 	 * x19가 0이 아니라면 레이블 0으로 이동한다. x19가 1인 경우는 MMU On & Cache On 이다.
 	 */
+	// if ( x[19] != 0 )  goto lable_0;
 	cbnz	x19, 0f				// skip cache invalidation if MMU is on 
 
 	/* IAMROOT20 20230722  
@@ -270,22 +309,26 @@ SYM_CODE_START_LOCAL(preserve_boot_args)
 	 * data memory barrier : CPU가 최적화를 위해 명령어의 순서를 바꿔서 처리할 때, 문제가 생길 수 있다. 
 	 	* 이 때, 메모리에 접근하는 명령어(load, store)는 reordering 되지 않도록 순서를 보장하는 명령어이다.
 	 */
+	// ARM_ASM(dmb,ARM_ASM_B_SY);
 	dmb	sy				// needed before dc ivac with		
 						// MMU off				
 											
  	/* IAMROOT20 20230722  
  	 * boot_args의 끝 주소를 x1에 저장한다. (이후에 invalidation 과정에서 필요할 것으로 예상)
  	 */
+	// x[1] = x[0] + 0x20;
 	add	x1, x0, #0x20			// 4 x 8 bytes				
 
 	/* IAMROOT20 20230722  
 	 * dcache_inval_poc로 이동한다.
 	 * 위치 : /arch/arm64/mm/cache.S
 	 */
+	// return dcache_inval_poc();	// b는 lr를 갱신하지X -> preserve_boot_args 호출 위치로 바로 리턴
 	b	dcache_inval_poc		// tail call				
-
-
+//lable_0:
+	// mmu_enabled_at_boot = x[19]; 
 0:	str_l   x19, mmu_enabled_at_boot, x0
+	// return 1;
 	ret
 SYM_CODE_END(preserve_boot_args)
 
@@ -387,6 +430,7 @@ SYM_FUNC_END(clear_page_tables)
  * IAMROOT20 20230812
  * map_meory: page table 생성
  */
+	//map_memory        x0, x1, x3, x6, x7, x3, IDMAP_PGD_ORDER, x10,  x11, x12,   x13,x14, EXTRA_SHIFT
 	.macro map_memory, tbl, rtbl, vstart, vend, flags, phys, order, istart, iend, tmp, count, sv, extra_shift
 	sub \vend, \vend, #1
 	add \rtbl, \tbl, #PAGE_SIZE
@@ -491,6 +535,7 @@ SYM_FUNC_START_LOCAL(remap_region)
 SYM_FUNC_END(remap_region)
 
 SYM_FUNC_START_LOCAL(create_idmap)
+	// x[28] = lr;
 	mov	x28, lr
 	/*
 	 * The ID map carries a 1:1 mapping of the physical address range
@@ -557,12 +602,16 @@ SYM_FUNC_START_LOCAL(create_idmap)
 	 * _text : 커널의 시작 주소
 	 * _end : 커널의 끝 주소
 	 */
+	// x[0] = init_idmap_pg_dir;
 	adrp	x0, init_idmap_pg_dir
+	// x[3] = _text;
 	adrp	x3, _text
+	// x[6] = (char *)_end + MAX_FDT_SIZE + SWAPPER_BLOCK_SIZE
 	adrp	x6, _end + MAX_FDT_SIZE + SWAPPER_BLOCK_SIZE
+	// x[7] = SWAPPER_RX_MMUFLAGS;
 	mov	x7, SWAPPER_RX_MMUFLAGS
-
 	/* IAMROOT20_END 20230805 *//* IAMROOT20_START 20230812 */
+	/* IAMROOT20_REVIEW_END 20230914 */
 	map_memory x0, x1, x3, x6, x7, x3, IDMAP_PGD_ORDER, x10, x11, x12, x13, x14, EXTRA_SHIFT
 	/* IAMROOT20_END 20230819 *//* IAMROOT20_START 20230826 */
 

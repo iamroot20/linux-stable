@@ -322,23 +322,27 @@ alternative_cb_end
 	/* IAMROOT20 20230722
 	 * 캐시 라인 사이즈를 얻는 매크로
 	 */
+	// void dcache_line_size(__u64 *reg, __u64 *tmp)
 	.macro	dcache_line_size, reg, tmp
 
 	/* IAMROOT20 20230722
          * ctr_el0의 값을 tmp 레지스터에 넣는다.
 	 * 매크로 위치 : arch/arm64/include/asm/assembler.h
          */
+	// *tmp = CTR_EL[0];
 	read_ctr	\tmp
 
 	/* IAMROOT20 20230722
 	 * ctr_el0 레지스터에서 캐시 라인 사이즈 부분을 얻어온다.
 	 * ctr_el0[19:16]은 DminLine으로 데이터 캐시 라인 사이즈를 나타내는 비트이다. 2^n 워드 단위로 저장된다.
 	 */
+	// ARM_ASM(ubfm,tmp,*tmp,16,19);
 	ubfm		\tmp, \tmp, #16, #19	// cache line size encoding
 	
 	/* IAMROOT20 20230722
          * reg 레지스터에 4를 넣는다. 이 때, 4는 word 크기를 의미한다. 
          */
+	// *reg = 4;
 	mov		\reg, #4		// bytes per word
 
 	/* IAMROOT20 20230722
@@ -346,6 +350,7 @@ alternative_cb_end
 	 * 워드 사이즈: 4, 캐시 라인 당 데이터 저장 개수 : 16, ctr_el0[19:16] : 4
 	 * 계산 : 4 << 4 => 4 * 2^4 => 64
          */
+	// *reg = *reg << *tmp;
 	lsl		\reg, \reg, \tmp	// actual cache line size
 	.endm
 
@@ -764,8 +769,10 @@ alternative_endif
  * Errata workaround prior to disable MMU. Insert an ISB immediately prior
  * to executing the MSR that will change SCTLR_ELn[M] from a value of 1 to 0.
  */
+	// static inline void pre_disable_mmu_workaround(void)
 	.macro pre_disable_mmu_workaround
 #ifdef CONFIG_QCOM_FALKOR_ERRATUM_E1041
+	// ARM_ASM(isb);
 	isb
 #endif
 	.endm
