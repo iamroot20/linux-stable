@@ -355,6 +355,7 @@ SYM_FUNC_END(clear_page_tables)
 /* IAMROOT20 20230826
  * tbl의 index 위치에 flags를 적용한 rtbl의 주소를 저장한다.
  */
+/* IAMROOT20_REVIEW 20231007 */
 	.macro populate_entries, tbl, rtbl, index, eindex, flags, inc, tmp1
 .Lpe\@:	phys_to_pte \tmp1, \rtbl
 	orr	\tmp1, \tmp1, \flags	// tmp1 = table entry
@@ -388,11 +389,15 @@ SYM_FUNC_END(clear_page_tables)
  * vstart, vend에서 shift+order부터 shift까지 bit를 추출해 istart, iend 설정
  * 각 level page table index 범위가 계산됨
  */
-/* IAMROOT20_REVIEW_END 20230923 */
+/* IAMROOT20_REVIEW_END 20230923 */ /* IAMROOT20_REVIEV_START 20231007 */
 	.macro compute_indices, vstart, vend, shift, order, istart, iend, count
+	// istart = (vstart >> shift) & ((1 << order) - 1)
 	ubfx	\istart, \vstart, \shift, \order
+	// iend = (vend >> shift) & ((1 << order) - 1)
 	ubfx	\iend, \vend, \shift, \order
+	// iend = iend + (count << order)
 	add	\iend, \iend, \count, lsl \order
+	// count = iend - istart
 	sub	\count, \iend, \istart
 	.endm
 
@@ -440,6 +445,7 @@ SYM_FUNC_END(clear_page_tables)
 	// if (Z == 1) goto L_\@
 	b.eq	.L_\@
 	compute_indices \vstart, \vend, #\extra_shift, #(PAGE_SHIFT - 3), \istart, \iend, \count
+	// sv = rtbl
 	mov \sv, \rtbl
 	populate_entries \tbl, \rtbl, \istart, \iend, #PMD_TYPE_TABLE, #PAGE_SIZE, \tmp
 	mov \tbl, \sv

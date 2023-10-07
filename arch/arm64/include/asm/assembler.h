@@ -721,6 +721,7 @@ alternative_endif
 #endif
 	.endm
 
+/* IAMROOT20_REVIEW 20231007 */
 	.macro	phys_to_pte, pte, phys
 #ifdef CONFIG_ARM64_PA_BITS_52
 	/*
@@ -731,16 +732,21 @@ alternative_endif
 	  * IAMROOT20 20230916: 
 	  * pte = (phys | (phys >> 36) & 0x0000_ffff_ffff_f000);
 	  */
+	// 0x0009_2222_3333_4XXX -> 0x0000_2222_3333_9XXX	64k page. 0x1_0000 = 65536
+	// pte = (phys | (phys >> 36))
 	orr	\pte, \phys, \phys, lsr #36
+	// pte = pte & PTE_ADDR_MASK(0x0000_ffff_ffff_f000)
 	and	\pte, \pte, #PTE_ADDR_MASK
 #else
 	/*
 	 * IAMROOT20 20230909: 
 	 * pte = phys;
 	 */
+	// pte = phys
 	mov	\pte, \phys
 #endif
 	.endm
+/* IAMROOT20_REVIEW_END 20231007*/
 
 	.macro	pte_to_phys, phys, pte
 	and	\phys, \pte, #PTE_ADDR_MASK
