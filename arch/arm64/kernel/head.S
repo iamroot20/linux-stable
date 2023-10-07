@@ -736,11 +736,13 @@ SYM_FUNC_END(__primary_switched)
  *
  * x0: whether we are being called from the primary boot path with the MMU on
  */
+/* IAMROOT20_START 20231007 */
 SYM_FUNC_START(init_kernel_el)
 	mrs	x1, CurrentEL
 	cmp	x1, #CurrentEL_EL2
 	b.eq	init_el2
 
+/* IAMROOT_END 20231007 */
 SYM_INNER_LABEL(init_el1, SYM_L_LOCAL)
 	mov_q	x0, INIT_SCTLR_EL1_MMU_OFF
 	pre_disable_mmu_workaround
