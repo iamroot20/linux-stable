@@ -722,6 +722,7 @@ alternative_endif
 	.endm
 
 /* IAMROOT20_REVIEW 20231007 */
+	// pte = phys_to_pte(phys);
 	.macro	phys_to_pte, pte, phys
 #ifdef CONFIG_ARM64_PA_BITS_52
 	/*

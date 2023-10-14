@@ -357,11 +357,17 @@ SYM_FUNC_END(clear_page_tables)
  */
 /* IAMROOT20_REVIEW 20231007 */
 	.macro populate_entries, tbl, rtbl, index, eindex, flags, inc, tmp1
+	// pe@:	tmp1 = phys_to_pte(rtbl);
 .Lpe\@:	phys_to_pte \tmp1, \rtbl
+	// tmp1 |= flags
 	orr	\tmp1, \tmp1, \flags	// tmp1 = table entry
+	// tbl[index] = tmp1;	 tbl은 u64 pointer
 	str	\tmp1, [\tbl, \index, lsl #3]
+	// rbl = rtbl + inc
 	add	\rtbl, \rtbl, \inc	// rtbl = pa next level
+	// index = index + 1
 	add	\index, \index, #1
+	// if(index <= eindex)	goto pe@;
 	cmp	\index, \eindex
 	b.ls	.Lpe\@
 	.endm
@@ -447,7 +453,10 @@ SYM_FUNC_END(clear_page_tables)
 	compute_indices \vstart, \vend, #\extra_shift, #(PAGE_SHIFT - 3), \istart, \iend, \count
 	// sv = rtbl
 	mov \sv, \rtbl
+	// tbl 테이블에 실제 extra page table값(rtbl | PMD_TYPE_TABLE)을 저장
+	// populate_entries(tbl, rtbl, istart, iend, PMD_TYPE_TABLE, PAGE_SIZE);
 	populate_entries \tbl, \rtbl, \istart, \iend, #PMD_TYPE_TABLE, #PAGE_SIZE, \tmp
+	// tbl = sv
 	mov \tbl, \sv
 	.endif
 .L_\@:
@@ -455,9 +464,16 @@ SYM_FUNC_END(clear_page_tables)
  * IAMROOT20 20230812 
  * PGD table 생성
  */
+	// vstart, vend 주소로 PGDIR_SHIFT~order bits사이의 값을 주출하여 istart, iend에 저장.
+	// compute_indices(vstart, vend, PGDIR_SHIFT, #order, &istart, &iend, &count)
 	compute_indices \vstart, \vend, #PGDIR_SHIFT, #\order, \istart, \iend, \count
+	// sv = rtbl
 	mov \sv, \rtbl
+	/* IAMROOT20_REVIEW_START 20231014 */
+	// tbl 테이블에 실제 extra page table값(rtbl | PMD_TYPE_TABLE)을 저장
+	// populate_entries(tbl, rtbl, istart, iend, PMD_TYPE_TABLE, PAGE_SIZE);
 	populate_entries \tbl, \rtbl, \istart, \iend, #PMD_TYPE_TABLE, #PAGE_SIZE, \tmp
+	// tbl = sv		// tbl = PUD table의 시작주소
 	mov \tbl, \sv
 /* IAMROOT20_END 20230812 *//* IAMROOT20_START 20230819 */
 
@@ -467,9 +483,15 @@ SYM_FUNC_END(clear_page_tables)
  * 3 level page table일 경우 실행 안됨
  */
 #if SWAPPER_PGTABLE_LEVELS > 3
+	// vstart, vend 주소로 PUDIR_SHIFT~order(PAGE_SHIFT - 3) bits사이의 값을 주출하여 istart, iend에 저장.
+	// compute_indices(vstart, vend, PGDIR_SHIFT, #order, &istart, &iend, &count)
 	compute_indices \vstart, \vend, #PUD_SHIFT, #(PAGE_SHIFT - 3), \istart, \iend, \count
+	// sv = rtbl		// sv 에 PMD table의 시작주소를 저장
 	mov \sv, \rtbl
+	// tbl 테이블에 실제 pud table값(rtbl | PMD_TYPE_TABLE)을 저장
+	// populate_entries(tbl, rtbl, istart, iend, PMD_TYPE_TABLE, PAGE_SIZE);
 	populate_entries \tbl, \rtbl, \istart, \iend, #PMD_TYPE_TABLE, #PAGE_SIZE, \tmp
+	// tbl = sv	// tbl에 PMD table 주소를 저장
 	mov \tbl, \sv
 #endif
 
@@ -479,9 +501,15 @@ SYM_FUNC_END(clear_page_tables)
  * 3 level page table일 경우 PUD table 생성
  */
 #if SWAPPER_PGTABLE_LEVELS > 2
+	// vstart, vend 주소로 SWAPPER_TABLE_SHIFT~order(PAGE_SHIFT - 3) bits사이의 값을 주출하여 istart, iend에 저장.
+	// compute_indices(vstart, vend, SWAPPER_TABLE_SHIFT, #order, &istart, &iend, &count)
 	compute_indices \vstart, \vend, #SWAPPER_TABLE_SHIFT, #(PAGE_SHIFT - 3), \istart, \iend, \count
+	// sv = rtbl 	sv에 PTE 테이블의 시작주소를 저장.
 	mov \sv, \rtbl
+	// tbl 테이블에 실제 SWAPPER TABLE값(rtbl | PMD_TYPE_TABLE)을 저장
+	// populate_entries(tbl, rtbl, istart, iend, PMD_TYPE_TABLE, PAGE_SIZE);
 	populate_entries \tbl, \rtbl, \istart, \iend, #PMD_TYPE_TABLE, #PAGE_SIZE, \tmp
+	// tbl = sv 	tbl에 PTE 테이블의 시작주소를 저장
 	mov \tbl, \sv
 #endif
 
@@ -490,8 +518,15 @@ SYM_FUNC_END(clear_page_tables)
  * PTE table 생성 (마지막 level page table)
  * 3 level page table일 경우 PUD table이 PTE 역할을 함
  */
+	// vstart, vend 주소로 SWAPPER_BLOCK_SHIFT~order(PAGE_SHIFT - 3)bit 사이의 값을 주출하여 istart, iend에 저장.
+	// compute_indices(vstart, vend, SWAPPER_TABLE_SHIFT, #order, &istart, &iend, &count)
+	//	SWAPPER_BLOCK_SHIFT은 PAGE_SHIFT + (PAGE_SHIFT - 3)   4k 일경우  12 + 12 -3  = 21
 	compute_indices \vstart, \vend, #SWAPPER_BLOCK_SHIFT, #(PAGE_SHIFT - 3), \istart, \iend, \count
+	// rtbl = phys & ~(SWAPPER_BLOCK_SIZE-1)	0~SWAPPER_BLOCK_SHIFT bit까지 clear(SWAPPER_BLOCK_SIZE로 alignd)
 	bic \rtbl, \phys, #SWAPPER_BLOCK_SIZE - 1
+
+	// tbl 테이블에 실제 SWAPPER TABLE값(rtbl | PMD_TYPE_TABLE)을 저장
+	// populate_entries(tbl, rtbl, istart, iend, PMD_TYPE_TABLE, PAGE_SIZE);
 	populate_entries \tbl, \rtbl, \istart, \iend, \flags, #SWAPPER_BLOCK_SIZE, \tmp
 	.endm
 
@@ -617,7 +652,7 @@ SYM_FUNC_START_LOCAL(create_idmap)
 
 	/* IAMROOT20_END 20230805 *//* IAMROOT20_START 20230812 */
 	map_memory x0, x1, x3, x6, x7, x3, IDMAP_PGD_ORDER, x10, x11, x12, x13, x14, EXTRA_SHIFT
-	/* IAMROOT20_END 20230819 *//* IAMROOT20_START 20230826 */
+	/* IAMROOT20_END 20230819 *//* IAMROOT20_START 20230826 */ /* IAMROOT20_REVIEW_END 20231014 */
 
 	/* IAMROOT20 20230826
 	 * 초기 커널 페이지 테이블 용도로 사용하는 init_pg_dir 영역을 R/W로 리매핑한다.
