@@ -93,7 +93,21 @@ SYM_CODE_START(primary_entry)
 	 * x19 = MMU on(1) or off(0)
 	 */
 	bl	record_mmu_state
+
+	/*
+	 * IAMROOT20 20230819: 
+	 * boot_args[0] = X21;	// FDT
+	 * boot_args[1] = X1;
+	 * boot_args[2] = X2;
+	 * boot_args[3] = X3;
+	 * mmu_enabled_at_boot = x19;	// MMU on or off
+	 */
 	bl	preserve_boot_args
+
+	/*
+	 * IAMROOT20 20230819: 
+	 * init_idmap_pg_dir PGD, PUD, PMD  커널 이미지 매핑 
+	 */
 	bl	create_idmap
 
 	/*
