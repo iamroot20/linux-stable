@@ -413,6 +413,7 @@ SYM_FUNC_START(__cpu_setup)
 	enable_dbg				// since this is per-cpu
 	reset_pmuserenr_el0 x1			// Disable PMU access from EL0
 	reset_amuserenr_el0 x1			// Disable AMU access from EL0
+	/* IAMROOT20_END 20231014 */
 
 	/*
 	 * Default values for VMSA control registers. These will be adjusted

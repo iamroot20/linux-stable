@@ -742,7 +742,7 @@ SYM_FUNC_START(init_kernel_el)
 	cmp	x1, #CurrentEL_EL2
 	b.eq	init_el2
 
-/* IAMROOT_END 20231007 */
+/* IAMROOT_END 20231007 */ /* IAMROOT20_START 20231014 */
 SYM_INNER_LABEL(init_el1, SYM_L_LOCAL)
 	mov_q	x0, INIT_SCTLR_EL1_MMU_OFF
 	pre_disable_mmu_workaround
@@ -781,6 +781,9 @@ SYM_INNER_LABEL(init_el2, SYM_L_LOCAL)
 	 * Fruity CPUs seem to have HCR_EL2.E2H set to RES1,
 	 * making it impossible to start in nVHE mode. Is that
 	 * compliant with the architecture? Absolutely not!
+	 */
+	/* IAMROOT20 20231014
+	 * 일부 CPU의 경우 E2H설정이 1로 고정되어 nVHE로 변경할 수 없다.
 	 */
 	mrs	x0, hcr_el2
 	and	x0, x0, #HCR_E2H
