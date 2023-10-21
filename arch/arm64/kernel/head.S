@@ -535,7 +535,7 @@ SYM_FUNC_END(clear_page_tables)
  * or output address. The entire remapped region must have been covered in the
  * invocation of map_memory.
  *
- * x0: last level table address (returned in first argument to map_memory)
+ * x0: last level table address(returned in first argument to map_memory)
  * x1: start VA of the existing mapping
  * x2: start VA of the region to update
  * x3: end VA of the region to update (exclusive)
@@ -547,24 +547,34 @@ SYM_FUNC_START_LOCAL(remap_region)
 	/* IAMROOT20 20230826
 	* populate_entries 매크로를 통한 매핑을 수행하기 전에, 매핑에서 사용할 요소를 초기화한다.
 	*/
+	// x3  = x3 - 1
 	sub	x3, x3, #1		// make end inclusive
 
 	// Get the index offset for the start of the last level table
+	// x1 = x1 >> x6
 	lsr	x1, x1, x6
 	/*
 	 * IAMROOT20 20230909: 
 	 *	bic x1, x1, 0x1ff	// PAGE_SHIFT = 12일 경우.
 	 */
+	// rd = (rd & (~(((1<<width)-1)<<lsb)) )|(((rs >> lsb)&((1<<width)-1))<<lsb);
+	// x1의 특정 영역을 xzr의 (#PAGE_SHIFT - 3) 영역으로 대체한다.
 	bfi	x1, xzr, #0, #PAGE_SHIFT - 3
 
 	// Derive the start and end indexes into the last level table
 	// associated with the provided region
+	// x2 = x2 >> x6
 	lsr	x2, x2, x6
+	// x3 = x3 >> x6
 	lsr	x3, x3, x6
+	// x2 = x2 - x1
 	sub	x2, x2, x1
+	// x3 = x3 - x1
 	sub	x3, x3, x1
 
+	// x1 = 1
 	mov	x1, #1
+	// x6 = 1 << x6
 	lsl	x6, x1, x6		// block size at this level
 
 	populate_entries x0, x4, x2, x3, x5, x6, x7
@@ -654,18 +664,26 @@ SYM_FUNC_START_LOCAL(create_idmap)
 	map_memory x0, x1, x3, x6, x7, x3, IDMAP_PGD_ORDER, x10, x11, x12, x13, x14, EXTRA_SHIFT
 	/* IAMROOT20_END 20230819 *//* IAMROOT20_START 20230826 */ /* IAMROOT20_REVIEW_END 20231014 */
 
+	/* IAMROOT20_REVIEW_START 20231021 */
 	/* IAMROOT20 20230826
 	 * 초기 커널 페이지 테이블 용도로 사용하는 init_pg_dir 영역을 R/W로 리매핑한다.
 	 */
 	/* Remap the kernel page tables r/w in the ID map */
+	// x1 = _text
 	adrp	x1, _text
+	// x2 = init_pg_dir
 	adrp	x2, init_pg_dir
+	// x3 = init_pg_end
 	adrp	x3, init_pg_end
+	// x4 = x2 & ~(SWAPPER_BLOCK_SIZE - 1)
 	bic	x4, x2, #SWAPPER_BLOCK_SIZE - 1
+	// x5 = SWAPPER_RW_MMUFLAGS
 	mov	x5, SWAPPER_RW_MMUFLAGS
+	// x6 = SWAPPER_BLOCK_SHIFT
 	mov	x6, #SWAPPER_BLOCK_SHIFT
+	// goto remap_region
 	bl	remap_region
-	/* IAMROOT20_END 20230826 */
+	/* IAMROOT20_END 20230826 */ /* IAMROOT20_REVIEW_END 20231021 */
 
 	/* IAMROOT20_START 20230909 */
 	/* Remap the FDT after the kernel image */
