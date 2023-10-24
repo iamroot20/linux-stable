@@ -392,6 +392,11 @@ alternative_cb_end
  * this number conveniently equals the number of leading zeroes in
  * the physical address of _end.
  */
+        /* IAMROOT20 20231021
+         * reg <- 0x0000_0000_42c8_0000(_end)
+         * reg <- 0x0000_0000_42c8_0000 | (0x0001_0000_0000_0000 - 1) = 0x0000_0000_42c8_0000 | 0x0000_ffff_ffff_ffff = 0x0000_ffff_ffff_ffff
+         * reg = 16 (clz: MSB부터 0의 숫자를 카운트)
+        */
 	.macro	idmap_get_t0sz, reg
 	adrp	\reg, _end
 	orr	\reg, \reg, #(1 << VA_BITS_MIN) - 1
@@ -706,7 +711,11 @@ alternative_endif
 	.macro	phys_to_ttbr, ttbr, phys
 #ifdef CONFIG_ARM64_PA_BITS_52
 	orr	\ttbr, \phys, \phys, lsr #46
+        /* IAMROOT20 20231021
+         * TTBR_BADDR_MASK_52 : 0x0000_ffff_ffff_fffc
+         */
 	and	\ttbr, \ttbr, #TTBR_BADDR_MASK_52
+        /* IAMROOT20_END 20231021 */
 #else
 	mov	\ttbr, \phys
 #endif

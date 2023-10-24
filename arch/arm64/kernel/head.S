@@ -931,6 +931,9 @@ SYM_FUNC_END(set_cpu_boot_mode_flag)
 SYM_FUNC_START(__enable_mmu)
 	mrs	x3, ID_AA64MMFR0_EL1
 	ubfx	x3, x3, #ID_AA64MMFR0_EL1_TGRAN_SHIFT, 4
+        /* IAMROOT20 20231021
+         * MIN : 0x0, MAX : 0x7
+         */
 	cmp     x3, #ID_AA64MMFR0_EL1_TGRAN_SUPPORTED_MIN
 	b.lt    __no_granule_support
 	cmp     x3, #ID_AA64MMFR0_EL1_TGRAN_SUPPORTED_MAX
