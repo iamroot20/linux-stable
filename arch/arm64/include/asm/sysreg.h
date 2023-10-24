@@ -585,10 +585,36 @@
 #define ENDIAN_SET_EL1		0
 #endif
 
+
+/* IAMROOT20 20231007
+ * LSMAOE : Multiple Load/Store(AArch32) 명령어로 메모리 접근 시 인터럽트 허용 여부 설정
+ * nTLSMD : Multiple Load/Store(AArch32) 명령어로 device 접근 시 fault 여부 설정
+ * EIS : EL1의 context synchronizing event 여부에 따라 exception 설정
+ * TSCXT : EL0의 SCXTNUM_EL0 접근 허용 여부 설정
+ * EOS : EL1에서 반환되는 exception의 context synchronizing event 여부에 따라 비트 설정 
+*/
 #define INIT_SCTLR_EL1_MMU_OFF \
 	(ENDIAN_SET_EL1 | SCTLR_EL1_LSMAOE | SCTLR_EL1_nTLSMD | \
 	 SCTLR_EL1_EIS  | SCTLR_EL1_TSCXT  | SCTLR_EL1_EOS)
 
+/* IAMROOT20 20231007
+ * M : 1단계 주소 변환(EL0/EL1)에 대한 MMU 활성화 여부 설정
+ * C : EL0/EL1에서 노멀 메모리에 접근되는 모든 데이터, 
+ *     혹은 1변환 테이블에 접근되는 노멀 메모리에 대해 Cacheability 여부 설정
+ * SA : EL1의 Stack Pointer 레지스터 얼라인먼트 체크 설정
+ * SA0 : EL0의 Stack Pointer 레지스터 얼라인먼트 체크 설정
+ * SED : AArch32의 EL0에서 SETEND 명령어 실행 허용 여부 설정
+ * I : EL0/EL1에서 노멀 메모리에 접근하는 모든 명령어의 Cacheability 여부 설정
+ * DZE : EL0에서 캐시를 제어하는 'DC ZCA' 명령어의 실행 허용 여부 설정
+ * UCT : EL0에서 캐시의 동작을 설정하는 CTR_EL0 레지스터 접근 여부 설정
+ * nTWI : EL0에서 WFI 명령어 실행 허용 여부 설정
+ * IESB : Implicit Error Synchronization event 허용 여부 설정
+ * SPAN : EL1에서 exception 발생 시 Privileged Access Never 활성화 여부 설정
+ * ITFSB : Tag Check Fault의 synchronized 여부 설정
+ * UCI : EL0에서 캐시를 설정하는 명령어
+ *       (DC CVAU, DC CIVAC, DC CVAC, DC CVAP, IC IVAU) 실행 허용 여부 설정
+ * EPAN : Privileged Access Never 강화 여부 설정
+*/
 #define INIT_SCTLR_EL1_MMU_ON \
 	(SCTLR_ELx_M      | SCTLR_ELx_C      | SCTLR_ELx_SA    | \
 	 SCTLR_EL1_SA0    | SCTLR_EL1_SED    | SCTLR_ELx_I     | \

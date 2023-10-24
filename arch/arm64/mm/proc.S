@@ -413,7 +413,11 @@ SYM_FUNC_START(__cpu_setup)
 	enable_dbg				// since this is per-cpu
 	reset_pmuserenr_el0 x1			// Disable PMU access from EL0
 	reset_amuserenr_el0 x1			// Disable AMU access from EL0
-
+	/* IAMROOT20_END 20231014 */ /* IAMROOT20_START 20231021 */
+        /* IAMROOT20 20231021
+         * mair(x17) : Memory Attribute Indirection Register
+         * tcr(x16) : Translation Control Register
+         */
 	/*
 	 * Default values for VMSA control registers. These will be adjusted
 	 * below depending on detected CPU features.
@@ -428,10 +432,17 @@ SYM_FUNC_START(__cpu_setup)
 	tcr_clear_errata_bits tcr, x9, x5
 
 #ifdef CONFIG_ARM64_VA_BITS_52
+        /* IAMROOT20 20231021
+         * x0 = 48 || 52
+         * x9 = 16 || 12
+         */
 	sub		x9, xzr, x0
 	add		x9, x9, #64
 	tcr_set_t1sz	tcr, x9
 #else
+        /* IAMROOT20 20231021
+         * x9 = 16
+         */
 	idmap_get_t0sz	x9
 #endif
 	tcr_set_t0sz	tcr, x9
