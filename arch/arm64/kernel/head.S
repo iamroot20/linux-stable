@@ -128,6 +128,7 @@ SYM_CODE_START(primary_entry)
 	bl	preserve_boot_args
 /* IAMROOT20_END 20230729 *//* IAMROOT20_START 20230805 */
 	bl	create_idmap
+/* IAMROOT20_REVIEW_END 20231028 */
 
 	/*
 	 * If we entered with the MMU and caches on, clean the ID mapped part
@@ -662,9 +663,9 @@ SYM_FUNC_START_LOCAL(create_idmap)
 
 	/* IAMROOT20_END 20230805 *//* IAMROOT20_START 20230812 */
 	map_memory x0, x1, x3, x6, x7, x3, IDMAP_PGD_ORDER, x10, x11, x12, x13, x14, EXTRA_SHIFT
-	/* IAMROOT20_END 20230819 *//* IAMROOT20_START 20230826 */ /* IAMROOT20_REVIEW_END 20231014 */
+	/* IAMROOT20_END 20230819 *//* IAMROOT20_START 20230826 */
 
-	/* IAMROOT20_REVIEW_START 20231021 */
+	 /* IAMROOT20_REVIEW_END 20231014 *//* IAMROOT20_REVIEW_START 20231021 */
 	/* IAMROOT20 20230826
 	 * 초기 커널 페이지 테이블 용도로 사용하는 init_pg_dir 영역을 R/W로 리매핑한다.
 	 */
@@ -683,22 +684,30 @@ SYM_FUNC_START_LOCAL(create_idmap)
 	mov	x6, #SWAPPER_BLOCK_SHIFT
 	// goto remap_region
 	bl	remap_region
-	/* IAMROOT20_END 20230826 */ /* IAMROOT20_REVIEW_END 20231021 */
-
-	/* IAMROOT20_START 20230909 */
+	/* IAMROOT20_END 20230826 *//* IAMROOT20_START 20230909 */
+	 
+	/* IAMROOT20_REVIEW_END 20231021 *//* IAMROOT20_REVIEW_START 20231028 */
 	/* Remap the FDT after the kernel image */
 	/* IAMROOT20 20230909
 	 * 커널의 끝 주소를 2MB를 더해준 다음, 내림 연산을 하여 2MB 단위로 정렬한다.
 	 * 매핑한 FDT의 물리 주소를 2MB 단위로 정렬한다.
 	 * FDT의 영역을 4MB 크기로 잡아서, 물리 주소에 RW 속성으로 매핑한다.
 	*/
+	// x1 = _text;
 	adrp	x1, _text
+	// x22 = _end + SWAPPER_BLOCK_SIZE;
 	adrp	x22, _end + SWAPPER_BLOCK_SIZE
+	// x2 = x22 & ~((1 << (SWAPPER_BLOCK_SIZE - 1)) -1);
 	bic	x2, x22, #SWAPPER_BLOCK_SIZE - 1
+	// x22 = (x22 & ~((1 << SWAPPER_BLOCK_SHIFT) - 1)<<0)) | (x21 & ((1 << SWAPPER_BLOCK_SHIFT)-1)<<0)
 	bfi	x22, x21, #0, #SWAPPER_BLOCK_SHIFT		// remapped FDT address
+	// x3 = x2 + MAX_FDT_SIZE + SWAPPER_BLOCK_SIZE
 	add	x3, x2, #MAX_FDT_SIZE + SWAPPER_BLOCK_SIZE
+	// x4 = x21 & ~((1 << (SWAPPER_BLOCK_SIZE - 1)) -1);
 	bic	x4, x21, #SWAPPER_BLOCK_SIZE - 1
+	// x5 = SWAPPER_RW_MMUFLAGS
 	mov	x5, SWAPPER_RW_MMUFLAGS
+	// x6 = SWAPPER_BLOCK_SHIFT
 	mov	x6, #SWAPPER_BLOCK_SHIFT
 	bl	remap_region
 
@@ -707,13 +716,18 @@ SYM_FUNC_START_LOCAL(create_idmap)
 	 * accesses (MMU disabled), invalidate those tables again to
 	 * remove any speculatively loaded cache lines.
 	 */
+	// if (x19 != 0) goto 0f
 	cbnz	x19, 0f				// skip cache invalidation if MMU is on
 	dmb	sy
 
 	/* IAMROOT20_START 20230916 */
+	// x0 = init_idmap_pg_dir;
 	adrp	x0, init_idmap_pg_dir
+	// x1 =init_idmap_pg_end;
 	adrp	x1, init_idmap_pg_end
+	// dcache_inval_poc();
 	bl	dcache_inval_poc
+	// return
 0:	ret	x28
 	/* IAMROOT20_END 20230916 */
 SYM_FUNC_END(create_idmap)
