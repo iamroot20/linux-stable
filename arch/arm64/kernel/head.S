@@ -613,6 +613,9 @@ SYM_FUNC_START_LOCAL(create_idmap)
 SYM_FUNC_END(create_idmap)
 
 SYM_FUNC_START_LOCAL(create_kernel_mapping)
+	/* IAMROOT20 20231028
+	 * init_pg_dir에 대해 page table을 생성
+	 */
 	adrp	x0, init_pg_dir
 	mov_q	x5, KIMAGE_VADDR		// compile time __va(_text)
 #ifdef CONFIG_RELOCATABLE
@@ -940,6 +943,9 @@ SYM_FUNC_START(__enable_mmu)
 	b.gt    __no_granule_support
 	phys_to_ttbr x2, x2
 	msr	ttbr0_el1, x2			// load TTBR0
+	/* IAMROOT20 20231028
+	 * 임시로 reserved_pg_dir(내용이 모두 0인 tlb)을 ttbr1에 load함
+	 */
 	load_ttbr1 x1, x1, x3
 
 	set_sctlr_el1	x0
@@ -1077,9 +1083,17 @@ SYM_FUNC_START_LOCAL(__primary_switch)
 	and	x23, x23, MIN_KIMG_ALIGN - 1
 #ifdef CONFIG_RANDOMIZE_BASE
 	mov	x0, x22
+	/* IAMROOT20 20231028
+	 * sp를 설정하여 c 함수가 호출할 수 있도록 함
+	 */
 	adrp	x1, init_pg_end
 	mov	sp, x1
 	mov	x29, xzr
+	/* IAMROOT20 20231028
+	 * RAMDOMIZE_BASE가 Enable되어 있는 경우
+	 * 커널 이미지를 재배치 할 offset을 구함
+	 * KASLR(Kernel Address Space Layout Randomization)
+	 */
 	bl	__pi_kaslr_early_init
 	and	x24, x0, #SZ_2M - 1		// capture memstart offset seed
 	bic	x0, x0, #SZ_2M - 1
@@ -1089,8 +1103,13 @@ SYM_FUNC_START_LOCAL(__primary_switch)
 	bl	clear_page_tables
 	bl	create_kernel_mapping
 
+	/* IAMROOT20 20231028
+	 * __enable_mmu에서 임시로 reserved_pg_dir을 load했었는데,
+	 * ttbr1에 init_pg_dir을 load함
+	 */
 	adrp	x1, init_pg_dir
 	load_ttbr1 x1, x1, x2
+	/* IAMROOT20_END 20231028 */
 #ifdef CONFIG_RELOCATABLE
 	bl	__relocate_kernel
 #endif

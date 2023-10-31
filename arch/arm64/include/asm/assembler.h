@@ -695,6 +695,10 @@ alternative_endif
 #ifdef CONFIG_ARM64_VA_BITS_52
 	mrs_s	\tmp, SYS_ID_AA64MMFR2_EL1
 	and	\tmp, \tmp, #(0xf << ID_AA64MMFR2_EL1_VARange_SHIFT)
+	/* IAMROOT20 20231028
+	 * VA=52로 사용하는데, LVA(VA=52 support)가 지원되지 않는 시스템의 경우
+	 * VA=48로 운영하기 위해 PGD 테이블 위치를 offset만큼 더한 주소로 적용 
+	 */
 	cbnz	\tmp, .Lskipoffs_\@
 	orr	\ttbr, \ttbr, #TTBR1_BADDR_4852_OFFSET
 .Lskipoffs_\@ :
@@ -715,7 +719,7 @@ alternative_endif
          * TTBR_BADDR_MASK_52 : 0x0000_ffff_ffff_fffc
          */
 	and	\ttbr, \ttbr, #TTBR_BADDR_MASK_52
-        /* IAMROOT20_END 20231021 */
+        /* IAMROOT20_END 20231021 */ /* IAMROOT20_START 20231028 */
 #else
 	mov	\ttbr, \phys
 #endif

@@ -88,11 +88,21 @@ static u64 get_kaslr_seed(void *fdt)
 asmlinkage u64 kaslr_early_init(void *fdt)
 {
 	u64 seed;
-
+	
+	/* IAMROOT20 20231028
+	 * cmdline에서 kaslr이 disable되어 있는지 확인
+	 */
 	if (is_kaslr_disabled_cmdline(fdt))
 		return 0;
 
+	/* IAMROOT20 20231028
+	 * DT에서 kaslr seed 값을 read
+	 */
 	seed = get_kaslr_seed(fdt);
+	/* IAMROOT20 20231028
+	 * DT에 seed 값이 존재하지 않으면, 
+	 * RNDR 레지스터를 읽어 seed를 얻음
+	 */
 	if (!seed) {
 		if (!__early_cpu_has_rndr() ||
 		    !__arm64_rndr((unsigned long *)&seed))
@@ -105,6 +115,9 @@ asmlinkage u64 kaslr_early_init(void *fdt)
 	 * middle half of the VMALLOC area (VA_BITS_MIN - 2), and stay clear of
 	 * the lower and upper quarters to avoid colliding with other
 	 * allocations.
+	 */
+	/* IAMROOT20 20231028
+	 * seed, VA_BITS_MIN을 이용하여 kaslr offset을 return
 	 */
 	return BIT(VA_BITS_MIN - 3) + (seed & GENMASK(VA_BITS_MIN - 3, 0));
 }
