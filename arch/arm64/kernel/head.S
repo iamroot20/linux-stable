@@ -994,6 +994,12 @@ SYM_FUNC_START_LOCAL(__relocate_kernel)
 	mov_q	x11, KIMAGE_VADDR		// default virtual offset
 	add	x11, x11, x23			// actual virtual offset
 
+	/* IAMROOT20 20231104
+	 * relocation table을 참조하여 R_AARCH64_RELATIVE type을 가진 모든 entry들의 
+	 * offset + kaslr displacement 주소의 값을  addend + kaslr displacement으로 설정함
+	 * relocation table의 offset은 구조체 변수의 필드 위치를 가리키는 것으로 보임
+	 * relocation table의 addend는 심볼 주소로 보임 
+	 */
 0:	cmp	x9, x10
 	b.hs	1f
 	ldp	x12, x13, [x9], #24
@@ -1039,6 +1045,16 @@ SYM_FUNC_START_LOCAL(__relocate_kernel)
 	adr_l	x9, __relr_start
 	adr_l	x10, __relr_end
 
+	/* IAMROOT20 20231104
+	 * relative relocation 과정
+	 * 배경: 기존의 relocation table에서 R_AARCH64_RELATIVE type이 많은 부분을 차지하고 있음
+	 *       R_AARCH64_RELATIVE의 특징은 offset이 8bytes 크기 차이로 모여있음
+	 *       RELA relocation의 info, type을 제거하고 offset을 압축해서 relr section을 생성
+	 * relative relocation entry는 address와 bitmap으로 나누어짐. entry 값이 짝수이면 address를, 홀수이면 bitmap을 의미함.
+	 * 짝수 값 entry는 맨 처음 1개의 relocation을 담당하고 (label 2)
+	 * bitmap은 다음부터 8bytes씩 증가되는 63개의 relocation을 진행하며 bitmap LSB 값 1은 무시 (label 3, 4, 5, 6)
+	 * rela relocation에서 진행했던 offset + kaslr_displacement / addend + kaslr_displacement 변경 과정은 동일
+	 */ 
 2:	cmp	x9, x10
 	b.hs	7f
 	ldr	x11, [x9], #8
@@ -1110,10 +1126,19 @@ SYM_FUNC_START_LOCAL(__primary_switch)
 	adrp	x1, init_pg_dir
 	load_ttbr1 x1, x1, x2
 	/* IAMROOT20_END 20231028 */
+	/* IAMROOT20_START 20231104 */
 #ifdef CONFIG_RELOCATABLE
 	bl	__relocate_kernel
 #endif
+	/* IAMROOT20 20231104
+	 * ldr x8, =__primary_switched는 pesudo instruction(literal pool)으로 
+	 * 빌드 타임의 __primary_switched 가상 주소를 해당 명령어 주변에 셋팅함
+	 * 런 타임에 해당 라인이 실행되면 x8에 __primary_switched의 가상 주소를 저장하고 
+	 * x0에 커널 이미지의 시작 물리 주소를 들고
+	 * x8 주소로 branch하면 TTBR1_EL1을 base 주소로 하는 init_pg_dir 페이지 테이블을 타고 커널 가상 주소 영역으로 진입
+	 */
 	ldr	x8, =__primary_switched
 	adrp	x0, KERNEL_START		// __pa(KERNEL_START)
 	br	x8
+	/* IAMROOT20_END 20231104 */
 SYM_FUNC_END(__primary_switch)
