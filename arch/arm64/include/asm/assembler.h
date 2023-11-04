@@ -339,7 +339,7 @@ alternative_cb_end
 	 * ctr_el0[19:16]은 DminLine으로 데이터 캐시 라인 사이즈를 나타내는 비트이다. 2^n 워드 단위로 저장된다.
 	 */
 	// tmp = tmp >> 16;
-	// tmp = tmp & 0xf; 		// tmp & ((0x1 << (19-16+1)) -1)
+	// tmp = tmp & 0xf;
 	ubfm		\tmp, \tmp, #16, #19	// cache line size encoding
 	
 	/* IAMROOT20 20230722
@@ -479,21 +479,28 @@ alternative_endif
 	 * dcache_op@:
 	 *	dc civac start
 	 */
+	// tmp = linesz - 1
 	sub	\tmp, \linesz, #1
+	// start = start & ~tmp
 	bic	\start, \start, \tmp
 .Ldcache_op\@:
+	// if (op == cvau) __dcache_op_workaround_clean_cache(op, start)
 	.ifc	\op, cvau
 	__dcache_op_workaround_clean_cache \op, \start
 	.else
+	// else if (op == cvac) __dcache_op_workarouod_clean_cache(op, start)
 	.ifc	\op, cvac
 	__dcache_op_workaround_clean_cache \op, \start
 	.else
+	// else if (op == cvap) dc cvap
 	.ifc	\op, cvap
 	sys	3, c7, c12, 1, \start	// dc cvap
 	.else
+	// else if (op == cvadp) dc cvadp
 	.ifc	\op, cvadp
 	sys	3, c7, c13, 1, \start	// dc cvadp
 	.else
+	// else dc op, start
 	dc	\op, \start
 	.endif
 	.endif
@@ -505,14 +512,17 @@ alternative_endif
 	 * if(start < end)	goto dcache_op@;
 	 * dsb domain;		dsb sy
 	 */
+	// start = start + linesz
 	add	\start, \start, \linesz
+	// if (start - end < 0) goto dcache_op@
 	cmp	\start, \end
 	b.lo	.Ldcache_op\@
 	dsb	\domain
 
 /*
- * IAMROOT20_END 20230909
+ * IAMROOT20_END 20230909 
  */
+/* IAMROOT20_REVIEW_END 20231104 */
 	_cond_uaccess_extable .Ldcache_op\@, \fixup
 	.endm
 
