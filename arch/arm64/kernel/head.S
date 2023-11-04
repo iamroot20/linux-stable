@@ -128,7 +128,7 @@ SYM_CODE_START(primary_entry)
 	bl	preserve_boot_args
 /* IAMROOT20_END 20230729 *//* IAMROOT20_START 20230805 */
 	bl	create_idmap
-/* IAMROOT20_REVIEW_END 20231028 */
+/* IAMROOT20_REVIEW_END 20231028 */ /* IAMROOT20_REVIEW_START 20231104 */
 
 	/*
 	 * If we entered with the MMU and caches on, clean the ID mapped part
@@ -140,9 +140,13 @@ SYM_CODE_START(primary_entry)
 	  * MMU가 ON 상태이면 __idmap_text_start부터 __idmap_text_end 까지
 	  * cache clean 한다.
 	  */
+	// if (x19 == 0) goto 0f
 	cbz	x19, 0f
+	// x0 = __idmap_text_start
 	adrp	x0, __idmap_text_start
+	// x1 = __idmap_text_end
 	adr_l	x1, __idmap_text_end
+	// x2 = dcache_clean_poc
 	adr_l	x2, dcache_clean_poc
 	blr	x2
 0:	mov	x0, x19
