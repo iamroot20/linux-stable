@@ -643,7 +643,15 @@ SYM_FUNC_END(create_kernel_mapping)
 	 */
 	.macro	init_cpu_task tsk, tmp1, tmp2
 	msr	sp_el0, \tsk
-
+	
+	/* IAMROOT20 20231111
+	 * tmp1 = tsk->stack
+	 * TSK_STACK = 32
+	 * THREAD_SIZE = 16k
+	 * PT_REGS_SIZE = 336
+	 * S_STACKFRAME = 304
+	 */
+	/* IAMROOT20_END 20231111 */
 	ldr	\tmp1, [\tsk, #TSK_STACK]
 	add	sp, \tmp1, #THREAD_SIZE
 	sub	sp, sp, #PT_REGS_SIZE
@@ -664,6 +672,7 @@ SYM_FUNC_END(create_kernel_mapping)
  *
  *   x0 = __pa(KERNEL_START)
  */
+/* IAMROOT20_START 20231111 */
 SYM_FUNC_START_LOCAL(__primary_switched)
 	adr_l	x4, init_task
 	init_cpu_task x4, x5, x6
