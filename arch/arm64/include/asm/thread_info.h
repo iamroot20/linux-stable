@@ -21,6 +21,10 @@ struct task_struct;
 /*
  * low level task data that entry.S needs immediate access to.
  */
+/* IAMROOT20 20231111
+ * preempt_count: 프로세스의 컨텍스트 실행 정보와 프로세스가 선점 스케줄링 될 정보를 저장.
+ *	- 0이면 선점 가능, 0 미만이면 bug
+ */
 struct thread_info {
 	unsigned long		flags;		/* low level flags */
 #ifdef CONFIG_ARM64_SW_TTBR0_PAN
