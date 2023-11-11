@@ -522,7 +522,7 @@ alternative_endif
 /*
  * IAMROOT20_END 20230909 
  */
-/* IAMROOT20_REVIEW_END 20231104 */
+/* IAMROOT20_REVIEW_END 20231104 */ /* IAMROOT20_REVIEW_START 20231111*/
 	_cond_uaccess_extable .Ldcache_op\@, \fixup
 	.endm
 

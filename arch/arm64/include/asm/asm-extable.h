@@ -64,6 +64,7 @@
  * do nothing.
  */
 	.macro		_cond_uaccess_extable, insn, fixup
+	// if (strcmp(fixup, "") != 0) _asm_extable_uaccess
 	.ifnc			\fixup,
 	_asm_extable_uaccess	\insn, \fixup
 	.endif

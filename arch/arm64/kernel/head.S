@@ -149,6 +149,7 @@ SYM_CODE_START(primary_entry)
 	// x2 = dcache_clean_poc
 	adr_l	x2, dcache_clean_poc
 	blr	x2
+	/* IAMROOT20_REVIEW_END 20231111 */
 0:	mov	x0, x19
 	bl	init_kernel_el			// w0=cpu_boot_mode
 	mov	x20, x0
