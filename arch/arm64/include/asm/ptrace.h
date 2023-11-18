@@ -16,6 +16,13 @@
 #define CurrentEL_EL1		(1 << 2)
 #define CurrentEL_EL2		(2 << 2)
 
+/* IAMROOT20_REVIEW
+ * PSR_D_BIT : 디버그 마스킹 (비활성화)
+ * PSR_A_BIT : 어보트 마스킹 (비활성화)
+ * PSR_I_BIT : 인터럽트 마스킹 (비활성화)
+ * PSR_F_BIT : 패스트 인터럽트 마스킹 (비활성화)
+ * PSR_MODE_EL1h : 익셉션 레벨 1
+ */
 #define INIT_PSTATE_EL1 \
 	(PSR_D_BIT | PSR_A_BIT | PSR_I_BIT | PSR_F_BIT | PSR_MODE_EL1h)
 #define INIT_PSTATE_EL2 \

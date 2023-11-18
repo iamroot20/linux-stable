@@ -148,8 +148,11 @@ SYM_CODE_START(primary_entry)
 	adr_l	x1, __idmap_text_end
 	// x2 = dcache_clean_poc
 	adr_l	x2, dcache_clean_poc
+	// dcache_clean_poc(__idmap_text_start, __idmap_text_end)
 	blr	x2
 	/* IAMROOT20_REVIEW_END 20231111 */
+	/* IAMROOT20_REVIEW_START 20231118 */
+	// x0 = x19
 0:	mov	x0, x19
 	bl	init_kernel_el			// w0=cpu_boot_mode
 	mov	x20, x0
@@ -862,35 +865,53 @@ SYM_FUNC_END(__primary_switched)
  * x0: whether we are being called from the primary boot path with the MMU on
  */
 SYM_FUNC_START(init_kernel_el)
+	// x1 = CurrentEL
 	mrs	x1, CurrentEL
+	// if (x1 == #CurrentEL_EL2) goto init_el2
 	cmp	x1, #CurrentEL_EL2
 	b.eq	init_el2
 
 SYM_INNER_LABEL(init_el1, SYM_L_LOCAL)
+
+	// x0 = INIT_SCTRL_EL1_MMU_OFF
 	mov_q	x0, INIT_SCTLR_EL1_MMU_OFF
 	pre_disable_mmu_workaround
+	// sctlr_el1 = x0
 	msr	sctlr_el1, x0
 	isb
+	// x0 = INIT_PSTATE_EL1
 	mov_q	x0, INIT_PSTATE_EL1
+	// spsr_el1 = x0
 	msr	spsr_el1, x0
+	// elr_el1 = lr
 	msr	elr_el1, lr
+	// w0 = BOOT_CPU_MODE_EL1
 	mov	w0, #BOOT_CPU_MODE_EL1
 	eret
 
 SYM_INNER_LABEL(init_el2, SYM_L_LOCAL)
+	// elr_el2 = lr
 	msr	elr_el2, lr
 
 	// clean all HYP code to the PoC if we booted at EL2 with the MMU on
+	// if (x0 == 0) goto 0f
 	cbz	x0, 0f
+	// x0 = __hyp_idmap_text_start
 	adrp	x0, __hyp_idmap_text_start
+	// x1 = __hyp_text_end
 	adr_l	x1, __hyp_text_end
+	// x2 = dcache_clean_poc
 	adr_l	x2, dcache_clean_poc
+	// dcache_clean_poc(__hyp_idmap_text_start, __hyp_text_end)
 	blr	x2
 0:
+	// x0 = HCR_HOST_NVHE_FLAGS
 	mov_q	x0, HCR_HOST_NVHE_FLAGS
+	// hcr_el2 = x0
 	msr	hcr_el2, x0
 	isb
 
+	/* IAMROOT20_REVIEW_END */
 	init_el2_state
 
 	/* Hypervisor stub */

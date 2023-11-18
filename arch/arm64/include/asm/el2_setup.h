@@ -17,7 +17,9 @@
 #include <linux/irqchip/arm-gic-v3.h>
 
 .macro __init_el2_sctlr
+	// x0 = INIT_SCTLR_EL2_MMU_OFF
 	mov_q	x0, INIT_SCTLR_EL2_MMU_OFF
+	// sctrl_el2 = x0
 	msr	sctlr_el2, x0
 	isb
 .endm

@@ -83,6 +83,13 @@
  * TID3:	Trap EL1 reads of group 3 ID registers
  * TID2:	Trap CTR_EL0, CCSIDR2_EL1, CLIDR_EL1, and CSSELR_EL1
  */
+/* IAMROOT20_REVIEW 20231118
+ * RW : EL1, EL0가 어떤 Execution state(AArch32/AArch64)를 가지고 있는지 설정
+ * API : Pointer Authentication 명령어 사용 시 trap 활성 여부 설정
+ * APK : 레지스터가 Pointer Authentication 사용을 위한 key value 저장 시,
+ * 	 trap 활성 여부 설정
+ * ATA : Allocation Tag 접근 시 trap 활성 여부 설정 
+*/
 #define HCR_GUEST_FLAGS (HCR_TSC | HCR_TSW | HCR_TWE | HCR_TWI | HCR_VM | \
 			 HCR_BSU_IS | HCR_FB | HCR_TACR | \
 			 HCR_AMO | HCR_SWIO | HCR_TIDCP | HCR_RW | HCR_TLOR | \
