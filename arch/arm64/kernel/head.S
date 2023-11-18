@@ -651,7 +651,7 @@ SYM_FUNC_END(create_kernel_mapping)
 	 * PT_REGS_SIZE = 336
 	 * S_STACKFRAME = 304
 	 */
-	/* IAMROOT20_END 20231111 */
+	/* IAMROOT20_END 20231111 */ /* IAMROOT20_START 20231118 */
 	ldr	\tmp1, [\tsk, #TSK_STACK]
 	add	sp, \tmp1, #THREAD_SIZE
 	sub	sp, sp, #PT_REGS_SIZE
@@ -661,6 +661,11 @@ SYM_FUNC_END(create_kernel_mapping)
 
 	scs_load_current
 
+	/* IAMROOT20 20231118
+	 * tmp1 = __per_cpu_offset[NR_CPUS]
+	 * tmp2 = tsk.thread_info.cpu
+	 * tmp1 = __per_cpu_offset[tmp2]
+	 */
 	adr_l	\tmp1, __per_cpu_offset
 	ldr	w\tmp2, [\tsk, #TSK_TI_CPU]
 	ldr	\tmp1, [\tmp1, \tmp2, lsl #3]
@@ -681,11 +686,19 @@ SYM_FUNC_START_LOCAL(__primary_switched)
 	msr	vbar_el1, x8			// vector table address
 	isb
 
+/* IAMROOT20 20231118
+ * x29 : stack frame
+ * x30 : link register
+ */
 	stp	x29, x30, [sp, #-16]!
 	mov	x29, sp
 
 	str_l	x21, __fdt_pointer, x5		// Save FDT pointer
 
+/* IAMROOT20 20231118
+ * kimage_vaddr : 커널 이미지의 가상 주소의 시작 (0xffff800008000000)
+ */
+/* IAMROOT20_END 20231118 */
 	ldr_l	x4, kimage_vaddr		// Save the offset between
 	sub	x4, x4, x0			// the kernel virtual and
 	str_l	x4, kimage_voffset, x5		// physical mappings
