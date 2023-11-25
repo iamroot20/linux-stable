@@ -699,6 +699,7 @@ SYM_FUNC_START_LOCAL(__primary_switched)
  * kimage_vaddr : 커널 이미지의 가상 주소의 시작 (0xffff800008000000)
  */
 /* IAMROOT20_END 20231118 */
+/* IAMROOT20_START 20231125 */
 	ldr_l	x4, kimage_vaddr		// Save the offset between
 	sub	x4, x4, x0			// the kernel virtual and
 	str_l	x4, kimage_voffset, x5		// physical mappings
@@ -707,13 +708,24 @@ SYM_FUNC_START_LOCAL(__primary_switched)
 	bl	set_cpu_boot_mode_flag
 
 	// Clear BSS
+	/* IAMROOT20 20231125 
+	 * bss 영역을 0으로 초기화 (init_pg_dir 아래에 위치)
+	 */
 	adr_l	x0, __bss_start
 	mov	x1, xzr
 	adr_l	x2, __bss_stop
 	sub	x2, x2, x0
 	bl	__pi_memset
+	/* IAMROOT20 20231125
+	 * ISHST : 스토어가 마무리되기를 기다리는 동작 (Store - Store)
+	 * domain : Inner Sharable domain
+	 */
 	dsb	ishst				// Make zero page visible to PTW
 
+/* IAMROOT20 20231125 
+ * 가상주소 52bit를 지원하면 vabits_actual = 52
+ * 지원하지 않는다면 vabits_actual = 48
+ */
 #if VA_BITS > 48
 	adr_l	x8, vabits_actual		// Set this early so KASAN early init
 	str	x25, [x8]			// ... observes the correct value
@@ -913,8 +925,19 @@ SYM_FUNC_END(__secondary_too_slow)
  * in w0. See arch/arm64/include/asm/virt.h for more info.
  */
 SYM_FUNC_START_LOCAL(set_cpu_boot_mode_flag)
+	/* IAMROOT20 20231125 
+	 * EL2일 경우
+	 * u32 __boot_cpu_mode[] = { BOOT_CPU_MODE_EL2, BOOT_CPU_MODE_EL2 };
+	 *                         x1                 x1
+	 * EL1일 경우
+	 * u32 __boot_cpu_mode[] = { BOOT_CPU_MODE_EL1, BOOT_CPU_MODE_EL1 };
+	 * 			   x1
+	 */
 	adr_l	x1, __boot_cpu_mode
 	cmp	w0, #BOOT_CPU_MODE_EL2
+	/*IAMROOT20 20231125 
+	 * EL1인 경우 label 1로 이동
+	 */
 	b.ne	1f
 	add	x1, x1, #4
 1:	str	w0, [x1]			// Save CPU boot mode

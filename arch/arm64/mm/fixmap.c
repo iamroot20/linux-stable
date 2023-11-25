@@ -99,7 +99,11 @@ void __init early_fixmap_init(void)
 {
 	unsigned long addr = FIXADDR_TOT_START;
 	unsigned long end = FIXADDR_TOP;
-
+	
+	/* IAMROOT20 20231125 
+	 * *pgdp = swapper_pgdir + pgd 
+	 * *p4dp = *pgdp;
+	 */
 	pgd_t *pgdp = pgd_offset_k(addr);
 	p4d_t *p4dp = p4d_offset(pgdp, addr);
 
