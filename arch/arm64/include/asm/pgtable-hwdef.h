@@ -51,6 +51,11 @@
   * exam) 39 VA_BITS, 4k
   *	PMD_SHIFT	21
   *	PMD_SIZE	SZ_2M
+  * exam) 48 VA_BITS, 4k
+  *	PMD_SHIFT	21
+  *	PMD_SIZE	SZ_2M
+  *	PMD_MASK	0xffff_ffff_ffe0_0000
+  *	PTRS_PER_PMD	512
   */
 #define PMD_SHIFT		ARM64_HW_PGTABLE_LEVEL_SHIFT(2)
 #define PMD_SIZE		(_AC(1, UL) << PMD_SHIFT)
@@ -62,6 +67,14 @@
  * PUD_SHIFT determines the size a level 1 page table entry can map.
  */
 #if CONFIG_PGTABLE_LEVELS > 3
+ /*
+  * IAMROOT20 20231201: 
+  * exam) 48 VA_BITS, 4k
+  *	PUD_SHIFT	30
+  *	PUD_SIZE	SZ_1G
+  *	PUD_MASK	0xffff_ffff_c000_0000
+  *	PTRS_PER_PUD	512
+  */
 #define PUD_SHIFT		ARM64_HW_PGTABLE_LEVEL_SHIFT(1)
 #define PUD_SIZE		(_AC(1, UL) << PUD_SHIFT)
 #define PUD_MASK		(~(PUD_SIZE-1))
@@ -79,6 +92,14 @@
   *		PGDIR_SIZE : 1 << 25	SZ_32M
   *		PGDIR_MASK : 0xffff_ffff_fe00_0000
   *		PTRS_PER_PGD : 11 (36 - 25)
+  *	exam) VA_BITS == 52 on 64k(16bit) CONFIG_PGTABLE_LEVELS = 3
+		PGDIR_SHIFT : 42
+		PGDIR_SIZE : SZ_4T
+  *	exam) VA_BITS == 48 on 4k	CONFIG_PGTABLE_LEVELS = 4
+  *		PGDIR_SHIFT	39
+  *		PGDIR_SIZE	SZ_512G
+  *		PGDIR_MASK	0xffff_ffc0_0000_0000
+  *		PTRS_PER_PGD	512
   */
 #define PGDIR_SHIFT		ARM64_HW_PGTABLE_LEVEL_SHIFT(4 - CONFIG_PGTABLE_LEVELS)
 #define PGDIR_SIZE		(_AC(1, UL) << PGDIR_SHIFT)

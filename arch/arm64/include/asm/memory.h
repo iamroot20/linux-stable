@@ -30,6 +30,12 @@
  * keep a constant PAGE_OFFSET and "fallback" to using the higher end
  * of the VMEMMAP where 52-bit support is not available in hardware.
  */
+ /*
+  * IAMROOT20 20231129: 
+  * exam) VA_BITS 48, VA_BITS_MIN 48
+  * VMEMMAP_SHIFT	6
+  * VMEMMAP_SIZE	0x0200_0000_0000	SZ_2T
+  */
 #define VMEMMAP_SHIFT	(PAGE_SHIFT - STRUCT_PAGE_MAX_SHIFT)
 #define VMEMMAP_SIZE	((_PAGE_END(VA_BITS_MIN) - PAGE_OFFSET) >> VMEMMAP_SHIFT)
 
@@ -40,6 +46,21 @@
  * KIMAGE_VADDR - the virtual address of the start of the kernel image.
  * VA_BITS - the maximum number of bits for virtual addresses.
  */
+ /*
+  * IAMROOT20 20231129: 
+  * VA_BITS		48
+  * VA_BITS_MIN		48
+  * PAGE_OFFSET		0xffff_0000_0000_0000
+  * KIMAGE_VADDR	0xffff_8000_0800_0000
+  * MODULES_END		0xffff_8000_0800_0000
+  * MODULES_VADDR	0xffff_8000_0000_0000
+  * MODULES_VSIZE	0x0800_0000		SZ_128M
+  * VMEMMAP_START	0xffff_fc00_0000_0000
+  * VMEMMAP_END		0xffff_fe00_0000_0000
+  * PCI_IO_END		0xffff_fbff_ff80_0000
+  * PCI_IO_START	0xffff_fbff_fe80_0000
+  * FIXADDR_TOP		0xffff_fbff_fe00_0000
+  */
 #define VA_BITS			(CONFIG_ARM64_VA_BITS)
 #define _PAGE_OFFSET(va)	(-(UL(1) << (va)))
 #define PAGE_OFFSET		(_PAGE_OFFSET(VA_BITS))

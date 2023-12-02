@@ -83,6 +83,11 @@ static inline unsigned long pud_index(unsigned long address)
 
 #ifndef pgd_index
 /* Must be a compile-time constant, so implement it as a macro */
+/*
+ * IAMROOT20 20231130: 
+ * exam) VA_BITS 48, PAGE_SIZE 4k
+ *	pgd_index(a)	a >> 39 & 511
+ */
 #define pgd_index(a)  (((a) >> PGDIR_SHIFT) & (PTRS_PER_PGD - 1))
 #endif
 
