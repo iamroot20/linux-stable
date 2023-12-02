@@ -27,6 +27,9 @@
  * Since there is only one init_mm in the entire system, keep it simple
  * and size this cpu_bitmask to NR_CPUS.
  */
+/* IAMROOT20 20231125
+ * arm64에서는 .pgd에 swapper_pg_dir대신 init_pg_dir로 설정한다.
+ */
 struct mm_struct init_mm = {
 	.mm_mt		= MTREE_INIT_EXT(mm_mt, MM_MT_FLAGS, init_mm.mmap_lock),
 	.pgd		= swapper_pg_dir,

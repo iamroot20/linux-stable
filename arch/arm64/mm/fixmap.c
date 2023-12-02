@@ -86,6 +86,7 @@ static void __init early_fixmap_init_pud(p4d_t *p4dp, unsigned long addr,
 		__p4d_populate(p4dp, __pa_symbol(bm_pud), P4D_TYPE_TABLE);
 
 	pudp = pud_offset_kimg(p4dp, addr);
+	/* IAMROOT20_END 20231125 */
 	early_fixmap_init_pmd(pudp, addr, end);
 }
 
@@ -101,7 +102,7 @@ void __init early_fixmap_init(void)
 	unsigned long end = FIXADDR_TOP;
 	
 	/* IAMROOT20 20231125 
-	 * *pgdp = swapper_pgdir + pgd 
+	 * *pgdp = init_pg_dir + pgd 
 	 * *p4dp = *pgdp;
 	 */
 	pgd_t *pgdp = pgd_offset_k(addr);
