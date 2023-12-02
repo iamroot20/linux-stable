@@ -57,6 +57,7 @@ static void __init early_fixmap_init_pmd(pud_t *pudp, unsigned long addr,
 
 	if (pud_none(pud))
 		__pud_populate(pudp, __pa_symbol(bm_pmd), PUD_TYPE_TABLE);
+	/* IAMROOT20_END 20231202 */
 
 	pmdp = pmd_offset_kimg(pudp, addr);
 	do {
@@ -86,7 +87,7 @@ static void __init early_fixmap_init_pud(p4d_t *p4dp, unsigned long addr,
 		__p4d_populate(p4dp, __pa_symbol(bm_pud), P4D_TYPE_TABLE);
 
 	pudp = pud_offset_kimg(p4dp, addr);
-	/* IAMROOT20_END 20231125 */
+	/* IAMROOT20_END 20231125 */ /* IAMROOT20_START 20231202j */
 	early_fixmap_init_pmd(pudp, addr, end);
 }
 

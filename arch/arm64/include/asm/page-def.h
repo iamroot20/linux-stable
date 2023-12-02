@@ -11,6 +11,12 @@
 #include <linux/const.h>
 
 /* PAGE_SHIFT determines the page size */
+/* IAMROOT20 20231202
+ * exam) VA_BITS 48, PAGE_SHIFT 12
+ *	PAGE_SHIFT	12
+ *	PAGE_SIZE	SZ_4K
+ *	PAGE_MASK	0XFFFF_FFFF_FFFF_F800
+ */
 #define PAGE_SHIFT		CONFIG_ARM64_PAGE_SHIFT
 #define PAGE_SIZE		(_AC(1, UL) << PAGE_SHIFT)
 #define PAGE_MASK		(~(PAGE_SIZE-1))

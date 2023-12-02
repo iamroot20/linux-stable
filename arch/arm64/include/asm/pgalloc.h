@@ -22,6 +22,9 @@
 
 static inline void __pud_populate(pud_t *pudp, phys_addr_t pmdp, pudval_t prot)
 {
+	/* IAMROOT20 20231202
+	 * pudp = (pmdp | prot)
+	 */
 	set_pud(pudp, __pud(__phys_to_pud_val(pmdp) | prot));
 }
 
@@ -41,6 +44,9 @@ static inline void __pud_populate(pud_t *pudp, phys_addr_t pmdp, pudval_t prot)
 
 #if CONFIG_PGTABLE_LEVELS > 3
 
+/** IAMROOT20 20231202
+ * *p4dp = (pudp | prot);
+ */
 static inline void __p4d_populate(p4d_t *p4dp, phys_addr_t pudp, p4dval_t prot)
 {
 	set_p4d(p4dp, __p4d(__phys_to_p4d_val(pudp) | prot));

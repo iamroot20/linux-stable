@@ -76,11 +76,23 @@ extern unsigned long empty_zero_page[PAGE_SIZE / sizeof(unsigned long)];
 #ifdef CONFIG_ARM64_PA_BITS_52
 static inline phys_addr_t __pte_to_phys(pte_t pte)
 {
+	/* IAMROOT20 20231202
+	 * pte & 0x0000_ffff_ffff_0000 | (pte & 0xf000) << 36
+	 * exam)
+	 *	pte = 0x0000_ABCD_EF01_9000
+	 *	return 0x0009_ABCD_EF01_0000
+	 */
 	return (pte_val(pte) & PTE_ADDR_LOW) |
 		((pte_val(pte) & PTE_ADDR_HIGH) << PTE_ADDR_HIGH_SHIFT);
 }
 static inline pteval_t __phys_to_pte_val(phys_addr_t phys)
 {
+	/* IAMROOT20 20231202
+	 * (phys | (phys >> 36)) & 0x0000_ffff_ffff_f000
+	 * exam)
+	 *	phys = 0x0009_ABCD_EF01_0000
+	 *	return 0x0000_ABCD_EF01_9000
+	 */
 	return (phys | (phys >> PTE_ADDR_HIGH_SHIFT)) & PTE_ADDR_MASK;
 }
 #else
@@ -124,6 +136,9 @@ static inline pteval_t __phys_to_pte_val(phys_addr_t phys)
 #define pte_sw_dirty(pte)	(!!(pte_val(pte) & PTE_DIRTY))
 #define pte_dirty(pte)		(pte_sw_dirty(pte) || pte_hw_dirty(pte))
 
+/* IAMROOT20 20231202
+ * return pte & PTE_VALID;
+ */
 #define pte_valid(pte)		(!!(pte_val(pte) & PTE_VALID))
 /*
  * Execute-only user mappings do not have the PTE_USER bit set. All valid
@@ -381,6 +396,10 @@ static inline pte_t pgd_pte(pgd_t pgd)
 	return __pte(pgd_val(pgd));
 }
 
+/*
+ * IAMROOT20 20231202: 
+ * return p4d
+ */
 static inline pte_t p4d_pte(p4d_t p4d)
 {
 	return __pte(p4d_val(p4d));
@@ -602,8 +621,14 @@ extern pgprot_t phys_mem_access_prot(struct file *file, unsigned long pfn,
 static inline bool pud_sect(pud_t pud) { return false; }
 static inline bool pud_table(pud_t pud) { return true; }
 #else
+/* IAMROOT20 20231202
+ * pud_sect(pud)	=>	(pud & 3) == 1 
+ */
 #define pud_sect(pud)		((pud_val(pud) & PUD_TYPE_MASK) == \
 				 PUD_TYPE_SECT)
+/* IAMROOT20 20231202
+ * pud_table(pud)	=>	(pud & 3) == 3
+ */
 #define pud_table(pud)		((pud_val(pud) & PUD_TYPE_MASK) == \
 				 PUD_TYPE_TABLE)
 #endif
@@ -678,6 +703,15 @@ static inline unsigned long pmd_page_vaddr(pmd_t pmd)
 #define pmd_ERROR(e)	\
 	pr_err("%s:%d: bad pmd %016llx.\n", __FILE__, __LINE__, pmd_val(e))
 
+/* IAMROOT20 20231202
+ * pud_none(pud)	=>	(pud == 0)
+ * pud_bed(pud)		=>	(pud & 3 != 3)
+ * pud_present(pud)	=>	(pud & (PTE_VALID | PTE_PROT_NONE))
+ * pud_leaf(pud)	=>	(pud_present(pud) && !pud_table(pud))
+ * pud_valid(pud)	=>	(pud & 1)
+ * pud_user(pud)	=>	(pud & PTE_USER)
+ * pud_user_exec(pud)	=>	!(pud & PTE_UXN)
+ */
 #define pud_none(pud)		(!pud_val(pud))
 #define pud_bad(pud)		(!pud_table(pud))
 #define pud_present(pud)	pte_present(pud_pte(pud))
@@ -695,6 +729,9 @@ static inline void set_pud(pud_t *pudp, pud_t pud)
 	}
 #endif /* __PAGETABLE_PUD_FOLDED */
 
+	/* IAMROOT20 20231202
+	 * *pudp = pud
+	 */
 	WRITE_ONCE(*pudp, pud);
 
 	if (pud_valid(pud)) {
@@ -749,6 +786,12 @@ static inline pmd_t *pud_pgtable(pud_t pud)
 #define pud_ERROR(e)	\
 	pr_err("%s:%d: bad pud %016llx.\n", __FILE__, __LINE__, pud_val(e))
 
+/*
+ * IAMROOT20 20231202: 
+ * p4d_none	p4d == 0
+ * p4d_bad	!(p4d & 2)
+ * p4d_present	p4d != 0
+ */
 #define p4d_none(p4d)		(!p4d_val(p4d))
 #define p4d_bad(p4d)		(!(p4d_val(p4d) & 2))
 #define p4d_present(p4d)	(p4d_val(p4d))
@@ -760,6 +803,11 @@ static inline void set_p4d(p4d_t *p4dp, p4d_t p4d)
 		return;
 	}
 
+	/* IAMROOT20 20231202
+	 * *p4dp = p4d;
+	 * dsb ishst
+	 * isb
+	 */
 	WRITE_ONCE(*p4dp, p4d);
 	dsb(ishst);
 	isb();
@@ -781,6 +829,9 @@ static inline pud_t *p4d_pgtable(p4d_t p4d)
 }
 
 /* Find an entry in the first-level page table. */
+/* IAMROOT20 20231202
+ * p4d_page_paddr(*dir) + pud_index(addr) * sizeof(pud_t)
+ */
 #define pud_offset_phys(dir, addr)	(p4d_page_paddr(READ_ONCE(*(dir))) + pud_index(addr) * sizeof(pud_t))
 
 #define pud_set_fixmap(addr)		((pud_t *)set_fixmap_offset(FIX_PUD, addr))

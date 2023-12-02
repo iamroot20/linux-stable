@@ -33,8 +33,8 @@
  /*
   * IAMROOT20 20231129: 
   * exam) VA_BITS 48, VA_BITS_MIN 48
-  * VMEMMAP_SHIFT	6
-  * VMEMMAP_SIZE	0x0200_0000_0000	SZ_2T
+  *	VMEMMAP_SHIFT	6
+  * 	VMEMMAP_SIZE	0x0200_0000_0000	SZ_2T
   */
 #define VMEMMAP_SHIFT	(PAGE_SHIFT - STRUCT_PAGE_MAX_SHIFT)
 #define VMEMMAP_SIZE	((_PAGE_END(VA_BITS_MIN) - PAGE_OFFSET) >> VMEMMAP_SHIFT)
@@ -98,6 +98,10 @@
 #define KASAN_THREAD_SHIFT	1
 #else
 #define KASAN_THREAD_SHIFT	0
+/*
+ * IAMROOT20 20231202: 
+ * PAGE_END	0xffff_8000_0000_0000
+ */
 #define PAGE_END		(_PAGE_END(VA_BITS_MIN))
 #endif /* CONFIG_KASAN */
 
@@ -306,6 +310,10 @@ static inline const void *__tag_set(const void *addr, u8 tag)
  * lives in the [PAGE_OFFSET, PAGE_END) interval at the bottom of the
  * kernel's TTBR1 address range.
  */
+ /*
+  * IAMROOT20 20231202: 
+  * __is_lm_address(addr) =>  PAGE_OFFSET <= addr < PAGE_END
+  */
 #define __is_lm_address(addr)	(((u64)(addr) - PAGE_OFFSET) < (PAGE_END - PAGE_OFFSET))
 
 #define __lm_to_phys(addr)	(((addr) - PAGE_OFFSET) + PHYS_OFFSET)
@@ -356,6 +364,10 @@ static inline void *phys_to_virt(phys_addr_t x)
  * Drivers should NOT use these either.
  */
 #define __pa(x)			__virt_to_phys((unsigned long)(x))
+ /*
+  * IAMROOT20 20231202: 
+  * __pa_symbol(x) -> (x - kimage_voffset)
+  */
 #define __pa_symbol(x)		__phys_addr_symbol(RELOC_HIDE((unsigned long)(x), 0))
 #define __pa_nodebug(x)		__virt_to_phys_nodebug((unsigned long)(x))
 #define __va(x)			((void *)__phys_to_virt((phys_addr_t)(x)))

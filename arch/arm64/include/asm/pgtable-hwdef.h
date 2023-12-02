@@ -195,6 +195,9 @@
  *  CONFIG_ARM64_PA_BITS_52 일경우
  *	PAGE_SHIFT 16	
  *	PTE_ADDR_LOW	0x0000_ffff_ffff_0000	((1 << (48 - 16)) - 1) << 16
+ *  CONFIG_ARM64_PA_BITS_48 일경우
+ *	PAGE_SHIFT 12	
+ *	PTE_ADDR_LOW	0x0000_ffff_ffff_f000	((1 << (48 - 12)) - 1) << 12
  */
 #define PTE_ADDR_LOW		(((_AT(pteval_t, 1) << (48 - PAGE_SHIFT)) - 1) << PAGE_SHIFT)
 #ifdef CONFIG_ARM64_PA_BITS_52
@@ -207,6 +210,12 @@
 #define PTE_ADDR_MASK		(PTE_ADDR_LOW | PTE_ADDR_HIGH)
 #define PTE_ADDR_HIGH_SHIFT	36
 #else
+/*
+ * IAMROOT20 20231202: 
+ *  CONFIG_ARM64_PA_BITS_48 일경우
+ *	PAGE_SHIFT 12
+ *	PTE_ADDR_MASK	0x0000_ffff_ffff_f000
+ */
 #define PTE_ADDR_MASK		PTE_ADDR_LOW
 #endif
 
