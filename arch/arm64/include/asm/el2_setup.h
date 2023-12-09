@@ -17,6 +17,7 @@
 #include <linux/irqchip/arm-gic-v3.h>
 
 .macro __init_el2_sctlr
+	// INIT_SCTLR_EL2_MMU_OFF = (SCTLR_EL2_RES1 | ENDIAN_SET_EL2)
 	// x0 = INIT_SCTLR_EL2_MMU_OFF
 	mov_q	x0, INIT_SCTLR_EL2_MMU_OFF
 	// sctrl_el2 = x0
@@ -35,8 +36,11 @@
  * EL2.
  */
 .macro __init_el2_timers
+	// x0 = 3;
 	mov	x0, #3				// Enable EL1 physical timers
+	// cntlctl_el2 = x0
 	msr	cnthctl_el2, x0
+	// cntvoff_el2 = xzr
 	msr	cntvoff_el2, xzr		// Clear virtual offset
 .endm
 
@@ -84,15 +88,21 @@
 
 /* LORegions */
 .macro __init_el2_lor
+	// x1 = id_aa64mmfr1_el1
 	mrs	x1, id_aa64mmfr1_el1
+	// x0 = x1[16:19]	
+	// x0 = (x1 >> ID_AA64MMFR1_EL1_LO_SHIFT) & 0xf
 	ubfx	x0, x1, #ID_AA64MMFR1_EL1_LO_SHIFT, 4
+	// if (x0 == 0) goto .Lskip_lor_\@
 	cbz	x0, .Lskip_lor_\@
+	// SYS_LORC_EL1 = xzr
 	msr_s	SYS_LORC_EL1, xzr
 .Lskip_lor_\@:
 .endm
 
 /* Stage-2 translation */
 .macro __init_el2_stage2
+	// vttbr_el2 = xzr
 	msr	vttbr_el2, xzr
 .endm
 
@@ -114,23 +124,31 @@
 .endm
 
 .macro __init_el2_hstr
+	// hstr_el2 = xzr
 	msr	hstr_el2, xzr			// Disable CP15 traps to EL2
 .endm
 
 /* Virtual CPU ID registers */
 .macro __init_el2_nvhe_idregs
+	// x0 = midr_el1
 	mrs	x0, midr_el1
+	// x1 = mpidr_el1
 	mrs	x1, mpidr_el1
+	// vpidr_el2 = x0
 	msr	vpidr_el2, x0
+	// vmpidr_el2 = x1
 	msr	vmpidr_el2, x1
 .endm
 
 /* Coprocessor traps */
 .macro __init_el2_nvhe_cptr
+	// x0 = 0x33ff (ZEN, FPEN)
 	mov	x0, #0x33ff
+	// cptr_el2 = x0
 	msr	cptr_el2, x0			// Disable copro. traps to EL2
 .endm
 
+/* IAMROOT20_REVIEW_END 20231209 */
 /* Disable any fine grained traps */
 .macro __init_el2_fgt
 	mrs	x1, id_aa64mmfr0_el1
@@ -184,6 +202,7 @@
  *
  * Regs: x0, x1 and x2 are clobbered.
  */
+/* IAMROOT20_REVIEW_END 20231118 */ /* IAMROOT20_REVIEW_START 20231209 */
 .macro init_el2_state
 	__init_el2_sctlr
 	__init_el2_timers
