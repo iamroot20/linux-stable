@@ -176,7 +176,10 @@ void __init *get_early_fdt_ptr(void)
 asmlinkage void __init early_fdt_map(u64 dt_phys)
 {
 	int fdt_size;
-
+	
+	/* IAMROOT20 20231209
+	 * fixmap 영역을 init_pg_dir, bm_pud, bm_pmd, bm_pte를 이용하여 매핑한다.
+	 */
 	early_fixmap_init();
 	early_fdt_ptr = fixmap_remap_fdt(dt_phys, &fdt_size, PAGE_KERNEL);
 }

@@ -71,6 +71,10 @@ static inline unsigned long virt_to_fix(const unsigned long vaddr)
 #endif
 
 /* Return a pointer with offset calculated */
+/* IAMROOT20 20231209
+ * idx에 해당하는 fixmap(bm_pte[][])에 (phys | flags)를 write하고
+ * idx에 해당하는 (virtual 주소 + offset)를 return
+ */
 #define __set_fixmap_offset(idx, phys, flags)				\
 ({									\
 	unsigned long ________addr;					\

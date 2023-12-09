@@ -101,6 +101,9 @@ static inline pteval_t __phys_to_pte_val(phys_addr_t phys)
 #endif
 
 #define pte_pfn(pte)		(__pte_to_phys(pte) >> PAGE_SHIFT)
+/* IAMROOT20 20231209
+ * pfn_pte(pfn,prot) = (pfn << PAGE_SHIFT) | prot
+ */
 #define pfn_pte(pfn,prot)	\
 	__pte(__phys_to_pte_val((phys_addr_t)(pfn) << PAGE_SHIFT) | pgprot_val(prot))
 
@@ -656,7 +659,9 @@ static inline void set_pmd(pmd_t *pmdp, pmd_t pmd)
 		return;
 	}
 #endif /* __PAGETABLE_PMD_FOLDED */
-
+	/* IAMROOT20 20231209
+	 * *pmdp = pmd
+	 */
 	WRITE_ONCE(*pmdp, pmd);
 
 	if (pmd_valid(pmd)) {

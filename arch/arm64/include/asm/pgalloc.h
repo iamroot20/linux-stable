@@ -72,6 +72,11 @@ extern void pgd_free(struct mm_struct *mm, pgd_t *pgdp);
 static inline void __pmd_populate(pmd_t *pmdp, phys_addr_t ptep,
 				  pmdval_t prot)
 {
+	/* IAMROOT20 20231209
+	 * __pmd(__phys_to_pmd_val(ptep) | prot = ptep | prot
+	 *
+	 * *pmdp = ptep | prot
+	 */
 	set_pmd(pmdp, __pmd(__phys_to_pmd_val(ptep) | prot));
 }
 

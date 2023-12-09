@@ -25,9 +25,14 @@ static_assert(NR_BM_PMD_TABLES == 1);
 
 #define __BM_TABLE_IDX(addr, shift) \
 	(((addr) >> (shift)) - (FIXADDR_TOT_START >> (shift)))
-
+/* IAMROOT20 20231209
+ * BM_PTE 테이블에서 addr이 가리키는 index를 찾는다
+ */
 #define BM_PTE_TABLE_IDX(addr)	__BM_TABLE_IDX(addr, PMD_SHIFT)
-
+/* IAMROOT20 20231209
+ * exam) 4KB / 4 level 
+ * 	-> bm_pte[2][512]
+ */
 static pte_t bm_pte[NR_BM_PTE_TABLES][PTRS_PER_PTE] __page_aligned_bss;
 static pmd_t bm_pmd[PTRS_PER_PMD] __page_aligned_bss __maybe_unused;
 static pud_t bm_pud[PTRS_PER_PUD] __page_aligned_bss __maybe_unused;
@@ -57,7 +62,7 @@ static void __init early_fixmap_init_pmd(pud_t *pudp, unsigned long addr,
 
 	if (pud_none(pud))
 		__pud_populate(pudp, __pa_symbol(bm_pmd), PUD_TYPE_TABLE);
-	/* IAMROOT20_END 20231202 */
+	/* IAMROOT20_END 20231202 */ /* IAMROOT20_START 20231209 */
 
 	pmdp = pmd_offset_kimg(pudp, addr);
 	do {
@@ -147,6 +152,9 @@ void *__init fixmap_remap_fdt(phys_addr_t dt_phys, int *size, pgprot_t prot)
 	 * at least 8 bytes so that we can always access the magic and size
 	 * fields of the FDT header after mapping the first chunk, double check
 	 * here if that is indeed the case.
+	 */
+	/* IAMROOT20 20231209
+	 * MIN_FDT_ALIGN은 최소 8이어야 한다
 	 */
 	BUILD_BUG_ON(MIN_FDT_ALIGN < 8);
 	if (!dt_phys || dt_phys % MIN_FDT_ALIGN)
