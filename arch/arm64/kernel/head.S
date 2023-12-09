@@ -911,7 +911,6 @@ SYM_INNER_LABEL(init_el2, SYM_L_LOCAL)
 	msr	hcr_el2, x0
 	isb
 
-	/* IAMROOT20_REVIEW_END */
 	init_el2_state
 
 	/* Hypervisor stub */
