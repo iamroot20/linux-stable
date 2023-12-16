@@ -23,6 +23,10 @@
 
 static_assert(NR_BM_PMD_TABLES == 1);
 
+/* IAMROOT20 20231216
+ * FIX_PMD vaddr : 0xfffffbfffdc34000, shift : 21
+ *	(0xfffffbfffdc34000 >> 21) - (0xffff_fbff_fdc3_1000 >> 21) = 0
+ */
 #define __BM_TABLE_IDX(addr, shift) \
 	(((addr) >> (shift)) - (FIXADDR_TOT_START >> (shift)))
 /* IAMROOT20 20231209
@@ -39,6 +43,10 @@ static pud_t bm_pud[PTRS_PER_PUD] __page_aligned_bss __maybe_unused;
 
 static inline pte_t *fixmap_pte(unsigned long addr)
 {
+	/* IAMROOT20 20231216
+	 * idx = FIX_PMD 일 경우
+	 *	addr = 0xfffffbfffdc34000 &bm_pte[0][52] 를 리턴
+	 */
 	return &bm_pte[BM_PTE_TABLE_IDX(addr)][pte_index(addr)];
 }
 
@@ -92,7 +100,7 @@ static void __init early_fixmap_init_pud(p4d_t *p4dp, unsigned long addr,
 		__p4d_populate(p4dp, __pa_symbol(bm_pud), P4D_TYPE_TABLE);
 
 	pudp = pud_offset_kimg(p4dp, addr);
-	/* IAMROOT20_END 20231125 */ /* IAMROOT20_START 20231202j */
+	/* IAMROOT20_END 20231125 */ /* IAMROOT20_START 20231202 */
 	early_fixmap_init_pmd(pudp, addr, end);
 }
 
@@ -129,9 +137,17 @@ void __set_fixmap(enum fixed_addresses idx,
 
 	BUG_ON(idx <= FIX_HOLE || idx >= __end_of_fixed_addresses);
 
+	/* IAMROOT20 20231216
+	 * idx = FIX_PMD 일 경우
+	 *	addr = 0xfffffbfffdc34000 이며
+	 *	bm_pte[0][52]의 주소를 가져옴.
+	 */
 	ptep = fixmap_pte(addr);
 
 	if (pgprot_val(flags)) {
+		/* IAMROOT20 20231216
+		 * FIX_P*D의 가상주소(ptep)에 bm_p*d(phys)를 매핑한다.
+		 */
 		set_pte(ptep, pfn_pte(phys >> PAGE_SHIFT, flags));
 	} else {
 		pte_clear(&init_mm, addr, ptep);

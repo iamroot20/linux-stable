@@ -219,6 +219,16 @@ static void alloc_init_cont_pte(pmd_t *pmdp, unsigned long addr,
 	do {
 		pgprot_t __prot = prot;
 
+		/* IAMROOT20 20231216
+		 * granule size |  cont PTE  |  cont PMD  |
+		 * -------------+------------+------------+
+		 *      4 KB    |    64 KB   |   32 MB    |
+		 *     16 KB    |     2 MB   |    1 GB*   |
+		 *     64 KB    |     2 MB   |   16 GB*   |
+		 *
+		 * 간략히 설명하자면 아래와 같다.
+		 *	next = min(addr + (cont PTE), end);
+		 */
 		next = pte_cont_addr_end(addr, end);
 
 		/* use a contiguous mapping if the range is suitably aligned */
@@ -239,10 +249,17 @@ static void init_pmd(pud_t *pudp, unsigned long addr, unsigned long end,
 	unsigned long next;
 	pmd_t *pmdp;
 
+	/* IAMROOT20 20231216
+	 * FIX_PMD 가장주소를 매핑
+	 */
 	pmdp = pmd_set_fixmap_offset(pudp, addr);
 	do {
 		pmd_t old_pmd = READ_ONCE(*pmdp);
 
+		/* IAMROOT20 20231216
+		 * exam) addr: 0xfffffbfffddfe000 end: 0xfffffbfffde11000
+		 *	next: 0xfffffbfffde00000
+		 */
 		next = pmd_addr_end(addr, end);
 
 		/* try section mapping first */
@@ -309,7 +326,7 @@ static void alloc_init_cont_pmd(pud_t *pudp, unsigned long addr,
 		if ((((addr | next | phys) & ~CONT_PMD_MASK) == 0) &&
 		    (flags & NO_CONT_MAPPINGS) == 0)
 			__prot = __pgprot(pgprot_val(prot) | PTE_CONT);
-		/* IAMROOT20_END 20231209 */
+		/* IAMROOT20_END 20231209 */ /* IAMROOT20_START 20231216 */
 
 		init_pmd(pudp, addr, next, phys, __prot, pgtable_alloc, flags);
 

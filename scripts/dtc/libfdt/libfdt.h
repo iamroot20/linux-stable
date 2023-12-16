@@ -142,6 +142,9 @@ static inline uint32_t fdt32_ld(const fdt32_t *p)
 {
 	const uint8_t *bp = (const uint8_t *)p;
 
+	/* IAMROOT20 20231216
+	 * 0xedfe0dd0 -> 0xd00dfeed
+	 */
 	return ((uint32_t)bp[0] << 24)
 		| ((uint32_t)bp[1] << 16)
 		| ((uint32_t)bp[2] << 8)
@@ -246,6 +249,10 @@ int fdt_next_subnode(const void *fdt, int offset);
 /**********************************************************************/
 #define fdt_get_header(fdt, field) \
 	(fdt32_ld(&((const struct fdt_header *)(fdt))->field))
+/* IAMROOT20 20231216
+ * fdt_magic	->	fdt32_ld(&fdt->magic)
+ * fdt_totalsize ->	fdt32_ld(&fdt->totalsize)
+ */
 #define fdt_magic(fdt)			(fdt_get_header(fdt, magic))
 #define fdt_totalsize(fdt)		(fdt_get_header(fdt, totalsize))
 #define fdt_off_dt_struct(fdt)		(fdt_get_header(fdt, off_dt_struct))

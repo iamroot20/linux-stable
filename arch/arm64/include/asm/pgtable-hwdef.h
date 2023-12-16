@@ -109,6 +109,13 @@
 /*
  * Contiguous page definitions.
  */
+/* IAMROOT20 20231216
+ * exam) VA_BITS == 48, 4k
+ *	CONT_PTE_SHIFT		16
+ *	CONT_PTES		16
+ *	CONT_PTE_SIZE		SZ_64K
+ *	CONT_PTE_MASK		0xffff_ffff_ffff_0000
+ */
 #define CONT_PTE_SHIFT		(CONFIG_ARM64_CONT_PTE_SHIFT + PAGE_SHIFT)
 #define CONT_PTES		(1 << (CONT_PTE_SHIFT - PAGE_SHIFT))
 #define CONT_PTE_SIZE		(CONT_PTES * PAGE_SIZE)
