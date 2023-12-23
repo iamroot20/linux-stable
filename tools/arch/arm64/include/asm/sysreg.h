@@ -682,6 +682,13 @@
 #define SCTLR_EL1_CP15BEN	(BIT(5))
 #define SCTLR_EL1_SA0		(BIT(4))
 
+/* IAMROOT20_REVIEW 20231223
+ * BIT(11) = EOS
+ * BIT(20) = TSCXT
+ * BIT(22) = EIS
+ * BIT(28) = nTLSMD
+ * BIT(29) = LSMAOE
+ */
 #define SCTLR_EL1_RES1	((BIT(11)) | (BIT(20)) | (BIT(22)) | (BIT(28)) | \
 			 (BIT(29)))
 
