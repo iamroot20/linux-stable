@@ -185,12 +185,24 @@ static int __init parse_nokaslr(char *unused)
 }
 early_param("nokaslr", parse_nokaslr);
 
+/* IAMROOT20 20231216
+ * return 값이 0이면 성공적으로 찾음. 그외의 값이면 실패.
+ */
 static int __init find_field(const char *cmdline,
 			     const struct ftr_set_desc *reg, int f, u64 *v)
 {
 	char opt[FTR_DESC_NAME_LEN + FTR_DESC_FIELD_LEN + 2];
 	int len;
 
+	/* IAMROOT20 20231216
+	 * exam) cmdline = "kaslr.disabled=1"
+	 *	reg->name = "kaslr"
+	 *	reg->fields[0].name = "disabled"
+	 *	==> opt = "kaslr.disabled="
+	 *	==> len = 15
+	 *
+	 *	==> kstrtou64("1", 0, v);
+	 */
 	len = snprintf(opt, ARRAY_SIZE(opt), "%s.%s=",
 		       reg->name, reg->fields[f].name);
 
@@ -231,9 +243,18 @@ static void __init match_options(const char *cmdline)
 				continue;
 			}
 
+			/* IAMROOT20 20231216
+			 * exam) kaslr.override->val = 0, kaslr.override->mask = 0
+			 *	v = 1
+			 *	mask = 0x0f
+			 *	regs[i]->override->val = 0
+			 *	regs[i]->override->val |= (1 << 0) & 0x0f
+			 *	regs[i]->override->mask |= 0x0f
+			 */
 			regs[i]->override->val  &= ~mask;
 			regs[i]->override->val  |= (v << shift) & mask;
 			regs[i]->override->mask |= mask;
+			/* IAMROOT20_END 20231216 */
 
 			return;
 		}
@@ -293,6 +314,13 @@ static __init const u8 *get_bootargs_cmdline(void)
 
 static __init void parse_cmdline(void)
 {
+	/* IAMROOT20 20231216
+	 * \ {
+	 *	chosen {
+	 *		bootargs = "console=ttyS1,115200 earlyprintk";
+	 *	}
+	 * };
+	 */
 	const u8 *prop = get_bootargs_cmdline();
 
 	if (IS_ENABLED(CONFIG_CMDLINE_FORCE) || !prop)

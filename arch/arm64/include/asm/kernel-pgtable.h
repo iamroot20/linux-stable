@@ -63,6 +63,9 @@
 #define EARLY_KASLR	(0)
 #endif
 
+/* IAMROOT20 20231209
+ * vstart ~ vend 에서 shift 크기가 몇 개 들어갈 수 있는지를 구함
+ */
 #define SPAN_NR_ENTRIES(vstart, vend, shift) \
 	((((vend) - 1) >> (shift)) - ((vstart) >> (shift)) + 1)
 

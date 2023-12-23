@@ -18,6 +18,14 @@
 #include <linux/bug.h>
 #include <linux/mm_types.h>
 
+/* IAMROOT20 20231216
+ * FIX_PMD	971
+ *	0xfffffbfffdc35000 = 0xffff_fbff_fe00_0000 - (971 << PAGE_SHIFT)
+ * FIX_PMD	972
+ *	0xfffffbfffdc34000 = 0xffff_fbff_fe00_0000 - (972 << PAGE_SHIFT)
+ * FIX_PUD	973
+ *	0xfffffbfffdc33000 = 0xffff_fbff_fe00_0000 - (973 << PAGE_SHIFT)
+ */
 #define __fix_to_virt(x)	(FIXADDR_TOP - ((x) << PAGE_SHIFT))
 #define __virt_to_fix(x)	((FIXADDR_TOP - ((x)&PAGE_MASK)) >> PAGE_SHIFT)
 
@@ -71,6 +79,10 @@ static inline unsigned long virt_to_fix(const unsigned long vaddr)
 #endif
 
 /* Return a pointer with offset calculated */
+/* IAMROOT20 20231209
+ * idx에 해당하는 fixmap(bm_pte[][])에 (phys | flags)를 write하고
+ * idx에 해당하는 (virtual 주소 + offset)를 return
+ */
 #define __set_fixmap_offset(idx, phys, flags)				\
 ({									\
 	unsigned long ________addr;					\

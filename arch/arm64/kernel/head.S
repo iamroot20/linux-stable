@@ -741,6 +741,9 @@ SYM_FUNC_START_LOCAL(create_idmap)
 SYM_FUNC_END(create_idmap)
 
 SYM_FUNC_START_LOCAL(create_kernel_mapping)
+	/* IAMROOT20 20231028
+	 * init_pg_dir에 대해 page table을 생성
+	 */
 	adrp	x0, init_pg_dir
 	mov_q	x5, KIMAGE_VADDR		// compile time __va(_text)
 #ifdef CONFIG_RELOCATABLE
@@ -768,7 +771,15 @@ SYM_FUNC_END(create_kernel_mapping)
 	 */
 	.macro	init_cpu_task tsk, tmp1, tmp2
 	msr	sp_el0, \tsk
-
+	
+	/* IAMROOT20 20231111
+	 * tmp1 = tsk->stack
+	 * TSK_STACK = 32
+	 * THREAD_SIZE = 16k
+	 * PT_REGS_SIZE = 336
+	 * S_STACKFRAME = 304
+	 */
+	/* IAMROOT20_END 20231111 */ /* IAMROOT20_START 20231118 */
 	ldr	\tmp1, [\tsk, #TSK_STACK]
 	add	sp, \tmp1, #THREAD_SIZE
 	sub	sp, sp, #PT_REGS_SIZE
@@ -778,6 +789,11 @@ SYM_FUNC_END(create_kernel_mapping)
 
 	scs_load_current
 
+	/* IAMROOT20 20231118
+	 * tmp1 = __per_cpu_offset[NR_CPUS]
+	 * tmp2 = tsk.thread_info.cpu
+	 * tmp1 = __per_cpu_offset[tmp2]
+	 */
 	adr_l	\tmp1, __per_cpu_offset
 	ldr	w\tmp2, [\tsk, #TSK_TI_CPU]
 	ldr	\tmp1, [\tmp1, \tmp2, lsl #3]
@@ -789,6 +805,7 @@ SYM_FUNC_END(create_kernel_mapping)
  *
  *   x0 = __pa(KERNEL_START)
  */
+/* IAMROOT20_START 20231111 */
 SYM_FUNC_START_LOCAL(__primary_switched)
 	adr_l	x4, init_task
 	init_cpu_task x4, x5, x6
@@ -797,11 +814,20 @@ SYM_FUNC_START_LOCAL(__primary_switched)
 	msr	vbar_el1, x8			// vector table address
 	isb
 
+/* IAMROOT20 20231118
+ * x29 : stack frame
+ * x30 : link register
+ */
 	stp	x29, x30, [sp, #-16]!
 	mov	x29, sp
 
 	str_l	x21, __fdt_pointer, x5		// Save FDT pointer
 
+/* IAMROOT20 20231118
+ * kimage_vaddr : 커널 이미지의 가상 주소의 시작 (0xffff800008000000)
+ */
+/* IAMROOT20_END 20231118 */
+/* IAMROOT20_START 20231125 */
 	ldr_l	x4, kimage_vaddr		// Save the offset between
 	sub	x4, x4, x0			// the kernel virtual and
 	str_l	x4, kimage_voffset, x5		// physical mappings
@@ -810,13 +836,24 @@ SYM_FUNC_START_LOCAL(__primary_switched)
 	bl	set_cpu_boot_mode_flag
 
 	// Clear BSS
+	/* IAMROOT20 20231125 
+	 * bss 영역을 0으로 초기화 (init_pg_dir 아래에 위치)
+	 */
 	adr_l	x0, __bss_start
 	mov	x1, xzr
 	adr_l	x2, __bss_stop
 	sub	x2, x2, x0
 	bl	__pi_memset
+	/* IAMROOT20 20231125
+	 * ISHST : 스토어가 마무리되기를 기다리는 동작 (Store - Store)
+	 * domain : Inner Sharable domain
+	 */
 	dsb	ishst				// Make zero page visible to PTW
 
+/* IAMROOT20 20231125 
+ * 가상주소 52bit를 지원하면 vabits_actual = 52
+ * 지원하지 않는다면 vabits_actual = 48
+ */
 #if VA_BITS > 48
 	adr_l	x8, vabits_actual		// Set this early so KASAN early init
 	str	x25, [x8]			// ... observes the correct value
@@ -864,6 +901,7 @@ SYM_FUNC_END(__primary_switched)
  *
  * x0: whether we are being called from the primary boot path with the MMU on
  */
+/* IAMROOT20_START 20231007 */
 SYM_FUNC_START(init_kernel_el)
 	// x1 = CurrentEL
 	mrs	x1, CurrentEL
@@ -871,6 +909,7 @@ SYM_FUNC_START(init_kernel_el)
 	cmp	x1, #CurrentEL_EL2
 	b.eq	init_el2
 
+/* IAMROOT_END 20231007 */ /* IAMROOT20_START 20231014 */
 SYM_INNER_LABEL(init_el1, SYM_L_LOCAL)
 
 	// x0 = INIT_SCTRL_EL1_MMU_OFF
@@ -928,6 +967,9 @@ SYM_INNER_LABEL(init_el2, SYM_L_LOCAL)
 	 * Fruity CPUs seem to have HCR_EL2.E2H set to RES1,
 	 * making it impossible to start in nVHE mode. Is that
 	 * compliant with the architecture? Absolutely not!
+	 */
+	/* IAMROOT20 20231014
+	 * 일부 CPU의 경우 E2H설정이 1로 고정되어 nVHE로 변경할 수 없다.
 	 */
 	mrs	x0, hcr_el2
 	and	x0, x0, #HCR_E2H
@@ -1032,8 +1074,19 @@ SYM_FUNC_END(__secondary_too_slow)
  * in w0. See arch/arm64/include/asm/virt.h for more info.
  */
 SYM_FUNC_START_LOCAL(set_cpu_boot_mode_flag)
+	/* IAMROOT20 20231125 
+	 * EL2일 경우
+	 * u32 __boot_cpu_mode[] = { BOOT_CPU_MODE_EL2, BOOT_CPU_MODE_EL2 };
+	 *                         x1                 x1
+	 * EL1일 경우
+	 * u32 __boot_cpu_mode[] = { BOOT_CPU_MODE_EL1, BOOT_CPU_MODE_EL1 };
+	 * 			   x1
+	 */
 	adr_l	x1, __boot_cpu_mode
 	cmp	w0, #BOOT_CPU_MODE_EL2
+	/*IAMROOT20 20231125 
+	 * EL1인 경우 label 1로 이동
+	 */
 	b.ne	1f
 	add	x1, x1, #4
 1:	str	w0, [x1]			// Save CPU boot mode
@@ -1075,12 +1128,18 @@ SYM_FUNC_END(set_cpu_boot_mode_flag)
 SYM_FUNC_START(__enable_mmu)
 	mrs	x3, ID_AA64MMFR0_EL1
 	ubfx	x3, x3, #ID_AA64MMFR0_EL1_TGRAN_SHIFT, 4
+        /* IAMROOT20 20231021
+         * MIN : 0x0, MAX : 0x7
+         */
 	cmp     x3, #ID_AA64MMFR0_EL1_TGRAN_SUPPORTED_MIN
 	b.lt    __no_granule_support
 	cmp     x3, #ID_AA64MMFR0_EL1_TGRAN_SUPPORTED_MAX
 	b.gt    __no_granule_support
 	phys_to_ttbr x2, x2
 	msr	ttbr0_el1, x2			// load TTBR0
+	/* IAMROOT20 20231028
+	 * 임시로 reserved_pg_dir(내용이 모두 0인 tlb)을 ttbr1에 load함
+	 */
 	load_ttbr1 x1, x1, x3
 
 	set_sctlr_el1	x0
@@ -1129,6 +1188,12 @@ SYM_FUNC_START_LOCAL(__relocate_kernel)
 	mov_q	x11, KIMAGE_VADDR		// default virtual offset
 	add	x11, x11, x23			// actual virtual offset
 
+	/* IAMROOT20 20231104
+	 * relocation table을 참조하여 R_AARCH64_RELATIVE type을 가진 모든 entry들의 
+	 * offset + kaslr displacement 주소의 값을  addend + kaslr displacement으로 설정함
+	 * relocation table의 offset은 구조체 변수의 필드 위치를 가리키는 것으로 보임
+	 * relocation table의 addend는 심볼 주소로 보임 
+	 */
 0:	cmp	x9, x10
 	b.hs	1f
 	ldp	x12, x13, [x9], #24
@@ -1174,6 +1239,16 @@ SYM_FUNC_START_LOCAL(__relocate_kernel)
 	adr_l	x9, __relr_start
 	adr_l	x10, __relr_end
 
+	/* IAMROOT20 20231104
+	 * relative relocation 과정
+	 * 배경: 기존의 relocation table에서 R_AARCH64_RELATIVE type이 많은 부분을 차지하고 있음
+	 *       R_AARCH64_RELATIVE의 특징은 offset이 8bytes 크기 차이로 모여있음
+	 *       RELA relocation의 info, type을 제거하고 offset을 압축해서 relr section을 생성
+	 * relative relocation entry는 address와 bitmap으로 나누어짐. entry 값이 짝수이면 address를, 홀수이면 bitmap을 의미함.
+	 * 짝수 값 entry는 맨 처음 1개의 relocation을 담당하고 (label 2)
+	 * bitmap은 다음부터 8bytes씩 증가되는 63개의 relocation을 진행하며 bitmap LSB 값 1은 무시 (label 3, 4, 5, 6)
+	 * rela relocation에서 진행했던 offset + kaslr_displacement / addend + kaslr_displacement 변경 과정은 동일
+	 */ 
 2:	cmp	x9, x10
 	b.hs	7f
 	ldr	x11, [x9], #8
@@ -1218,9 +1293,17 @@ SYM_FUNC_START_LOCAL(__primary_switch)
 	and	x23, x23, MIN_KIMG_ALIGN - 1
 #ifdef CONFIG_RANDOMIZE_BASE
 	mov	x0, x22
+	/* IAMROOT20 20231028
+	 * sp를 설정하여 c 함수가 호출할 수 있도록 함
+	 */
 	adrp	x1, init_pg_end
 	mov	sp, x1
 	mov	x29, xzr
+	/* IAMROOT20 20231028
+	 * RAMDOMIZE_BASE가 Enable되어 있는 경우
+	 * 커널 이미지를 재배치 할 offset을 구함
+	 * KASLR(Kernel Address Space Layout Randomization)
+	 */
 	bl	__pi_kaslr_early_init
 	and	x24, x0, #SZ_2M - 1		// capture memstart offset seed
 	bic	x0, x0, #SZ_2M - 1
@@ -1230,12 +1313,26 @@ SYM_FUNC_START_LOCAL(__primary_switch)
 	bl	clear_page_tables
 	bl	create_kernel_mapping
 
+	/* IAMROOT20 20231028
+	 * __enable_mmu에서 임시로 reserved_pg_dir을 load했었는데,
+	 * ttbr1에 init_pg_dir을 load함
+	 */
 	adrp	x1, init_pg_dir
 	load_ttbr1 x1, x1, x2
+	/* IAMROOT20_END 20231028 */
+	/* IAMROOT20_START 20231104 */
 #ifdef CONFIG_RELOCATABLE
 	bl	__relocate_kernel
 #endif
+	/* IAMROOT20 20231104
+	 * ldr x8, =__primary_switched는 pesudo instruction(literal pool)으로 
+	 * 빌드 타임의 __primary_switched 가상 주소를 해당 명령어 주변에 셋팅함
+	 * 런 타임에 해당 라인이 실행되면 x8에 __primary_switched의 가상 주소를 저장하고 
+	 * x0에 커널 이미지의 시작 물리 주소를 들고
+	 * x8 주소로 branch하면 TTBR1_EL1을 base 주소로 하는 init_pg_dir 페이지 테이블을 타고 커널 가상 주소 영역으로 진입
+	 */
 	ldr	x8, =__primary_switched
 	adrp	x0, KERNEL_START		// __pa(KERNEL_START)
 	br	x8
+	/* IAMROOT20_END 20231104 */
 SYM_FUNC_END(__primary_switch)

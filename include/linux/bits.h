@@ -39,6 +39,11 @@
 #define __GENMASK_ULL(h, l) \
 	(((~ULL(0)) - (ULL(1) << (l)) + 1) & \
 	 (~ULL(0) >> (BITS_PER_LONG_LONG - 1 - (h))))
+/* IAMROOT20 20231216
+ * 64bit 값중 lbit부터 h비트값이 1인 마스크값을 만든다.
+ * exam) GENMASK( 7, 4) => 0x0000_0000_00f0
+ *	 GENMASK(11, 8) => 0x0000_0000_0f00
+ */
 #define GENMASK_ULL(h, l) \
 	(GENMASK_INPUT_CHECK(h, l) + __GENMASK_ULL(h, l))
 

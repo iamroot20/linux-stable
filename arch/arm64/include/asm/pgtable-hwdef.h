@@ -51,6 +51,11 @@
   * exam) 39 VA_BITS, 4k
   *	PMD_SHIFT	21
   *	PMD_SIZE	SZ_2M
+  * exam) 48 VA_BITS, 4k
+  *	PMD_SHIFT	21
+  *	PMD_SIZE	SZ_2M
+  *	PMD_MASK	0xffff_ffff_ffe0_0000
+  *	PTRS_PER_PMD	512
   */
 #define PMD_SHIFT		ARM64_HW_PGTABLE_LEVEL_SHIFT(2)
 #define PMD_SIZE		(_AC(1, UL) << PMD_SHIFT)
@@ -62,6 +67,14 @@
  * PUD_SHIFT determines the size a level 1 page table entry can map.
  */
 #if CONFIG_PGTABLE_LEVELS > 3
+ /*
+  * IAMROOT20 20231201: 
+  * exam) 48 VA_BITS, 4k
+  *	PUD_SHIFT	30
+  *	PUD_SIZE	SZ_1G
+  *	PUD_MASK	0xffff_ffff_c000_0000
+  *	PTRS_PER_PUD	512
+  */
 #define PUD_SHIFT		ARM64_HW_PGTABLE_LEVEL_SHIFT(1)
 #define PUD_SIZE		(_AC(1, UL) << PUD_SHIFT)
 #define PUD_MASK		(~(PUD_SIZE-1))
@@ -79,6 +92,14 @@
   *		PGDIR_SIZE : 1 << 25	SZ_32M
   *		PGDIR_MASK : 0xffff_ffff_fe00_0000
   *		PTRS_PER_PGD : 11 (36 - 25)
+  *	exam) VA_BITS == 52 on 64k(16bit) CONFIG_PGTABLE_LEVELS = 3
+		PGDIR_SHIFT : 42
+		PGDIR_SIZE : SZ_4T
+  *	exam) VA_BITS == 48 on 4k	CONFIG_PGTABLE_LEVELS = 4
+  *		PGDIR_SHIFT	39
+  *		PGDIR_SIZE	SZ_512G
+  *		PGDIR_MASK	0xffff_ffc0_0000_0000
+  *		PTRS_PER_PGD	512
   */
 #define PGDIR_SHIFT		ARM64_HW_PGTABLE_LEVEL_SHIFT(4 - CONFIG_PGTABLE_LEVELS)
 #define PGDIR_SIZE		(_AC(1, UL) << PGDIR_SHIFT)
@@ -88,11 +109,26 @@
 /*
  * Contiguous page definitions.
  */
+/* IAMROOT20 20231216
+ * exam) VA_BITS == 48, 4k
+ *	CONT_PTE_SHIFT		16
+ *	CONT_PTES		16
+ *	CONT_PTE_SIZE		SZ_64K
+ *	CONT_PTE_MASK		0xffff_ffff_ffff_0000
+ */
 #define CONT_PTE_SHIFT		(CONFIG_ARM64_CONT_PTE_SHIFT + PAGE_SHIFT)
 #define CONT_PTES		(1 << (CONT_PTE_SHIFT - PAGE_SHIFT))
 #define CONT_PTE_SIZE		(CONT_PTES * PAGE_SIZE)
 #define CONT_PTE_MASK		(~(CONT_PTE_SIZE - 1))
 
+/* IAMROOT20 20231209
+ * CONFIG_ARM64_CONT_PMD_SHIFT = 4(arm64 defconfig)
+ * exam) 4K, 4-level
+ *	 CONT_PMD_SHIFT = 4 + 21 
+ *	 CONT_PMDS = (1 << 4) = 16
+ * 	 CONT_PMD_SIZE = 16 * SZ_2M = 32MB
+ * 	 CONT_PMD_MASK = ~(32M - 1)
+ */
 #define CONT_PMD_SHIFT		(CONFIG_ARM64_CONT_PMD_SHIFT + PMD_SHIFT)
 #define CONT_PMDS		(1 << (CONT_PMD_SHIFT - PMD_SHIFT))
 #define CONT_PMD_SIZE		(CONT_PMDS * PMD_SIZE)
@@ -174,6 +210,9 @@
  *  CONFIG_ARM64_PA_BITS_52 일경우
  *	PAGE_SHIFT 16	
  *	PTE_ADDR_LOW	0x0000_ffff_ffff_0000	((1 << (48 - 16)) - 1) << 16
+ *  CONFIG_ARM64_PA_BITS_48 일경우
+ *	PAGE_SHIFT 12	
+ *	PTE_ADDR_LOW	0x0000_ffff_ffff_f000	((1 << (48 - 12)) - 1) << 12
  */
 #define PTE_ADDR_LOW		(((_AT(pteval_t, 1) << (48 - PAGE_SHIFT)) - 1) << PAGE_SHIFT)
 #ifdef CONFIG_ARM64_PA_BITS_52
@@ -186,6 +225,12 @@
 #define PTE_ADDR_MASK		(PTE_ADDR_LOW | PTE_ADDR_HIGH)
 #define PTE_ADDR_HIGH_SHIFT	36
 #else
+/*
+ * IAMROOT20 20231202: 
+ *  CONFIG_ARM64_PA_BITS_48 일경우
+ *	PAGE_SHIFT 12
+ *	PTE_ADDR_MASK	0x0000_ffff_ffff_f000
+ */
 #define PTE_ADDR_MASK		PTE_ADDR_LOW
 #endif
 

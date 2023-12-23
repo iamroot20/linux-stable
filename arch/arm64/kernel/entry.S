@@ -506,6 +506,14 @@ tsk	.req	x28		// current thread_info
 /*
  * Exception vectors.
  */
+/* IAMROOT20 20231118
+ * kernel_ventry el, ht, regsize, label
+ * el : exception level
+ * ht : sp0 공유 여부
+ * 	- t(thread) : sp0 공유
+ * 	- h(handler): sp0 공유하지 않음
+ * label : exception 라벨
+ */
 	.pushsection ".entry.text", "ax"
 
 	.align	11

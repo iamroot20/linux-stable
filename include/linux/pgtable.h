@@ -83,6 +83,11 @@ static inline unsigned long pud_index(unsigned long address)
 
 #ifndef pgd_index
 /* Must be a compile-time constant, so implement it as a macro */
+/*
+ * IAMROOT20 20231130: 
+ * exam) VA_BITS 48, PAGE_SIZE 4k
+ *	pgd_index(a)	a >> 39 & 511
+ */
 #define pgd_index(a)  (((a) >> PGDIR_SHIFT) & (PTRS_PER_PGD - 1))
 #endif
 
@@ -846,6 +851,11 @@ static inline void arch_swap_restore(swp_entry_t entry, struct folio *folio)
 #endif
 
 #ifndef pmd_addr_end
+/* IAMROOT20 20231216
+ * exam) addr: 0xffff_fbff_fddf_e000 end: 0xffff_fbff_fde1_1000
+ *	(0xfffffbfffddfe000 + SZ_2M ) & 0xffff_ffff_ffe0_0000
+ *	= 0xffff_fbff_fde0_0000
+ */
 #define pmd_addr_end(addr, end)						\
 ({	unsigned long __boundary = ((addr) + PMD_SIZE) & PMD_MASK;	\
 	(__boundary - 1 < (end) - 1)? __boundary: (end);		\

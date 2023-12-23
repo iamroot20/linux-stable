@@ -219,6 +219,16 @@ static void alloc_init_cont_pte(pmd_t *pmdp, unsigned long addr,
 	do {
 		pgprot_t __prot = prot;
 
+		/* IAMROOT20 20231216
+		 * granule size |  cont PTE  |  cont PMD  |
+		 * -------------+------------+------------+
+		 *      4 KB    |    64 KB   |   32 MB    |
+		 *     16 KB    |     2 MB   |    1 GB*   |
+		 *     64 KB    |     2 MB   |   16 GB*   |
+		 *
+		 * 간략히 설명하자면 아래와 같다.
+		 *	next = min(addr + (cont PTE), end);
+		 */
 		next = pte_cont_addr_end(addr, end);
 
 		/* use a contiguous mapping if the range is suitably aligned */
@@ -239,10 +249,17 @@ static void init_pmd(pud_t *pudp, unsigned long addr, unsigned long end,
 	unsigned long next;
 	pmd_t *pmdp;
 
+	/* IAMROOT20 20231216
+	 * FIX_PMD 가장주소를 매핑
+	 */
 	pmdp = pmd_set_fixmap_offset(pudp, addr);
 	do {
 		pmd_t old_pmd = READ_ONCE(*pmdp);
 
+		/* IAMROOT20 20231216
+		 * exam) addr: 0xfffffbfffddfe000 end: 0xfffffbfffde11000
+		 *	next: 0xfffffbfffde00000
+		 */
 		next = pmd_addr_end(addr, end);
 
 		/* try section mapping first */
@@ -300,9 +317,16 @@ static void alloc_init_cont_pmd(pud_t *pudp, unsigned long addr,
 		next = pmd_cont_addr_end(addr, end);
 
 		/* use a contiguous mapping if the range is suitably aligned */
+		/* IAMROOT20 20231209
+		 * CONT_PMD_MASK = ~(32MB - 1)
+		 *
+		 * addr, next, phys가 모두 32MB 로 정렬되어 있는지 확인
+		 * NO_CONT_MAPPINGS 플래그가 set되어 있지 않는지 확인
+		 */
 		if ((((addr | next | phys) & ~CONT_PMD_MASK) == 0) &&
 		    (flags & NO_CONT_MAPPINGS) == 0)
 			__prot = __pgprot(pgprot_val(prot) | PTE_CONT);
+		/* IAMROOT20_END 20231209 */ /* IAMROOT20_START 20231216 */
 
 		init_pmd(pudp, addr, next, phys, __prot, pgtable_alloc, flags);
 
@@ -332,7 +356,11 @@ static void alloc_init_pud(pgd_t *pgdp, unsigned long addr, unsigned long end,
 		p4d = READ_ONCE(*p4dp);
 	}
 	BUG_ON(p4d_bad(p4d));
-
+	
+	/* IAMROOT20 20231209
+	 * FIX_PUD를 bm_pud에 매핑한다
+	 * pudp = virt(FIX_PUD) + (phys_addr & (PAGE_SIZE - 1))
+	 */
 	pudp = pud_set_fixmap_offset(p4dp, addr);
 	do {
 		pud_t old_pud = READ_ONCE(*pudp);
@@ -382,8 +410,14 @@ static void __create_pgd_mapping_locked(pgd_t *pgdir, phys_addr_t phys,
 	if (WARN_ON((phys ^ virt) & ~PAGE_MASK))
 		return;
 
+	/* IAMROOT20 20231209
+	 * virt, phys 주소를 page size만큼 round down
+	 */
 	phys &= PAGE_MASK;
 	addr = virt & PAGE_MASK;
+	/* IAMROOT20 20231209
+	 * virt + size 주소를 page size 단위로 round up
+	 */
 	end = PAGE_ALIGN(virt + size);
 
 	do {

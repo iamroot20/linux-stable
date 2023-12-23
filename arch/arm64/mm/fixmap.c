@@ -23,17 +23,30 @@
 
 static_assert(NR_BM_PMD_TABLES == 1);
 
+/* IAMROOT20 20231216
+ * FIX_PMD vaddr : 0xfffffbfffdc34000, shift : 21
+ *	(0xfffffbfffdc34000 >> 21) - (0xffff_fbff_fdc3_1000 >> 21) = 0
+ */
 #define __BM_TABLE_IDX(addr, shift) \
 	(((addr) >> (shift)) - (FIXADDR_TOT_START >> (shift)))
-
+/* IAMROOT20 20231209
+ * BM_PTE 테이블에서 addr이 가리키는 index를 찾는다
+ */
 #define BM_PTE_TABLE_IDX(addr)	__BM_TABLE_IDX(addr, PMD_SHIFT)
-
+/* IAMROOT20 20231209
+ * exam) 4KB / 4 level 
+ * 	-> bm_pte[2][512]
+ */
 static pte_t bm_pte[NR_BM_PTE_TABLES][PTRS_PER_PTE] __page_aligned_bss;
 static pmd_t bm_pmd[PTRS_PER_PMD] __page_aligned_bss __maybe_unused;
 static pud_t bm_pud[PTRS_PER_PUD] __page_aligned_bss __maybe_unused;
 
 static inline pte_t *fixmap_pte(unsigned long addr)
 {
+	/* IAMROOT20 20231216
+	 * idx = FIX_PMD 일 경우
+	 *	addr = 0xfffffbfffdc34000 &bm_pte[0][52] 를 리턴
+	 */
 	return &bm_pte[BM_PTE_TABLE_IDX(addr)][pte_index(addr)];
 }
 
@@ -57,6 +70,7 @@ static void __init early_fixmap_init_pmd(pud_t *pudp, unsigned long addr,
 
 	if (pud_none(pud))
 		__pud_populate(pudp, __pa_symbol(bm_pmd), PUD_TYPE_TABLE);
+	/* IAMROOT20_END 20231202 */ /* IAMROOT20_START 20231209 */
 
 	pmdp = pmd_offset_kimg(pudp, addr);
 	do {
@@ -86,6 +100,7 @@ static void __init early_fixmap_init_pud(p4d_t *p4dp, unsigned long addr,
 		__p4d_populate(p4dp, __pa_symbol(bm_pud), P4D_TYPE_TABLE);
 
 	pudp = pud_offset_kimg(p4dp, addr);
+	/* IAMROOT20_END 20231125 */ /* IAMROOT20_START 20231202 */
 	early_fixmap_init_pmd(pudp, addr, end);
 }
 
@@ -99,7 +114,11 @@ void __init early_fixmap_init(void)
 {
 	unsigned long addr = FIXADDR_TOT_START;
 	unsigned long end = FIXADDR_TOP;
-
+	
+	/* IAMROOT20 20231125 
+	 * *pgdp = init_pg_dir + pgd 
+	 * *p4dp = *pgdp;
+	 */
 	pgd_t *pgdp = pgd_offset_k(addr);
 	p4d_t *p4dp = p4d_offset(pgdp, addr);
 
@@ -118,9 +137,17 @@ void __set_fixmap(enum fixed_addresses idx,
 
 	BUG_ON(idx <= FIX_HOLE || idx >= __end_of_fixed_addresses);
 
+	/* IAMROOT20 20231216
+	 * idx = FIX_PMD 일 경우
+	 *	addr = 0xfffffbfffdc34000 이며
+	 *	bm_pte[0][52]의 주소를 가져옴.
+	 */
 	ptep = fixmap_pte(addr);
 
 	if (pgprot_val(flags)) {
+		/* IAMROOT20 20231216
+		 * FIX_P*D의 가상주소(ptep)에 bm_p*d(phys)를 매핑한다.
+		 */
 		set_pte(ptep, pfn_pte(phys >> PAGE_SHIFT, flags));
 	} else {
 		pte_clear(&init_mm, addr, ptep);
@@ -141,6 +168,9 @@ void *__init fixmap_remap_fdt(phys_addr_t dt_phys, int *size, pgprot_t prot)
 	 * at least 8 bytes so that we can always access the magic and size
 	 * fields of the FDT header after mapping the first chunk, double check
 	 * here if that is indeed the case.
+	 */
+	/* IAMROOT20 20231209
+	 * MIN_FDT_ALIGN은 최소 8이어야 한다
 	 */
 	BUILD_BUG_ON(MIN_FDT_ALIGN < 8);
 	if (!dt_phys || dt_phys % MIN_FDT_ALIGN)

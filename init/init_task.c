@@ -61,16 +61,47 @@ unsigned long init_shadow_call_stack[SCS_SIZE / sizeof(long)]
  * Set up the first task table, touch at your own risk!. Base=0,
  * limit=0x1fffff (=2MB)
  */
+/* IAMROOT20 20231111
+ * ARM64: CONFIG_ARCH_TASK_STRUCT_ON_STACK = false
+ * IA64: CONFIG_ARCH_TASK_STRUCT_ON_STACK = true
+ * true의 경우, __init_task_data 매크로는 __section(".data..init_task")을 가리킨다.
+ * false의 경우, __init_task_data는 아무것도 가리키지 않는다.
+ */
 struct task_struct init_task
 #ifdef CONFIG_ARCH_TASK_STRUCT_ON_STACK
 	__init_task_data
 #endif
+/* IAMROOT20 20231111
+ * 아래 구조체를 L1_CACHE_BYTES 크기로 정렬한다.
+ * L1_CACHE_BYTE = 1 << 6 = 64 byte
+ */
 	__aligned(L1_CACHE_BYTES)
 = {
+/* IAMROOT20 20231111
+ * CONFIG_THREAD_INFO_IN_TASK = true
+ * INIT_THREAD_INFO :
+ * 	1) 현재 CPU의 FP 처리 활성 상태
+ * 	2) CPU의 선점 가능 여부
+ * 	3) shadow call stack 활성 시, shadow call stack에 대한 정보
+ * REFCOUNT_INIT : 1
+ */
 #ifdef CONFIG_THREAD_INFO_IN_TASK
 	.thread_info	= INIT_THREAD_INFO(init_task),
 	.stack_refcount	= REFCOUNT_INIT(1),
 #endif
+/* IAMROOT20 20231111
+ * __state: 프로세스의 상태를 저장 
+ *	- 0x00000000: TASK_RUNNING
+ * init_stack: THREAD_SHIFT로 정렬된 data 섹션의 위치
+ * flags: 프로세스의 세부 실행 상태
+ * 	- PK_KTHREAD: 커널 스레드임을 의미
+ * MAX_PRIO: 우선순위 최대값
+ * CPU_MASK_ALL: cpumask_t의 모든 배열의 요소마다 모든 비트가 1로 설정된 비트 필드를 설정.
+ * NR_CPUS: arm64에는 256으로 정의되어 있음
+ * tasks: 커널에서 구동 중인 모든 프로세스 중 가장 최상위 프로세스의 태스크
+ * active_mm: init_mm 구조체 설정
+ * 	- .pgd = init_pg_dir
+ */
 	.__state	= 0,
 	.stack		= init_stack,
 	.usage		= REFCOUNT_INIT(2),
@@ -102,6 +133,10 @@ struct task_struct init_task
 #ifdef CONFIG_CGROUP_SCHED
 	.sched_task_group = &root_task_group,
 #endif
+/* IAMROOT20 20231111
+ * INIT_TASK_COMM: "swapper"
+ * children, sibling: 연결리스트로, 현재 자기 자신을 next와 prev에 설정한다.
+ */
 	.ptraced	= LIST_HEAD_INIT(init_task.ptraced),
 	.ptrace_entry	= LIST_HEAD_INIT(init_task.ptrace_entry),
 	.real_parent	= &init_task,

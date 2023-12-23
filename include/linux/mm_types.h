@@ -396,6 +396,10 @@ FOLIO_MATCH(compound_head, _head_2);
 /*
  * Used for sizing the vmemmap region on some architectures
  */
+ /*
+  * IAMROOT20 20231129: 
+  * STRUCT_PAGE_MAX_SHIFT	6
+  */
 #define STRUCT_PAGE_MAX_SHIFT	(order_base_2(sizeof(struct page)))
 
 #define PAGE_FRAG_CACHE_MAX_SIZE	__ALIGN_MASK(32768, ~PAGE_MASK)

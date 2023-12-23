@@ -67,6 +67,10 @@ enum fixed_addresses {
 	FIX_ENTRY_TRAMP_TEXT1,
 #define TRAMP_VALIAS		(__fix_to_virt(FIX_ENTRY_TRAMP_TEXT1))
 #endif /* CONFIG_UNMAP_KERNEL_AT_EL0 */
+	/*
+	 * IAMROOT20 20231130: 
+	 * __end_of_permanent_fixed_addresses	523
+	 */
 	__end_of_permanent_fixed_addresses,
 
 	/*
@@ -89,9 +93,20 @@ enum fixed_addresses {
 	FIX_PUD,
 	FIX_PGD,
 
+	/*
+	 * IAMROOT20 20231130: 
+	 *	__end_of_fixed_addresses 975
+	 */
 	__end_of_fixed_addresses
 };
 
+/*
+ * IAMROOT20 20231130: 
+ * FIXADDR_SIZE		0x0020_b000		SZ_523_PAGE
+ * FIXADDR_START	0xffff_fbff_fddf_5000
+ * FIXADDR_TOT_SIZE	0x003c_f000		SZ_975_PAGE
+ * FIXADDR_TOT_START	0xffff_fbff_fdc3_1000
+ */
 #define FIXADDR_SIZE		(__end_of_permanent_fixed_addresses << PAGE_SHIFT)
 #define FIXADDR_START		(FIXADDR_TOP - FIXADDR_SIZE)
 #define FIXADDR_TOT_SIZE	(__end_of_fixed_addresses << PAGE_SHIFT)
