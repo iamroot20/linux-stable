@@ -234,6 +234,12 @@
 .endm
 #endif
 
+/* IAMROOT20 20231223
+ * override된 필드를 확인하여, 각 필드와 연결된 레지스터의 값을 업데이트 한다.
+ * SVE, SME 관련 작업들이 주로 업데이트 됨.
+ * - SVE, SME와 관련된 작업을 할 경우, Trap 시키지 않음.
+ * - 최대 크기의 벡터를 설정함.
+ */
 .macro finalise_el2_state
 	check_override id_aa64pfr0, ID_AA64PFR0_EL1_SVE_SHIFT, .Linit_sve_\@, .Lskip_sve_\@, x1, x2
 
