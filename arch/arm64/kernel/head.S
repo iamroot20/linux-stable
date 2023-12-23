@@ -914,11 +914,15 @@ SYM_INNER_LABEL(init_el2, SYM_L_LOCAL)
 	init_el2_state
 
 	/* Hypervisor stub */
+	// x0 = __hyp_stub_vectors
 	adr_l	x0, __hyp_stub_vectors
+	// vbar_el2 = x0
 	msr	vbar_el2, x0
 	isb
 
+	// x1 = INIT_SCTLR_EL1_MMU_OFF
 	mov_q	x1, INIT_SCTLR_EL1_MMU_OFF
+	/* IAMROOT20_REVIEW_END 20231223 */
 
 	/*
 	 * Fruity CPUs seem to have HCR_EL2.E2H set to RES1,
