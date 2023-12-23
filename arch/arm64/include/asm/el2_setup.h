@@ -91,7 +91,7 @@
 	// x1 = id_aa64mmfr1_el1
 	mrs	x1, id_aa64mmfr1_el1
 	// x0 = x1[16:19]	
-	// x0 = (x1 >> ID_AA64MMFR1_EL1_LO_SHIFT) & 0xf
+	// x0 = (x1 >> ID_AA64MMFR1_EL1_LO_SHIFT) & 0xf // FIX-TYPO? (#4)
 	ubfx	x0, x1, #ID_AA64MMFR1_EL1_LO_SHIFT, 4
 	// if (x0 == 0) goto .Lskip_lor_\@
 	cbz	x0, .Lskip_lor_\@
@@ -148,16 +148,23 @@
 	msr	cptr_el2, x0			// Disable copro. traps to EL2
 .endm
 
-/* IAMROOT20_REVIEW_END 20231209 */
+/* IAMROOT20_REVIEW_END 20231209 */ /* IAMROOT20_REVIEW_START 20231223 */
 /* Disable any fine grained traps */
 .macro __init_el2_fgt
+	// x1 = id_aa64mmfr0_el1
 	mrs	x1, id_aa64mmfr0_el1
+	// x1 = (x1 >> ID_AA64MMFR0_EL1_FGT_SHIFT) & 0xf
 	ubfx	x1, x1, #ID_AA64MMFR0_EL1_FGT_SHIFT, #4
+	// if (x1 == 0) goto .Lskip_fgt_\@
 	cbz	x1, .Lskip_fgt_\@
 
+	// x0 = xzr
 	mov	x0, xzr
+	// x1 = id_aa64dfr0_el1
 	mrs	x1, id_aa64dfr0_el1
+	// x1 = (x1 >> ID_AA64DFR0_EL1_PMSVer_SHITF) & 0xf
 	ubfx	x1, x1, #ID_AA64DFR0_EL1_PMSVer_SHIFT, #4
+	// if (x1 < 3) goto .Lset_debug_fgt_\@
 	cmp	x1, #3
 	b.lt	.Lset_debug_fgt_\@
 	/* Disable PMSNEVFR_EL1 read and write traps */
@@ -190,7 +197,9 @@
 .endm
 
 .macro __init_el2_nvhe_prepare_eret
+	// x0 = #INIT_PSTATE_EL1
 	mov	x0, #INIT_PSTATE_EL1
+	// spsr_el2 = x0
 	msr	spsr_el2, x0
 .endm
 
