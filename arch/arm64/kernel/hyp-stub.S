@@ -73,6 +73,7 @@ SYM_CODE_START_LOCAL(elx_sync)
 	eret
 SYM_CODE_END(elx_sync)
 
+/* IAMROOT20_END 20231223 */
 SYM_CODE_START_LOCAL(__finalise_el2)
 	finalise_el2_state
 
