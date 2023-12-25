@@ -197,6 +197,22 @@
 .endm
 
 #ifndef __KVM_NVHE_HYPERVISOR__
+/* IAMROOT20 20231223
+ * bool check_override()
+ * {
+ * 	u64 val = IdReg[fld:fld+width];
+ * 	if(val == 0)
+ * 		return false;
+ * 
+ * 	val = IdReg_override.val;
+ * 	u64 mask = IdReg_override.mask;
+ * 	if(mask == 0)
+ * 		return true;
+ * 	if(val & mask)
+ * 		return true;
+ * 	return false;
+ * }
+ */
 // This will clobber tmp1 and tmp2, and expect tmp1 to contain
 // the id register value as read from the HW
 .macro __check_override idreg, fld, width, pass, fail, tmp1, tmp2

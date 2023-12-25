@@ -209,25 +209,47 @@ static int __init find_field(const char *cmdline,
 	if (!parameqn(cmdline, opt, len))
 		return -1;
 
+	/* IAMROOT20 20231223
+	 * exam) cmdline = "kaslr.disabled=1" 
+	 *	cmdline + len = "1"
+	 *	return : 0, v = 1
+	 */
 	return kstrtou64(cmdline + len, 0, v);
 }
 
+/* IAMROOT20_START 20231223
+ * exam) cmdline="kaslr.disabled=1"
+ */
 static void __init match_options(const char *cmdline)
 {
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(regs); i++) {
 		int f;
-
+		/* IAMROOT20 20231223
+		 * exam) kaslr -> regs[6]
+		 */
 		if (!regs[i]->override)
 			continue;
 
 		for (f = 0; strlen(regs[i]->fields[f].name); f++) {
+			/* IAMROOT20 20231223
+			 * exam) kaslr.fileds[0] = { "disabled", 0, 4, NULL}
+			 *	shift = 0;
+			 *	width = 4;
+			 *	mask = GENMASK_ULL(3, 0) -> 0b1111 -> 0xf
+			 */
 			u64 shift = regs[i]->fields[f].shift;
 			u64 width = regs[i]->fields[f].width ?: 4;
 			u64 mask = GENMASK_ULL(shift + width - 1, shift);
 			u64 v;
 
+			/* IAMROOT20 20231223
+			 * exam) cmdline = "kaslr.disabled=1"
+			 *	regs = &kaslr, f = 0
+			 *
+			 *	return : 0, v = 1
+			 */
 			if (find_field(cmdline, regs[i], f, &v))
 				continue;
 
@@ -235,6 +257,10 @@ static void __init match_options(const char *cmdline)
 			 * If an override gets filtered out, advertise
 			 * it by setting the value to the all-ones while
 			 * clearing the mask... Yes, this is fragile.
+			 */
+			/* IAMROOT20 20231223
+			 * filter에서 실패가 나오면 mask값은 0으로 설정하고
+			 * val값은 모두 1로 셋팅하여 invalid value임을 표시한다.
 			 */
 			if (regs[i]->fields[f].filter &&
 			    !regs[i]->fields[f].filter(v)) {
@@ -285,6 +311,10 @@ static __init void __parse_cmdline(const char *cmdline, bool parse_aliases)
 
 		match_options(buf);
 
+		/* IAMROOT20 20231223
+		 * exam) buf = "nokaslr" 일경우
+		 *	aliases[i].feature = "kaslr.disabled=1"
+		 */
 		for (i = 0; parse_aliases && i < ARRAY_SIZE(aliases); i++)
 			if (parameq(buf, aliases[i].alias))
 				__parse_cmdline(aliases[i].feature, false);
