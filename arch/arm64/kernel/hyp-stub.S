@@ -46,6 +46,9 @@ SYM_CODE_END(__hyp_stub_vectors)
 	.align 11
 
 SYM_CODE_START_LOCAL(elx_sync)
+	/* IAMROOT20 20240106
+	 * x0 = #HVC_FINALISE_EL2
+	 */
 	cmp	x0, #HVC_SET_VECTORS
 	b.ne	1f
 	msr	vbar_el2, x1
@@ -140,6 +143,9 @@ SYM_CODE_END(__finalise_el2)
 	.pushsection	.idmap.text, "ax"
 
 SYM_CODE_START_LOCAL(enter_vhe)
+	/* IAMROOT20 20230106
+	 * TLB invalidate by VMID(Virtual Machine ID ), All at stage 1, EL1.
+	 */
 	// Invalidate TLBs before enabling the MMU
 	tlbi	vmalle1
 	dsb	nsh
@@ -216,6 +222,7 @@ SYM_FUNC_END(__hyp_reset_vectors)
  *
  * w0: boot mode, as returned by init_kernel_el()
  */
+/* IAMROOT20_START 20240106 */
 SYM_FUNC_START(finalise_el2)
 	// Need to have booted at EL2
 	cmp	w0, #BOOT_CPU_MODE_EL2
