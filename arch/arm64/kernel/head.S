@@ -662,9 +662,10 @@ SYM_FUNC_END(create_kernel_mapping)
 	scs_load_current
 
 	/* IAMROOT20 20231118
-	 * tmp1 = __per_cpu_offset[NR_CPUS]
+	 * tmp1 = __per_cpu_offset
 	 * tmp2 = tsk.thread_info.cpu
 	 * tmp1 = __per_cpu_offset[tmp2]
+	 * tpidr_el1 = tmp1
 	 */
 	adr_l	\tmp1, __per_cpu_offset
 	ldr	w\tmp2, [\tsk, #TSK_TI_CPU]

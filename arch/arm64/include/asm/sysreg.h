@@ -864,6 +864,11 @@
  * For registers without architectural names, or simply unsupported by
  * GAS.
  */
+/* IAMROOT20 20240106
+ * r = SYS_MPIDR_EL1
+ * mrs_s __val, SYS_MPIDR_EL1
+ * return __val;
+ */
 #define read_sysreg_s(r) ({						\
 	u64 __val;							\
 	asm volatile(__mrs_s("%0", r) : "=r" (__val));			\

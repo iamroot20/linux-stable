@@ -88,6 +88,11 @@ u64 __cacheline_aligned boot_args[4];
 
 void __init smp_setup_processor_id(void)
 {
+	/* IAMROOT20 20240106
+	 * mpidr = MPIDR_EL1 & 0xff00ffffff
+	 *	mpidir Affinity level 0~3 정보를 가져옴.
+	 * http://jake.dothome.co.kr/smp_setup_processor_id
+	 */
 	u64 mpidr = read_cpuid_mpidr() & MPIDR_HWID_BITMASK;
 	set_cpu_logical_map(0, mpidr);
 

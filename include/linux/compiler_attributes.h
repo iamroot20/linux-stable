@@ -140,6 +140,10 @@
  *   gcc: https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-externally_005fvisible-function-attribute
  */
 #if __has_attribute(__externally_visible__)
+/* IAMROOT20 20240106
+ * __externally_visible__ : 파일에게 이 함수 또는 변수를 사용할 수 없음으로
+ *	표시하지 않도록 이 함수 또는 변수를 사용한다고 알려줍니다
+ */
 # define __visible                      __attribute__((__externally_visible__))
 #else
 # define __visible

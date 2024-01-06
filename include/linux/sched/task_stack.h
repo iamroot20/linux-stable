@@ -25,6 +25,9 @@ static __always_inline void *task_stack_page(const struct task_struct *task)
 
 static __always_inline unsigned long *end_of_stack(const struct task_struct *task)
 {
+	/* IAMROOT20 20240106
+	 * CONFIG_STACK_GROWSUP : 스택이 상향으로 push되는 경우에 사용
+	 */
 #ifdef CONFIG_STACK_GROWSUP
 	return (unsigned long *)((unsigned long)task->stack + THREAD_SIZE) - 1;
 #else

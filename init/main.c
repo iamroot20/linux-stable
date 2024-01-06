@@ -877,6 +877,14 @@ static void __init print_unknown_bootoptions(void)
 	memblock_free(unknown_options, len);
 }
 
+/* IAMROOT20 20240106
+ * asmlinkage : 어셈블리와 링크가 가능하다는 뜻 즉, 어셈블리어로 짜여진 코드에서
+ *	이 함수를 호출 할 수 있다는 뜻입니다.
+ * __visible : 링커가 이 함수를 생략하지 못하도록 하는 것 같습니다.
+ * __no_sanitize_address : C/C++에서 메모리 버그를 감지하기 위한 감지기(detector)를
+ *	사용하지 않겠다.
+ * __noreturn : 이 함수는 리턴하지 않는다.
+ */
 asmlinkage __visible void __init __no_sanitize_address __noreturn start_kernel(void)
 {
 	char *command_line;
@@ -884,6 +892,7 @@ asmlinkage __visible void __init __no_sanitize_address __noreturn start_kernel(v
 
 	set_task_stack_end_magic(&init_task);
 	smp_setup_processor_id();
+	/* IAMROOT20_END 20240106 */
 	debug_objects_early_init();
 	init_vmlinux_build_id();
 
