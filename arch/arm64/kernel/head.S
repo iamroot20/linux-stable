@@ -155,6 +155,7 @@ SYM_CODE_START(primary_entry)
 	// x0 = x19
 0:	mov	x0, x19
 	bl	init_kernel_el			// w0=cpu_boot_mode
+	// x20 = x0
 	mov	x20, x0
 
 	/*
@@ -164,13 +165,21 @@ SYM_CODE_START(primary_entry)
 	 * the TCR will have been set.
 	 */
 #if VA_BITS > 48
+	// x0 = SYS_ID_AA64MMFR2_EL1
 	mrs_s	x0, SYS_ID_AA64MMFR2_EL1
+	// if (ID_AA64MMFR2_EL1.VARange == 0) Z=1
 	tst	x0, #0xf << ID_AA64MMFR2_EL1_VARange_SHIFT
+	// x0 = VA_BITS
 	mov	x0, #VA_BITS
+	// x25 = VA_BITS_MIN
 	mov	x25, #VA_BITS_MIN
+	// x25 = Z == 1 ? x25 : x0
+	// x25 = VARange == 0 ? VA_BITS_MIN : VA_BITS
 	csel	x25, x25, x0, eq
+	// x0 = x25
 	mov	x0, x25
 #endif
+	/* IAMROOT20_REVIEW_END 20230106 */
 	bl	__cpu_setup			// initialise processor
 	b	__primary_switch
 SYM_CODE_END(primary_entry)
@@ -961,7 +970,7 @@ SYM_INNER_LABEL(init_el2, SYM_L_LOCAL)
 
 	// x1 = INIT_SCTLR_EL1_MMU_OFF
 	mov_q	x1, INIT_SCTLR_EL1_MMU_OFF
-	/* IAMROOT20_REVIEW_END 20231223 */
+	/* IAMROOT20_REVIEW_END 20231223 */ /* IAMROOT20_REVIEW_START 20230106 */
 
 	/*
 	 * Fruity CPUs seem to have HCR_EL2.E2H set to RES1,
@@ -971,23 +980,33 @@ SYM_INNER_LABEL(init_el2, SYM_L_LOCAL)
 	/* IAMROOT20 20231014
 	 * 일부 CPU의 경우 E2H설정이 1로 고정되어 nVHE로 변경할 수 없다.
 	 */
+	// x0 = hcr_el2
 	mrs	x0, hcr_el2
+	// x0 = x0 & #HCR_E2H
 	and	x0, x0, #HCR_E2H
+	// if (x0 == 0) goto 1f
 	cbz	x0, 1f
 
 	/* Set a sane SCTLR_EL1, the VHE way */
 	pre_disable_mmu_workaround
+	// sctlr_el1 = x1
 	msr_s	SYS_SCTLR_EL12, x1
+	// x2 = #BOOT_CPU_FLAG_E2H
 	mov	x2, #BOOT_CPU_FLAG_E2H
 	b	2f
 
 1:
 	pre_disable_mmu_workaround
+	// sctrl_el1 = x1
 	msr	sctlr_el1, x1
+	// x2 = xzr
 	mov	x2, xzr
 2:
+	// w0 = BOOT_CPU_MODE_EL2
 	mov	w0, #BOOT_CPU_MODE_EL2
+	// x0 = x0 | x2
 	orr	x0, x0, x2
+	// MEMO : el2 -> el1
 	eret
 SYM_FUNC_END(init_kernel_el)
 
