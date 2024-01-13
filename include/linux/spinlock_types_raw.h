@@ -11,6 +11,14 @@
 
 #include <linux/lockdep_types.h>
 
+/* IAMROOT20 20240113
+ * raw_lock : 스핀락. 값이 0 이상인지 체크를 통해, 락이 걸려 있는지 확인 
+ * magic : 스핀락이 만들어질 때 설정되는 랜덤한 정수
+ * owner : 어떤 프로세스에서 실행되는지에 대한 정봅
+ * owner_cpu : 몇 번째 CPU에서 실행되는지에 대한 정보
+ * dep_map : 구조체가 현재 접근중인 lock을 lock_class에 연결
+ * 	- https://m.blog.naver.com/nawoo/220913522363
+ */
 typedef struct raw_spinlock {
 	arch_spinlock_t raw_lock;
 #ifdef CONFIG_DEBUG_SPINLOCK
