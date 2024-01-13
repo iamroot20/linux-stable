@@ -179,7 +179,7 @@ SYM_CODE_START(primary_entry)
 	// x0 = x25
 	mov	x0, x25
 #endif
-	/* IAMROOT20_REVIEW_END 20230106 */
+	/* IAMROOT20_REVIEW_END 20240106 */ /* IMAROOT20_REVIEW_START 20240113 */
 	bl	__cpu_setup			// initialise processor
 	b	__primary_switch
 SYM_CODE_END(primary_entry)

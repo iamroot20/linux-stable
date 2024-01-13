@@ -55,6 +55,7 @@
 	.endm
 
 	.macro	enable_dbg
+	// debug mask clear
 	msr	daifclr, #8
 	.endm
 

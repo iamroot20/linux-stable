@@ -63,6 +63,7 @@
  * Default MAIR_EL1. MT_NORMAL_TAGGED is initially mapped as Normal memory and
  * changed during mte_cpu_setup to Normal Tagged if the system supports MTE.
  */
+/* IAMROOT20_REVIEW_END 20240113 */
 #define MAIR_EL1_SET							\
 	(MAIR_ATTRIDX(MAIR_ATTR_DEVICE_nGnRnE, MT_DEVICE_nGnRnE) |	\
 	 MAIR_ATTRIDX(MAIR_ATTR_DEVICE_nGnRE, MT_DEVICE_nGnRE) |	\
@@ -405,13 +406,19 @@ SYM_FUNC_START(__cpu_setup)
 	tlbi	vmalle1				// Invalidate local TLB
 	dsb	nsh
 
+	// x1 = (3 << 20)
 	mov	x1, #3 << 20
+	// cpacr_el1 = x1
 	msr	cpacr_el1, x1			// Enable FP/ASIMD
+	// x1 = (1 << 12)
 	mov	x1, #1 << 12			// Reset mdscr_el1 and disable
+	// mdscr_el1 = x1
 	msr	mdscr_el1, x1			// access to the DCC from EL0
 	isb					// Unmask debug exceptions now,
-	enable_dbg				// since this is per-cpu
+	enable_dbg
+	// reset_pmuserner_el0 = x1		// since this is per-cpu
 	reset_pmuserenr_el0 x1			// Disable PMU access from EL0
+	// reset_amuserner_el1 = x1
 	reset_amuserenr_el0 x1			// Disable AMU access from EL0
 	/* IAMROOT20_END 20231014 */ /* IAMROOT20_START 20231021 */
         /* IAMROOT20 20231021
@@ -422,8 +429,11 @@ SYM_FUNC_START(__cpu_setup)
 	 * Default values for VMSA control registers. These will be adjusted
 	 * below depending on detected CPU features.
 	 */
+	// #define mair x17
 	mair	.req	x17
+	// #define tcr x16
 	tcr	.req	x16
+	// 
 	mov_q	mair, MAIR_EL1_SET
 	mov_q	tcr, TCR_TxSZ(VA_BITS) | TCR_CACHE_FLAGS | TCR_SMP_FLAGS | \
 			TCR_TG_FLAGS | TCR_KASLR_FLAGS | TCR_ASID16 | \
