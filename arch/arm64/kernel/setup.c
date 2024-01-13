@@ -291,6 +291,9 @@ static int __init reserve_memblock_reserved_regions(void)
 }
 arch_initcall(reserve_memblock_reserved_regions);
 
+/* IAMROOT20 20240113
+ * __cpu_logical_map[0] = 0(mpidr & 0xff00ffff)
+ */
 u64 __cpu_logical_map[NR_CPUS] = { [0 ... NR_CPUS-1] = INVALID_HWID };
 
 u64 cpu_logical_map(unsigned int cpu)

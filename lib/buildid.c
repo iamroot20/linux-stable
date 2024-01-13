@@ -20,6 +20,25 @@ static int parse_build_id_buf(unsigned char *build_id,
 {
 	Elf32_Word note_offs = 0, new_offs;
 
+	/* IAMROOT20 20240113
+	 * sizeof(Elf32_Nhdr) = 12
+	 *
+	 * exam)
+	 *    +-------------------------+
+	 *    |<--------Elf32_Nhdr----->|
+	 *    |namesz |descsz  | type   |
+	 *    +-------------------------+
+	 *    04000000 14000000 03000000 474e5500  ............GNU.
+	 *    |<---------------------- build id -  ---------------
+	 *    b752b23a ddbcb03d 42316e26 804bbcba  .R.:...=B1n&.K..
+	 *    |------>|
+	 *    415c0cb6 06000000 04000000 01010000  A\..............
+	 *    4c696e75 78000000 00000000 06000000  Linux...........
+	 *    01000000 00010000 4c696e75 78000000  ........Linux...
+	 *    00000000  
+	 *
+	 *    build_id = b752b23a ddbcb03d 42316e26 804bbcba 415c0cb6
+	 */
 	while (note_offs + sizeof(Elf32_Nhdr) < note_size) {
 		Elf32_Nhdr *nhdr = (Elf32_Nhdr *)(note_start + note_offs);
 
@@ -28,10 +47,16 @@ static int parse_build_id_buf(unsigned char *build_id,
 		    !strcmp((char *)(nhdr + 1), "GNU") &&
 		    nhdr->n_descsz > 0 &&
 		    nhdr->n_descsz <= BUILD_ID_SIZE_MAX) {
+			/* IAMROOT20 20240113
+			 * Elf32_Nhdr과 name 다음에 있는 build id를 build_id에 복사한다.
+			 */
 			memcpy(build_id,
 			       note_start + note_offs +
 			       ALIGN(sizeof("GNU"), 4) + sizeof(Elf32_Nhdr),
 			       nhdr->n_descsz);
+			/* IAMROOT20 20240113
+			 * build_id 남은 부분을 0으로 셋팅한다.
+			 */
 			memset(build_id + nhdr->n_descsz, 0,
 			       BUILD_ID_SIZE_MAX - nhdr->n_descsz);
 			if (size)
@@ -182,6 +207,12 @@ unsigned char vmlinux_build_id[BUILD_ID_SIZE_MAX] __ro_after_init;
  */
 void __init init_vmlinux_build_id(void)
 {
+	/* IAMROOT20 20240113
+	 * __weak : https://kldp.org/node/40383
+	 *	같은 이름의 심볼이 있으면 weak symbol이 strong symbol에게 overriding이 되게 하는 것입니다.
+	 *	예를 들어 shared library에 a라는 weak symbol이 있을 때 이를 사용하는 프로그램에서 a라는
+	 *	심볼이 있으면 프로그램에서는 shared library가 아닌 자신에 있는 것을 사용하게 됩니다.
+	 */
 	extern const void __start_notes __weak;
 	extern const void __stop_notes __weak;
 	unsigned int size = &__stop_notes - &__start_notes;

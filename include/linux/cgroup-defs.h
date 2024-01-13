@@ -42,6 +42,11 @@ struct poll_table_struct;
 #define SUBSYS(_x) _x ## _cgrp_id,
 enum cgroup_subsys_id {
 #include <linux/cgroup_subsys.h>
+	/* IAMROOT20 20240113
+	 * SUBSYS(cpuset)	--> cpuset_cgrp_id,
+	 * SUBSYS(cpu)		--> cpu_cgrp_id,
+	 * SUBSYS(memory)	--> memory_cgrp_id,
+	 */
 	CGROUP_SUBSYS_COUNT,
 };
 #undef SUBSYS

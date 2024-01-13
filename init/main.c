@@ -892,7 +892,7 @@ asmlinkage __visible void __init __no_sanitize_address __noreturn start_kernel(v
 
 	set_task_stack_end_magic(&init_task);
 	smp_setup_processor_id();
-	/* IAMROOT20_END 20240106 */
+	/* IAMROOT20_END 20240106 */ /* IAMROOT20_START 20240113 */
 	debug_objects_early_init();
 	init_vmlinux_build_id();
 

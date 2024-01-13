@@ -129,6 +129,13 @@ static struct workqueue_struct *cgroup_destroy_wq;
 #define SUBSYS(_x) [_x ## _cgrp_id] = &_x ## _cgrp_subsys,
 struct cgroup_subsys *cgroup_subsys[] = {
 #include <linux/cgroup_subsys.h>
+	/* IAMROOT20 20240113
+	 * SUBSYS(cpuset)	--> [cpuset_cgrp_id] = &cpuset_cgrp_subsys,
+	 * SUBSYS(cpu)		--> [cpu_cgrp_id] = &cpu_cgrp_subsys,
+	 * SUBSYS(cpuacct)	--> [cpuacct_cgrp_id] = & cpuacct_cgrp_subsys,
+	 * SUBSYS(io)		--> [io_cgrp_id] = &io_cgrp_subsys,
+	 * SUBSYS(memory)	--> [memory_cgrp_id] = &memory_cgrp_subsys,
+	 */
 };
 #undef SUBSYS
 
@@ -6052,6 +6059,7 @@ int __init cgroup_init_early(void)
 
 	ctx.root = &cgrp_dfl_root;
 	init_cgroup_root(&ctx);
+	/* IAMROOT20_END 20240113 */
 	cgrp_dfl_root.cgrp.self.flags |= CSS_NO_REF;
 
 	RCU_INIT_POINTER(init_task.cgroups, &init_css_set);
