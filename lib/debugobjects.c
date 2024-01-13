@@ -56,6 +56,9 @@ static DEFINE_PER_CPU(struct debug_percpu_free, percpu_obj_pool);
 
 static struct debug_bucket	obj_hash[ODEBUG_HASH_SIZE];
 
+/* IAMROOT20 20240113 
+ * __initdata : 커널 초기화 이후 해제되는 영역에 코드를 배치함으로써 메모리 영역 확보
+*/
 static struct debug_obj		obj_static_pool[ODEBUG_POOL_SIZE] __initdata;
 
 static DEFINE_RAW_SPINLOCK(pool_lock);
@@ -1323,6 +1326,10 @@ static inline void debug_objects_selftest(void) { }
  * the static object pool objects into the poll list. After this call
  * the object tracker is fully operational.
  */
+/* IAMROOT20 20240113 
+ * ODEBUG_HASH_SIZE : 16K
+ * ODEBUG_POOL_SIZE : 1024
+*/
 void __init debug_objects_early_init(void)
 {
 	int i;
