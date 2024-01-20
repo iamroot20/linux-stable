@@ -22,6 +22,10 @@
 #include <asm/smp.h>
 #include <asm/sysreg.h>
 
+/* IAMROOT20_REVIEW
+ * TG0 : TTBR0_EL1(유저 영역)에서 사용하는 페이지(Granule) 크기
+ * TG1 : TTBR1_EL1(커널 영역)에서 사용하는 페이지(Granule) 크기
+ */
 #ifdef CONFIG_ARM64_64K_PAGES
 #define TCR_TG_FLAGS	TCR_TG0_64K | TCR_TG1_64K
 #elif defined(CONFIG_ARM64_16K_PAGES)
@@ -39,6 +43,12 @@
 #define TCR_SMP_FLAGS	TCR_SHARED
 
 /* PTWs cacheable, inner/outer WBWA */
+/* IAMROOT20_REVIEW 
+ * IRGN : Inner sharability 영역의 캐시를 처리하는 방식
+ * ORGN : Outer Sharability 영역의 캐시를 처리하는 방식
+ * Write-Back : 캐시에 데이터를 먼저 쓰고 더티 비트를 갱신한 다음, 나중에 메인 메모리에 데이터를 업데이트
+ * Write-Allocation : 쓰기 미스가 일어났을 때만 메인 메모리에서 데이터를 읽어 캐시 라인을 업데이트
+ */
 #define TCR_CACHE_FLAGS	TCR_IRGN_WBWA | TCR_ORGN_WBWA
 
 #ifdef CONFIG_KASAN_SW_TAGS
@@ -63,7 +73,7 @@
  * Default MAIR_EL1. MT_NORMAL_TAGGED is initially mapped as Normal memory and
  * changed during mte_cpu_setup to Normal Tagged if the system supports MTE.
  */
-/* IAMROOT20_REVIEW_END 20240113 */
+/* IAMROOT20_REVIEW_END 20240113 */ /* IAMROOT20_REVIEW_START 20240120 */
 #define MAIR_EL1_SET							\
 	(MAIR_ATTRIDX(MAIR_ATTR_DEVICE_nGnRnE, MT_DEVICE_nGnRnE) |	\
 	 MAIR_ATTRIDX(MAIR_ATTR_DEVICE_nGnRE, MT_DEVICE_nGnRE) |	\
@@ -433,8 +443,9 @@ SYM_FUNC_START(__cpu_setup)
 	mair	.req	x17
 	// #define tcr x16
 	tcr	.req	x16
-	// 
+	// mair = MAIR_EL1_SET
 	mov_q	mair, MAIR_EL1_SET
+	/* IAMROOT20_REVIEW_END 20240120 */
 	mov_q	tcr, TCR_TxSZ(VA_BITS) | TCR_CACHE_FLAGS | TCR_SMP_FLAGS | \
 			TCR_TG_FLAGS | TCR_KASLR_FLAGS | TCR_ASID16 | \
 			TCR_TBI0 | TCR_A1 | TCR_KASAN_SW_FLAGS | TCR_MTE_FLAGS
