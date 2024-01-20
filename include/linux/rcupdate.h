@@ -429,6 +429,15 @@ static inline void rcu_preempt_sleep_check(void) { }
  */
 
 #ifdef __CHECKER__
+/* IAMROOT20 20240120
+ * rcu_check_sparse(p, __rcu)
+ *	--> p에 __rcu 속성이 있는지 체크한다.
+ *
+ * sparse 설명 :
+ *	https://kldp.org/node/96789
+ *	https://www.kernel.org/doc/Documentation/dev-tools/sparse.rst
+ *	https://en.wikipedia.org/wiki/Sparse
+ */
 #define rcu_check_sparse(p, space) \
 	((void)(((typeof(*p) space *)p) == p))
 #else /* #ifdef __CHECKER__ */
@@ -481,6 +490,16 @@ static inline void rcu_preempt_sleep_check(void) { }
 /**
  * RCU_INITIALIZER() - statically initialize an RCU-protected global variable
  * @v: The value to statically initialize with.
+ */
+/* IAMROOT20 20240120
+ * __force는 v에 __rcu속성이 없더라도 타입케이스팅을 한다.
+ * exam)
+ *	int a = 10;
+ *	int * v = &a;
+ *	int __rcu r = RCU_INITIALIZER(v);
+ *		-> (typeof(*v) __force __rcu *)(v)
+ *		-> (int __force __rcu *)(v)
+ *	--> int __rcu r = (int __force __rcu *)v;
  */
 #define RCU_INITIALIZER(v) (typeof(*(v)) __force __rcu *)(v)
 
@@ -932,6 +951,10 @@ static inline notrace void rcu_read_unlock_sched_notrace(void)
  *
  * Note that unlike rcu_assign_pointer(), RCU_INIT_POINTER() provides no
  * ordering guarantees for either the CPU or the compiler.
+ */
+/* IAMROOT20 20240120
+ * rcu_check_sparse	p에 __rcu 속성이 있는지 체크한다.
+ * p = RCU_INITIALIZER(v)
  */
 #define RCU_INIT_POINTER(p, v) \
 	do { \

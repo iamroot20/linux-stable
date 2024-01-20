@@ -3147,6 +3147,10 @@ cpuset_css_alloc(struct cgroup_subsys_state *parent_css)
 
 static int cpuset_css_online(struct cgroup_subsys_state *css)
 {
+	/* IAMROOT20 20240120
+	 * cs = &top_cpuset
+	 * parent = NULL
+	 */
 	struct cpuset *cs = css_cs(css);
 	struct cpuset *parent = parent_cs(cs);
 	struct cpuset *tmp_cs;

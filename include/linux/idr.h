@@ -8,6 +8,10 @@
  * Small id to pointer translation service avoiding fixed sized
  * tables.
  */
+/* IAMROOT20 20240120
+ * IDA, IDR 한글 설명.
+ *  https://velog.io/@mythos/Linux-Tutorial-23-IDRID-Radix-IDAID-Allocator
+ */
 
 #ifndef __IDR_H__
 #define __IDR_H__

@@ -15,6 +15,9 @@
  *
  * WARNING: any const qualifier of @ptr is lost.
  */
+/* IAMROOT20 20240120
+ * structure에 있는 member를 가지고 structure주소를 알아낸다.
+ */
 #define container_of(ptr, type, member) ({				\
 	void *__mptr = (void *)(ptr);					\
 	static_assert(__same_type(*(ptr), ((type *)0)->member) ||	\

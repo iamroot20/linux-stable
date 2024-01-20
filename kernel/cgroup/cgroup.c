@@ -132,7 +132,7 @@ struct cgroup_subsys *cgroup_subsys[] = {
 	/* IAMROOT20 20240113
 	 * SUBSYS(cpuset)	--> [cpuset_cgrp_id] = &cpuset_cgrp_subsys,
 	 * SUBSYS(cpu)		--> [cpu_cgrp_id] = &cpu_cgrp_subsys,
-	 * SUBSYS(cpuacct)	--> [cpuacct_cgrp_id] = & cpuacct_cgrp_subsys,
+	 * SUBSYS(cpuacct)	--> [cpuacct_cgrp_id] = &cpuacct_cgrp_subsys,
 	 * SUBSYS(io)		--> [io_cgrp_id] = &io_cgrp_subsys,
 	 * SUBSYS(memory)	--> [memory_cgrp_id] = &memory_cgrp_subsys,
 	 */
@@ -142,6 +142,13 @@ struct cgroup_subsys *cgroup_subsys[] = {
 /* array of cgroup subsystem names */
 #define SUBSYS(_x) [_x ## _cgrp_id] = #_x,
 static const char *cgroup_subsys_name[] = {
+/* IAMROOT20 20240120
+	SUBSYS(cpuset)	->	[cpuset_cgrp_id] = "cpuset",
+	SUBSYS(cpu)	->	[cpu_cgrp_id] = "cpu",
+	SUBSYS(cpuacct)	->	[cpuacct_cgrp_id] = "cpuacct",
+	SUBSYS(io)	->	[io_cgrp_id] = "io",
+	SUBSYS(memory)	->	[memory_cgrp_id] = "memory",
+*/
 #include <linux/cgroup_subsys.h>
 };
 #undef SUBSYS
@@ -207,6 +214,10 @@ static u64 css_serial_nr_next = 1;
 /*
  * These bitmasks identify subsystems with specific features to avoid
  * having to do iterative checks repeatedly.
+ */
+/* IAMROOT20 20240120
+ * 이러한 비트마스크는 반복적인 검사를 반복적으로 수행할 필요가 없도록 특정
+ * 기능을 갖춘 하위 시스템을 식별합니다.
  */
 static u16 have_fork_callback __read_mostly;
 static u16 have_exit_callback __read_mostly;
@@ -5508,6 +5519,10 @@ static int online_css(struct cgroup_subsys_state *css)
 
 	lockdep_assert_held(&cgroup_mutex);
 
+	/* IAMROOT20 20240120
+	 * ss -> cpu_set_cgrp_subsys 이면
+	 *	css_online = cpuset_css_online
+	 */
 	if (ss->css_online)
 		ret = ss->css_online(css);
 	if (!ret) {
@@ -6038,6 +6053,11 @@ static void __init cgroup_init_subsys(struct cgroup_subsys *ss, bool early)
 	/* At system boot, before all subsystems have been
 	 * registered, no tasks have been forked, so we don't
 	 * need to invoke fork callbacks here. */
+	/* IAMROOT20 20240120
+	 * 
+	 * 시스템 부팅 시 모든 하위 시스템이 등록되기 전에 포크된 작업이 없으므
+	 * 로 여기서 포크 콜백을 호출할 필요가 없습니다.
+	 */
 	BUG_ON(!list_empty(&init_task.tasks));
 
 	BUG_ON(online_css(css));
@@ -6059,11 +6079,16 @@ int __init cgroup_init_early(void)
 
 	ctx.root = &cgrp_dfl_root;
 	init_cgroup_root(&ctx);
-	/* IAMROOT20_END 20240113 */
+	/* IAMROOT20_END 20240113 */ /* IAMROOT20_START 20240120 */
 	cgrp_dfl_root.cgrp.self.flags |= CSS_NO_REF;
 
 	RCU_INIT_POINTER(init_task.cgroups, &init_css_set);
 
+	/* IAMROOT20 20240120
+	 * 
+	 * for (i = 0; i < CGROUP_SUBSYS_COUNT &&
+	 *   ((ss = cgroup_subsys[i]) || true); i++)
+	 */
 	for_each_subsys(ss, i) {
 		WARN(!ss->css_alloc || !ss->css_free || ss->name || ss->id,
 		     "invalid cgroup_subsys %d:%s css_alloc=%p css_free=%p id:name=%d:%s\n",

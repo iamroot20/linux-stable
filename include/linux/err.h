@@ -15,10 +15,28 @@
  * This should be a per-architecture thing, to allow different
  * error and pointer decisions.
  */
+/* IAMROOT20 20240120
+ * 커널 포인터에는 중복된 정보가 있으므로 오류 코드나 동일한 반환 값을 가진 일반
+ * 포인터를 반환할 수 있는 체계를 사용할 수 있습니다.
+ * 이는 다양한 오류 및 포인터 결정을 허용하기 위해 아키텍처별로 이루어져야 합니다.
+ */
 #define MAX_ERRNO	4095
 
 #ifndef __ASSEMBLY__
 
+/* IAMROOT20 20240120
+ * x > (unsigned long)-4095 
+ *	->   x > 0xffff_ffff_ffff_f000
+ *	커널영역주소는 0xffff_0000_0000_0000 ~ 0xffff_ffff_ffff_ffff
+ *	-1(0xffff_ffff_ffff_ffff) ~ -4095(0xffff_ffff_ffff_f000)가 에러, 그 외에는 주소
+ *
+ * 에러 번호는 1 ~ 34까지 할당되어 있으며 ERR_PTR함수를 호출할때 -를 붙여 호출한다
+ * exam) ERR_PTR(-ENOMEM)
+ * 따라서 에러 번호는 -1 ~ -34까지 해당되며 unsigned long으로 바꾸면
+ * 0xffff_ffff_ffff_ffff(-1) ~ 0xffff_ffff_ffff_ffde(-34)에 해당된다.
+ *
+ * include/uapi/asm-generic/errno-base.h 참고
+ */
 #define IS_ERR_VALUE(x) unlikely((unsigned long)(void *)(x) >= (unsigned long)-MAX_ERRNO)
 
 static inline void * __must_check ERR_PTR(long error)

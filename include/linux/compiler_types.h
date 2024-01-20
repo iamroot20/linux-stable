@@ -16,6 +16,16 @@
 #endif
 
 /* sparse defines __CHECKER__; see Documentation/dev-tools/sparse.rst */
+/* IAMROOT20 20240120
+ * sparse 설명 :
+ *	https://kldp.org/node/96789
+ *	https://pinocc.tistory.com/144
+ *	https://www.kernel.org/doc/Documentation/dev-tools/sparse.rst
+ *	https://en.wikipedia.org/wiki/Sparse
+ *	https://sparse.docs.kernel.org/en/latest/annotations.html
+ *
+ *	__force는 sparse 속성이 없더라도 경고를 내지 않는다.
+ */
 #ifdef __CHECKER__
 /* address spaces */
 # define __kernel	__attribute__((address_space(0)))

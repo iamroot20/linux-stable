@@ -246,6 +246,11 @@ struct css_set {
 	 * css_set_rwsem, but, during migration, once tasks are moved to
 	 * mg_tasks, it can be read safely while holding cgroup_mutex.
 	 */
+	/* IAMROOT20 20240120
+	 * 이 cgroup 그룹을 사용하여 실행 중인 모든 작업을 나열합니다.
+  	 * mg_tasks는 이 cset에 속하지만 마이그레이션되거나 마이그레이션되는 과정에 있는 작업을 나열합니다.
+	 * css_set_rwsem으로 보호되지만 마이그레이션 중에 작업이 mg_tasks로 이동되면 cgroup_mutex를 유지하는 동안 안전하게 읽을 수 있습니다.
+  	*/
 	struct list_head tasks;
 	struct list_head mg_tasks;
 	struct list_head dying_tasks;
