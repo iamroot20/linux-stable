@@ -256,6 +256,10 @@
 /*
  * TCR flags.
  */
+/* IAMROOT20_REVIEW 20240120 
+ * T0SZ : 유저 영역의 가상 메모리 크기
+ * T1SZ : 커널 영역의 가상 메모리 크기
+*/
 #define TCR_T0SZ_OFFSET		0
 #define TCR_T1SZ_OFFSET		16
 #define TCR_T0SZ(x)		((UL(64) - (x)) << TCR_T0SZ_OFFSET)
@@ -314,6 +318,10 @@
 #define TCR_SH0_MASK		(UL(3) << TCR_SH0_SHIFT)
 #define TCR_SH0_INNER		(UL(3) << TCR_SH0_SHIFT)
 
+/* IAMROOT20_REVIEW 20240120
+ * SH0_INNER : TTBR0_EL1(유저 영역)의 메모리를 inner sharable로 설정
+ * SH1_INNER : TTBR1_EL1(커널 영역)의 메모리릘 inner sharable로 설정
+*/
 #define TCR_SH1_SHIFT		28
 #define TCR_SH1_MASK		(UL(3) << TCR_SH1_SHIFT)
 #define TCR_SH1_INNER		(UL(3) << TCR_SH1_SHIFT)
