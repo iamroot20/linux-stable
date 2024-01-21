@@ -170,6 +170,9 @@ extern void warn_bogus_irq_restore(void);
 /*
  * Wrap the arch provided IRQ routines to provide appropriate checks.
  */
+/* IAMROOT20 20240120
+   raw_local_irq_disable은 arch_local_irq_disable로 치환됨
+ */
 #define raw_local_irq_disable()		arch_local_irq_disable()
 #define raw_local_irq_enable()		arch_local_irq_enable()
 #define raw_local_irq_save(flags)			\
@@ -240,6 +243,11 @@ extern void warn_bogus_irq_restore(void);
 #else /* !CONFIG_TRACE_IRQFLAGS */
 
 #define local_irq_enable()	do { raw_local_irq_enable(); } while (0)
+/* IAMROOT20 20240120
+   local_irq_disable은 raw_local_irq_disable로 치환됨
+   local: 현재 PE를 의미함
+   remote: 현재 PE를 제외한 나머지를 의미함
+ */
 #define local_irq_disable()	do { raw_local_irq_disable(); } while (0)
 #define local_irq_save(flags)	do { raw_local_irq_save(flags); } while (0)
 #define local_irq_restore(flags) do { raw_local_irq_restore(flags); } while (0)

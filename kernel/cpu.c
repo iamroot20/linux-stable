@@ -2698,6 +2698,15 @@ void set_cpu_online(unsigned int cpu, bool online)
 	}
 }
 
+/* IAMROOT20 20240120
+   boot core의 online, active, present, possible bit를 set
+   __cpu_possible_mask: 디바이스 트리에서 파싱된 CPU 를 의미함
+   __cpu_present_mask:  실제로 CPU 가 물리적으로 존재하는 것을 의미함
+   __cpu_online_mask:   부팅 완료를 나타냄
+   __cpu_active_mask:   스케줄러가 바라보는 core 상태를 나타냄
+   https://yohda.tistory.com/entry/%EC%BB%A4%EB%84%90%ED%8C%8C%EC%9B%8C-Linux-CPU-core-%EC%A0%84%EC%9B%90-%EA%B4%80%EB%A6%AC5-CPU-control-hotplug%EC%9E%91%EC%84%B1%EC%A4%91
+ */
+/* IAMROOT20_END 20240120 */
 /*
  * Activate the first processor.
  */

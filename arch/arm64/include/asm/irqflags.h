@@ -56,6 +56,9 @@ static inline void arch_local_irq_enable(void)
 	}
 }
 
+/* IAMROOT20 20240120
+   msr daifset, #3 명령어로 irq disable
+ */
 static __always_inline void __daif_local_irq_disable(void)
 {
 	barrier();
@@ -75,6 +78,13 @@ static __always_inline void __pmr_local_irq_disable(void)
 	barrier();
 }
 
+/* IAMROOT20 20240120
+   arch로 시작하는 함수이므로 arch/arm64 경로로 찾아옴
+   gicv3의 PMR 기능을 사용할 경우 __pmr_local_irq_disable 함수를 호출하고
+   아닐 경우 __daif_local_irq_disable 함수를 호출
+   PMR, PSEUDO_NMI 관련 내용은 추후에 다시 알아보기로 하고 daif로 따라감
+   https://github.com/iamroot18/5.10/blob/i515/arch/arm64/include/asm/ptrace.h
+ */
 static inline void arch_local_irq_disable(void)
 {
 	if (__irqflags_uses_pmr()) {
