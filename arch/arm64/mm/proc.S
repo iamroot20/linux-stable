@@ -40,6 +40,10 @@
 #define TCR_KASLR_FLAGS	0
 #endif
 
+/* IAMROOT20_REVIEW 20240127
+ * TCR_SHARED : (TCR_SH0_INNER | TCR_SH1_INNER)
+ * 메모리의 공유 여부를 정의한다.
+ */
 #define TCR_SMP_FLAGS	TCR_SHARED
 
 /* PTWs cacheable, inner/outer WBWA */
@@ -445,7 +449,26 @@ SYM_FUNC_START(__cpu_setup)
 	tcr	.req	x16
 	// mair = MAIR_EL1_SET
 	mov_q	mair, MAIR_EL1_SET
-	/* IAMROOT20_REVIEW_END 20240120 */
+	/* IAMROOT20_REVIEW_END 20240120 */ /* IAMROOT20_REVIEW_START 20240127 */
+	/* IAMROOT20_REVIEW 20240127
+	 * TCR_TxSZ : TTBR_ELx에서 가리키는 가상 주소 공간의 크기를 정의
+	 * TCR_CACHE_FLAGS : 공유 영역의 캐시 처리 방식을 설정
+	 * TCR_SMP_FLAGS : 메모리 공유 여부를 정의
+	 * TCR_TG_FLAGS : TTBR_ELx에서 사용하는 페이지(Granule) 크기를 정의
+	 * TCR_KASLR_FLAGS : TTBR1_EL1으로 번역되는 가상 주소에 비특권 접근이 발생한 경우,
+	 *		     주소 변환 여부를 정의
+	 * TCR_ASID16 : ASID의 크기를 정의
+	 * TCR_TBI0 : TTBR0_EL1에서 변환되는 가상 주소의 최상위 비트를 무시할지 여부를 정의
+	 * TCR_A1 : TTBR0_EL1 또는 TTBR1_EL1이 ASID를 사용할지 여부를 정의
+	 * TCR_KASAN_SW_FLAGS : TCR_TB1 | TCR_TBID1로, 커널 영역 주소 공간의 최상위 비트를
+	 *                      어떻게 사용할지 정의하는 것 같다.
+	 * TCR_MTE_FLAGS : MTE(Memory tagging extension)을 사용할지 여부를 정의
+	 *                 MTE를 사용하면 다양한 메모리 오류를 감지할 수 있다고 한다.
+	 *                 https://developer.android.com/ndk/guides/arm-mte
+	 */
+	// tcr = TCR_TxSZ(VA_BITS) | TCR_CACHE_FLAGS | TCR_SMP_FLAGS | \
+	//	TCR_TG_FLAGS | TCR_KASLR_FLAGS | TCR_ASID16 | \
+	//	TCR_TBI0 | TCR_A1 | TCR_KASAN_SW_FLAGS | TCR_MTE_FLAGS
 	mov_q	tcr, TCR_TxSZ(VA_BITS) | TCR_CACHE_FLAGS | TCR_SMP_FLAGS | \
 			TCR_TG_FLAGS | TCR_KASLR_FLAGS | TCR_ASID16 | \
 			TCR_TBI0 | TCR_A1 | TCR_KASAN_SW_FLAGS | TCR_MTE_FLAGS
