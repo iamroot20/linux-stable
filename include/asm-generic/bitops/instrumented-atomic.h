@@ -67,6 +67,10 @@ static __always_inline void change_bit(long nr, volatile unsigned long *addr)
  */
 static __always_inline bool test_and_set_bit(long nr, volatile unsigned long *addr)
 {
+	/* IAMROOT20 20240127
+	 * KCSAN - Kernel Concurrency Sanitizer
+	 *       - 커널 공간에서 동작하는 동적 data race 탐지 기능
+	 */
 	kcsan_mb();
 	instrument_atomic_read_write(addr + BIT_WORD(nr), sizeof(long));
 	return arch_test_and_set_bit(nr, addr);

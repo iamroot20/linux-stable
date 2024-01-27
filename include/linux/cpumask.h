@@ -80,6 +80,17 @@ static inline void set_nr_cpu_ids(unsigned int nr)
  * optimization comes from being able to potentially use a compile-time
  * constant instead of a run-time generated exact number of CPUs.
  */
+/* IAMROOT20 20240127
+ * optimization을 위해 NR_CPUS 값에 따라 small/large_cpumask_bits를 설정
+ * ex) BITS_PER_LONG = 64
+ * 	1) NR_CPUS <= 64
+ * 		small, large -> NR_CPUS
+ * 	2) 64 < NR_CPUS <= 4*64(256)
+ * 		small -> nr_cpu_ids
+ * 		large -> NR_CPUS
+ * 	3) 256 < NR_CPUS 
+ * 		small, large -> nr_cpus_ids
+ */
 #if NR_CPUS <= BITS_PER_LONG
   #define small_cpumask_bits ((unsigned int)NR_CPUS)
   #define large_cpumask_bits ((unsigned int)NR_CPUS)
@@ -521,6 +532,9 @@ static __always_inline bool cpumask_test_cpu(int cpu, const struct cpumask *cpum
  */
 static __always_inline bool cpumask_test_and_set_cpu(int cpu, struct cpumask *cpumask)
 {
+	/* IAMROOT20 20240127
+	 * 	test_and_set_bit(cpu, cpumask->bits)
+	 */
 	return test_and_set_bit(cpumask_check(cpu), cpumask_bits(cpumask));
 }
 

@@ -36,10 +36,30 @@ static __always_inline int
 arch_test_and_set_bit(unsigned int nr, volatile unsigned long *p)
 {
 	long old;
+	/* IAMROOT20 20240127
+	 * BIT_WORD() : 몇 번째 word(long)을 쓸 것인지
+	 * BIT_MASK() : word 내에서 해당 bit를 set 
+	 */
 	unsigned long mask = BIT_MASK(nr);
 
 	p += BIT_WORD(nr);
 	old = arch_atomic_long_fetch_or(mask, (atomic_long_t *)p);
+	/* IAMROOT20 20240127
+	 * ex)
+	 * 1) old값에 mask bit가 set되어 있지 않은 경우
+	 * 	old = 0001
+	 * 	mask = 0010
+	 *
+	 * 	old & mask = 0000
+	 * 	!!(old & mask) -> false
+	 *
+	 * 2) old값에 mask bit가 set되어 있는 경우
+	 * 	old = 0011
+	 * 	mask = 0010
+	 *
+	 * 	old & mask = 0010
+	 * 	!!(0ld & mask) -> true
+	 */
 	return !!(old & mask);
 }
 

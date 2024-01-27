@@ -2162,6 +2162,10 @@ arch_atomic64_fetch_or(s64 i, atomic64_t *v)
 {
 	s64 ret;
 	__atomic_pre_full_fence();
+	/* IARMROOT24 20240127
+	 * 	arch_atomic64_fetch_or_relaxed(i, v)
+	 * 	=>  *v |= i, 이전 v값을 return한다
+	 */
 	ret = arch_atomic64_fetch_or_relaxed(i, v);
 	__atomic_post_full_fence();
 	return ret;

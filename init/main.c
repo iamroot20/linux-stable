@@ -906,6 +906,7 @@ asmlinkage __visible void __init __no_sanitize_address __noreturn start_kernel(v
 	 * enable them.
 	 */
 	boot_cpu_init();
+	/* IAMROOT20_END 20240127 */
 	page_address_init();
 	pr_notice("%s", linux_banner);
 	early_security_init();
