@@ -342,17 +342,39 @@
 #define TCR_IPS_SHIFT		32
 #define TCR_IPS_MASK		(UL(7) << TCR_IPS_SHIFT)
 #define TCR_A1			(UL(1) << 22)
+/* IAMROOT20_REVIEW 20240127
+ * ASID : 가상 메모리 시스템에서 각 프로세스의 가상 주소 공간을
+ *        구분하는 데 사용되는 식별자.
+ */
 #define TCR_ASID16		(UL(1) << 36)
+/* IAMROOT20_REVIEW 20240127
+ * TBI0 : TTBR0_EL1(유저 영역)을 사용하여 번역되는 가상 주소의
+ *        최상위 비트를 무시. 이 바이트는 태그용으로 사용될 수 있다. 
+ * TBI1 : TTBR1_EL1(커널 영역)을 사용하여 번역되는 가상 주소의
+ *        최상위 비트를 무시. 이 바이트는 태그용으로 사용될 수 있다.
+ */
 #define TCR_TBI0		(UL(1) << 37)
 #define TCR_TBI1		(UL(1) << 38)
 #define TCR_HA			(UL(1) << 39)
 #define TCR_HD			(UL(1) << 40)
+/* IAMROOT20_REVIEW 20240127
+ * TBID1 : TTBR1_EL1(커널 영역)을 사용하여 번역되는 가상 주소의
+ *         최상위 비트가 주소 변환과 데이터 접근에 사용할지,
+ *         데이터 접근에만 사용할지 결정.
+ */
 #define TCR_TBID1		(UL(1) << 52)
 #define TCR_NFD0		(UL(1) << 53)
+/* IAMROOT20_REVIEW 20240127
+ * NFD1 : TTBR1_EL1(커널 영역)을 사용하여 번역되는 가상 주소에 대한
+ *        비특권 접근이 발생했을 때, 주소 변환 과정을 수행하지 않음.
+ */
 #define TCR_NFD1		(UL(1) << 54)
 #define TCR_E0PD0		(UL(1) << 55)
 #define TCR_E0PD1		(UL(1) << 56)
 #define TCR_TCMA0		(UL(1) << 57)
+/* IAMROOT20_REVIEW 20240127
+ * TCMA1 : EL1과 EL0에서 확인되지 않은 접근 생성을 제어.
+ */
 #define TCR_TCMA1		(UL(1) << 58)
 
 /*
