@@ -31,6 +31,9 @@
 #include <linux/cpumask.h>
 #include <linux/thread_info.h>
 
+/* IAMROOT20 20240127
+ * extern __attribute__((noderef, address_space(__percpu))) __attribute__((section(".data..percpu" "..read_mostly"))) __typeof__(int) cpu_number
+ */
 DECLARE_PER_CPU_READ_MOSTLY(int, cpu_number);
 
 /*
@@ -39,6 +42,9 @@ DECLARE_PER_CPU_READ_MOSTLY(int, cpu_number);
  * the expense of. If we're preemptible, the value can be stale at use anyway.
  * And we can't use this_cpu_ptr() either, as that winds up recursing back
  * here under CONFIG_DEBUG_PREEMPT=y.
+ */
+/* IAMROOT20 20240127
+ * ex) &cpu_number + 0
  */
 #define raw_smp_processor_id() (*raw_cpu_ptr(&cpu_number))
 

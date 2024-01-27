@@ -53,6 +53,9 @@
 
 #include <trace/events/ipi.h>
 
+/* IAMROOT20 20240127
+ * __attribute__((noderef, address_space(__percpu))) __attribute__((section(".data..percpu" "..read_mostly"))) __typeof__(int) cpu_number
+ */
 DEFINE_PER_CPU_READ_MOSTLY(int, cpu_number);
 EXPORT_PER_CPU_SYMBOL(cpu_number);
 

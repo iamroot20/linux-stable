@@ -41,6 +41,10 @@ extern unsigned long __per_cpu_offset[NR_CPUS];
  * translations for raw_cpu_ptr().
  */
 #ifndef arch_raw_cpu_ptr
+/* IAMROOT20 20240127
+ * ex) ptr(&cpu_number) __my_cpu_offset(0)
+       &cpu_number + 0
+ */
 #define arch_raw_cpu_ptr(ptr) SHIFT_PERCPU_PTR(ptr, __my_cpu_offset)
 #endif
 

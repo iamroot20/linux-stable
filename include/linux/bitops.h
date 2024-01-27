@@ -15,7 +15,19 @@
 #  define aligned_byte_mask(n) (~0xffUL << (BITS_PER_LONG - 8 - 8*(n)))
 #endif
 
+/* IAMROOT20 20240127
+ * ex) type(long)
+ *     (sizeof(long) * BITS_PER_BYTE)
+ *     (8 * 8)
+ *     (64)
+ */
 #define BITS_PER_TYPE(type)	(sizeof(type) * BITS_PER_BYTE)
+/* IAMROOT20 20240127
+ * ex) nr(256)
+ *     __KERNEL_DIV_ROUND_UP(256, BITS_PER_TYPE(long))
+ *     __KERNEL_DIV_ROUND_UP(256, 64)
+ *     (4)
+ */
 #define BITS_TO_LONGS(nr)	__KERNEL_DIV_ROUND_UP(nr, BITS_PER_TYPE(long))
 #define BITS_TO_U64(nr)		__KERNEL_DIV_ROUND_UP(nr, BITS_PER_TYPE(u64))
 #define BITS_TO_U32(nr)		__KERNEL_DIV_ROUND_UP(nr, BITS_PER_TYPE(u32))

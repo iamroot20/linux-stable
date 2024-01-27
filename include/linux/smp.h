@@ -261,6 +261,10 @@ static inline int get_boot_cpu_id(void)
  * regular asm read for the stable.
  */
 #ifndef __smp_processor_id
+/* IAMROOT20 20240127
+ * ex) x(void로 추정됨)
+ * &cpu_number + 0
+ */
 #define __smp_processor_id(x) raw_smp_processor_id(x)
 #endif
 
@@ -268,6 +272,9 @@ static inline int get_boot_cpu_id(void)
   extern unsigned int debug_smp_processor_id(void);
 # define smp_processor_id() debug_smp_processor_id()
 #else
+/* IAMROOT20 20240127
+ * &cpu_number + 0
+ */
 # define smp_processor_id() __smp_processor_id()
 #endif
 

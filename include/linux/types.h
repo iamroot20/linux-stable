@@ -7,6 +7,11 @@
 
 #ifndef __ASSEMBLY__
 
+/* IAMROOT20 20240127
+ * ex) name(bits) bits(256)
+ *     unsigned long bits[BITS_TO_LONGS(256)]
+ *     unsigned long bits[4]
+ */
 #define DECLARE_BITMAP(name,bits) \
 	unsigned long name[BITS_TO_LONGS(bits)]
 

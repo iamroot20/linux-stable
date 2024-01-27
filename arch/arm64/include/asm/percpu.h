@@ -29,6 +29,10 @@ static inline unsigned long __hyp_my_cpu_offset(void)
 	return read_sysreg(tpidr_el2);
 }
 
+/* IAMROOT20 20240127
+ * mrs off, tpidr_el1
+ * tpidr_el1값을 가져와서 반환
+ */
 static inline unsigned long __kern_my_cpu_offset(void)
 {
 	unsigned long off;
@@ -49,6 +53,9 @@ static inline unsigned long __kern_my_cpu_offset(void)
 #ifdef __KVM_NVHE_HYPERVISOR__
 #define __my_cpu_offset __hyp_my_cpu_offset()
 #else
+/* IAMROOT20 20240127
+ * tpidr_el1값을 반환
+ */
 #define __my_cpu_offset __kern_my_cpu_offset()
 #endif
 

@@ -163,6 +163,10 @@ void ftrace_likely_update(struct ftrace_likely_data *f, int val,
 #endif
 
 #ifndef RELOC_HIDE
+/* IAMROOT20 20240127
+ * ex) ptr(&cpu_number) off(0) 
+ *     (typeof(&cpu_number)) (&cpu_number + (0))
+ */
 # define RELOC_HIDE(ptr, off)					\
   ({ unsigned long __ptr;					\
      __ptr = (unsigned long) (ptr);				\

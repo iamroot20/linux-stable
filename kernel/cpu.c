@@ -2707,11 +2707,15 @@ void set_cpu_online(unsigned int cpu, bool online)
    https://yohda.tistory.com/entry/%EC%BB%A4%EB%84%90%ED%8C%8C%EC%9B%8C-Linux-CPU-core-%EC%A0%84%EC%9B%90-%EA%B4%80%EB%A6%AC5-CPU-control-hotplug%EC%9E%91%EC%84%B1%EC%A4%91
  */
 /* IAMROOT20_END 20240120 */
+/* IAMROOT20_START 20240127 */
 /*
  * Activate the first processor.
  */
 void __init boot_cpu_init(void)
 {
+	/* IAMROOT20 20240127
+	 * 현재 실행중인 코어의 논리번호를 가져옴
+	 */
 	int cpu = smp_processor_id();
 
 	/* Mark the boot cpu "present", "online" etc for SMP and UP case */

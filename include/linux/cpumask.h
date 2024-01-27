@@ -16,6 +16,12 @@
 #include <linux/numa.h>
 
 /* Don't assign or return these: may not be this big! */
+/* IAMROOT20 20240127
+ * __cpu_possible_mask, __cpu_online_mask, __cpu_present_mask, __cpu_active_mask는 모두 struct cpumask 형으로 선언되어 있음
+ * typedef struct cpumask { 
+ *     unsigned long bits[4]; 
+ * } cpumask_t;
+ */
 typedef struct cpumask { DECLARE_BITMAP(bits, NR_CPUS); } cpumask_t;
 
 /**

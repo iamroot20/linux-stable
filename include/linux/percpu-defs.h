@@ -46,6 +46,13 @@
  * linkage errors occur due the compiler generating the wrong code to access
  * that section.
  */
+/* IAMROOT20 20240127
+ * ex) sec("..read_mostly")
+ *     __percpu __attribute__((section(PER_CPU_BASE_SECTION "..read_mostly")))
+ *     __attribute__((noderef, address_space(__percpu))) __attribute__((section(PER_CPU_BASE_SECTION "..read_mostly")))
+ *     __attribute__((noderef, address_space(__percpu))) __attribute__((section(".data..percpu" "..read_mostly")))
+ *     PER_CPU_ATTRIBUTES는 arm64에서 define되어 있지 않음
+ */
 #define __PCPU_ATTRS(sec)						\
 	__percpu __attribute__((section(PER_CPU_BASE_SECTION sec)))	\
 	PER_CPU_ATTRIBUTES
@@ -97,9 +104,19 @@
 /*
  * Normal declaration and definition macros.
  */
+/* IAMROOT20 20240127
+ * ex) type(int) name(cpu_number) sec("..read_mostly")
+ *     extern __PCPU_ATTRS("..read_mostly") __typeof__(int) cpu_number 
+ *     extern __attribute__((noderef, address_space(__percpu))) __attribute__((section(".data..percpu" "..read_mostly"))) __typeof__(int) cpu_number
+ */
 #define DECLARE_PER_CPU_SECTION(type, name, sec)			\
 	extern __PCPU_ATTRS(sec) __typeof__(type) name
 
+/* IAMROOT20 20240127
+ * ex) type(int) name(cpu_number) sec("..read_mostly")
+ *     __PCPU_ATTRS("..read_mostrly") __typeof__(int) cpu_number
+ *     __attribute__((noderef, address_space(__percpu))) __attribute__((section(".data..percpu" "..read_mostly"))) __typeof__(int) cpu_number
+ */
 #define DEFINE_PER_CPU_SECTION(type, name, sec)				\
 	__PCPU_ATTRS(sec) __typeof__(type) name
 #endif
@@ -165,9 +182,19 @@
 /*
  * Declaration/definition used for per-CPU variables that must be read mostly.
  */
+/* IAMROOT20 20240127
+ * ex) type(int) name(cpu_number)
+ *     DECLARE_PER_CPU_SECTION(int, cpu_number, "..read_mostly")
+ *     extern __attribute__((noderef, address_space(__percpu))) __attribute__((section(".data..percpu" "..read_mostly"))) __typeof__(int) cpu_number
+ */
 #define DECLARE_PER_CPU_READ_MOSTLY(type, name)			\
 	DECLARE_PER_CPU_SECTION(type, name, "..read_mostly")
 
+/* IAMROOT20 20240127
+ * ex) type(int) name(cpu_number)
+ *     DEFINE_PER_CPU_SECTION(int, cpu_number, "..read_mostly")
+ *     __attribute__((noderef, address_space(__percpu))) __attribute__((section(".data..percpu" "..read_mostly"))) __typeof__(int) cpu_number 
+ */
 #define DEFINE_PER_CPU_READ_MOSTLY(type, name)				\
 	DEFINE_PER_CPU_SECTION(type, name, "..read_mostly")
 
@@ -214,6 +241,10 @@
  * + 0 is required in order to convert the pointer type from a
  * potential array type to a pointer to a single item of the array.
  */
+/* IAMROOT20 20240127
+ * https://stackoverflow.com/questions/30831335/verify-pcpu-ptr-function-in-linux-kernel-what-does-it-do    
+ * http://www.iamroot.org/xe/index.php?mid=Programming&document_srl=208290
+ */
 #define __verify_pcpu_ptr(ptr)						\
 do {									\
 	const void __percpu *__vpp_verify = (typeof((ptr) + 0))NULL;	\
@@ -227,6 +258,13 @@ do {									\
  * to prevent the compiler from making incorrect assumptions about the
  * pointer value.  The weird cast keeps both GCC and sparse happy.
  */
+/* IAMROOT20 20240127
+ * ex) __p(&cpu_number) __offset(0)
+ *     RELOC_HIDE((typeof(*(&cpu_number)) __kernel __force *)(&cpu_number), (0))
+ *     RELOC_HIDE((typeof(*(&cpu_number)) ___attribute__((address_space(0)))  __attribute__((force)) *)(&cpu_number), (0))
+ *         요약하면 RELOC_HIDE((int *) &cpu_number, 0)
+ *     &cpu_number + 0 
+ */
 #define SHIFT_PERCPU_PTR(__p, __offset)					\
 	RELOC_HIDE((typeof(*(__p)) __kernel __force *)(__p), (__offset))
 
@@ -236,6 +274,10 @@ do {									\
 	SHIFT_PERCPU_PTR((ptr), per_cpu_offset((cpu)));			\
 })
 
+/* IAMROOT20 20240127
+ * ex) ptr(&cpu_number)
+ *     &cpu_number + 0
+ */
 #define raw_cpu_ptr(ptr)						\
 ({									\
 	__verify_pcpu_ptr(ptr);						\
