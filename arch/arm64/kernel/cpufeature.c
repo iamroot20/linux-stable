@@ -1629,6 +1629,7 @@ bool kaslr_requires_kpti(void)
 	 * E0PD does a similar job to KPTI so can be used instead
 	 * where available.
 	 */
+	/* IAMROOT20_REVIEW_END 20240203 */
 	if (IS_ENABLED(CONFIG_ARM64_E0PD)) {
 		u64 mmfr2 = read_sysreg_s(SYS_ID_AA64MMFR2_EL1);
 		if (cpuid_feature_extract_unsigned_field(mmfr2,
