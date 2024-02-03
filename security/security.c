@@ -75,6 +75,9 @@ const char *const lockdown_reasons[LOCKDOWN_CONFIDENTIALITY_MAX + 1] = {
 	[LOCKDOWN_CONFIDENTIALITY_MAX] = "confidentiality",
 };
 
+/* IAMROOT20 20240203 
+ * security_hook_heads 선언부
+ */
 struct security_hook_heads security_hook_heads __ro_after_init;
 static BLOCKING_NOTIFIER_HEAD(blocking_lsm_notifier_chain);
 
@@ -240,6 +243,9 @@ static void __init initialize_lsm(struct lsm_info *lsm)
 		int ret;
 
 		init_debug("initializing %s\n", lsm->name);
+		/* IAMROOT20 20240203
+		 * ex) lsm->init(): lockdown_lsm_init()
+		 */
 		ret = lsm->init();
 		WARN(ret, "%s failed to initialize: %d\n", lsm->name, ret);
 	}
@@ -399,15 +405,27 @@ static void __init ordered_lsm_init(void)
 	kfree(ordered_lsms);
 }
 
+/* IAMROOT20 20240203
+ * https://scienceon.kisti.re.kr/commons/util/originalView.do?cn=JAKO200311921893007&oCn=JAKO200311921893007&dbt=JAKO&journal=NJOU00291864
+ * https://lesstif.gitbook.io/web-service-hardening/selinux
+ */
 int __init early_security_init(void)
 {
 	struct lsm_info *lsm;
 
+	/* IAMROOT20 20240203
+	 * security_hook_heads.binder_set_context_mgr.first = NULL;
+	 * security_hook_heads.binder_transaction.first = NULL;
+	 * ...
+	 */
 #define LSM_HOOK(RET, DEFAULT, NAME, ...) \
 	INIT_HLIST_HEAD(&security_hook_heads.NAME);
 #include "linux/lsm_hook_defs.h"
 #undef LSM_HOOK
 
+	/* IAMROOT20 20240203
+	 * ex) lsm -> __early_lsm_lockdown
+	 */
 	for (lsm = __start_early_lsm_info; lsm < __end_early_lsm_info; lsm++) {
 		if (!lsm->enabled)
 			lsm->enabled = &lsm_enabled_true;
@@ -522,6 +540,9 @@ void __init security_add_hooks(struct security_hook_list *hooks, int count,
 	int i;
 
 	for (i = 0; i < count; i++) {
+		/* IAMROOT20 20240203
+		 * ex) lockdown_hooks[0].lsm = "lockdown"
+		 */
 		hooks[i].lsm = lsm;
 		hlist_add_tail_rcu(&hooks[i].list, hooks[i].head);
 	}
@@ -529,6 +550,9 @@ void __init security_add_hooks(struct security_hook_list *hooks, int count,
 	/*
 	 * Don't try to append during early_security_init(), we'll come back
 	 * and fix this up afterwards.
+	 */
+	/* IAMROOT20 20240203
+	 * early_security_init() 로직에서는 수행되지 않음
 	 */
 	if (slab_is_available()) {
 		if (lsm_append(lsm, &lsm_names) < 0)
