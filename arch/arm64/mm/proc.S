@@ -473,6 +473,8 @@ SYM_FUNC_START(__cpu_setup)
 			TCR_TG_FLAGS | TCR_KASLR_FLAGS | TCR_ASID16 | \
 			TCR_TBI0 | TCR_A1 | TCR_KASAN_SW_FLAGS | TCR_MTE_FLAGS
 
+	/* IAMROOT20_REVIEW_START 20240203 */
+	// tcr_clear_errata_bits(tcr, x9, x5)
 	tcr_clear_errata_bits tcr, x9, x5
 
 #ifdef CONFIG_ARM64_VA_BITS_52
@@ -480,15 +482,24 @@ SYM_FUNC_START(__cpu_setup)
          * x0 = 48 || 52
          * x9 = 16 || 12
          */
+	// x9 = xzr - x0
 	sub		x9, xzr, x0
+	// x9 = x9 + 64
 	add		x9, x9, #64
+	// tcr_set_t1sz(tcr, x9)
 	tcr_set_t1sz	tcr, x9
 #else
         /* IAMROOT20 20231021
          * x9 = 16
          */
+	/* IAMROOT20_REVIEW 20240203
+	 * 그 외 52비트 커널을 사용한 경우가 아니라면 
+	 * 실제 커널의 끝 주소와 사용할 VA 공간과의 비트 차이만큼을 고려하여 
+	 * TCR 레지스터의 T0SZ 필드에 대입한다.
+	 */
 	idmap_get_t0sz	x9
 #endif
+	/* IAMROOT20_REVIEW_END 20240203 */
 	tcr_set_t0sz	tcr, x9
 
 	/*
