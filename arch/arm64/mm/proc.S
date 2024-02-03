@@ -465,7 +465,7 @@ SYM_FUNC_START(__cpu_setup)
 	 * TCR_MTE_FLAGS : MTE(Memory tagging extension)을 사용할지 여부를 정의
 	 *                 MTE를 사용하면 다양한 메모리 오류를 감지할 수 있다고 한다.
 	 *                 https://developer.android.com/ndk/guides/arm-mte
-	 */
+	 */ /* IAMROOT20_REVIEW_END 20240127 */
 	// tcr = TCR_TxSZ(VA_BITS) | TCR_CACHE_FLAGS | TCR_SMP_FLAGS | \
 	//	TCR_TG_FLAGS | TCR_KASLR_FLAGS | TCR_ASID16 | \
 	//	TCR_TBI0 | TCR_A1 | TCR_KASAN_SW_FLAGS | TCR_MTE_FLAGS
