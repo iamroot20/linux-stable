@@ -391,6 +391,9 @@ alternative_cb_end
  * tcr_set_t1sz - update TCR.T1SZ
  */
 	.macro	tcr_set_t1sz, valreg, t1sz
+	/* IAMROOT20_REVIEW 20240203 */
+	// uint64_t mask = ((1ULL << TCR_TxSZ_WIDTH) - 1) << TCR_T1SZ_OFFSET;
+	// valreg = (valreg & ~mask) | ((t1sz << TCR_T1SZ_OFFSET) & mask);
 	bfi	\valreg, \t1sz, #TCR_T1SZ_OFFSET, #TCR_TxSZ_WIDTH
 	.endm
 
@@ -784,17 +787,27 @@ alternative_endif
 /*
  * tcr_clear_errata_bits - Clear TCR bits that trigger an errata on this CPU.
  */
+/* IAMROOT20_REVIEW 20240203 
+ * https://patchwork.kernel.org/project/linux-arm-kernel/patch/20190226184341.26083-1-james.morse@arm.com/
+ */
 	.macro	tcr_clear_errata_bits, tcr, tmp1, tmp2
 #ifdef CONFIG_FUJITSU_ERRATUM_010001
+	// tmp1 = midr_el1
 	mrs	\tmp1, midr_el1
 
+	// tmp2 = MIDR_FUJITSU_ERRATUM_010001_MASK
 	mov_q	\tmp2, MIDR_FUJITSU_ERRATUM_010001_MASK
+	// tmp1 = tmp1 & tmp2
 	and	\tmp1, \tmp1, \tmp2
+	// tmp2 = MIDR_FUJITSU_ERRATUM_010001
 	mov_q	\tmp2, MIDR_FUJITSU_ERRATUM_010001
+	// if (tmp1 != tmp2) goto 10f 
 	cmp	\tmp1, \tmp2
 	b.ne	10f
 
+	// tmp2 = TCR_CLEAR_FUJITSU_ERRATUM_010001
 	mov_q	\tmp2, TCR_CLEAR_FUJITSU_ERRATUM_010001
+	// tcr = tcr & ~tmp2
 	bic	\tcr, \tcr, \tmp2
 10:
 #endif /* CONFIG_FUJITSU_ERRATUM_010001 */
