@@ -29,12 +29,29 @@
 #include <linux/init.h>
 #include <linux/rculist.h>
 
+/* IAMROOT20 20240203 
+ * union security_list_options {
+ *     int (*binder_set_context_mgr)(const struct cred *mgr);
+ *     int (*binder_transaction)(const struct cred *from,const struct cred *to);
+ *     ...
+ * };
+ */
 union security_list_options {
 	#define LSM_HOOK(RET, DEFAULT, NAME, ...) RET (*NAME)(__VA_ARGS__);
 	#include "lsm_hook_defs.h"
 	#undef LSM_HOOK
 };
 
+/* IAMROOT20 20240203 
+ * struct security_hook_heads {
+ *     struct hlist_head binder_set_context_mgr;
+ *     struct hlist_head binder_transaction;
+ *     ....
+ * } __attribute__((__designated_init__)) __attribute__((randomize_layout));
+ * __attribute__((__designated_init__)): 지정된 초기화 사용
+ * __attribute__((randomize_layout)): 구조체 필드 배치 무작위화
+ * 구조체 필드 위치가 랜덤하게 결정되면 초기화시 의도했던대로 안되기 때문에 지정된 초기화 옵션을 사용하는 것으로 보임
+ */
 struct security_hook_heads {
 	#define LSM_HOOK(RET, DEFAULT, NAME, ...) struct hlist_head NAME;
 	#include "lsm_hook_defs.h"

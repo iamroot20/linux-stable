@@ -304,6 +304,13 @@
 	. = ALIGN(8);					\
 	BOUNDED_SECTION_PRE_LABEL(.lsm_info.init, _lsm_info, __start, __end)
 
+/* IAMROOT20 20240203 
+ * EARLY_LSM_TABLE()
+ * . = ALIGN(8);
+ * __start_early_lsm_info=.;
+ * KEEP(*(.early_lsm_info.init))
+ * __end_early_lsm_info=.;
+ */
 #define EARLY_LSM_TABLE()						\
 	. = ALIGN(8);							\
 	BOUNDED_SECTION_PRE_LABEL(.early_lsm_info.init, _early_lsm_info, __start, __end)

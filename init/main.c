@@ -907,7 +907,16 @@ asmlinkage __visible void __init __no_sanitize_address __noreturn start_kernel(v
 	 */
 	boot_cpu_init();
 	/* IAMROOT20_END 20240127 */
+	/* IAMROOT20_START 20240203 */
+	/* IAMROOT20 20240203
+	 * 32bit 시스템에서는 1:1 매핑이 일부만 가능하기 때문에 ZONE_NORMAL을 초과하는 메모리가 이 영역을 사용한다.
+	 * 64bit 시스템에서는 모든 물리 메모리가 1:1 매핑이 가능하므로 ZONE_HIGHMEM을 사용하지 않는다.
+	 */
 	page_address_init();
+	/* IAMROOT20 20240203
+	 * linux_banner 출력
+	 * ex) Linux version 6.6.10-1-rt19-MANJARO (builduser@fv-az1491-220) (gcc (GCC) 13.2.1 20230801, GNU ld (GNU Binutils) 2.41.0) #1 SMP PREEMPT_RT Wed Jan 10 09:41:23 UTC 2024
+	 */
 	pr_notice("%s", linux_banner);
 	early_security_init();
 	setup_arch(&command_line);

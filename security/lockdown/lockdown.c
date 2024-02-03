@@ -71,6 +71,16 @@ static int lockdown_is_locked_down(enum lockdown_reason what)
 	return 0;
 }
 
+/* IAMROOT20 20240203 
+ * static struct security_hook_list lockdown_hooks[] __ro_after_init = {
+ *     {
+ *         .head = &security_hook_heads.locked_down,
+ *         .hook = {
+ *                     .locked_down = lockdown_is_locked_down
+ *                 }
+ *     }
+ * }
+ */
 static struct security_hook_list lockdown_hooks[] __ro_after_init = {
 	LSM_HOOK_INIT(locked_down, lockdown_is_locked_down),
 };
@@ -157,6 +167,13 @@ static int __init lockdown_secfs_init(void)
 
 core_initcall(lockdown_secfs_init);
 
+/* IAMROOT20 20240203 
+ * ex) DEFINE_EARLY_LSM(lockdown) = {
+           .name = "lockdown",
+           .init = lockdown_lsm_init,
+       }; 
+       static struct lsm_info __early_lsm_lockdown __used __section(".early_lsm_info.init") __aligned(sizeof(unsigned long))
+ */
 #ifdef CONFIG_SECURITY_LOCKDOWN_LSM_EARLY
 DEFINE_EARLY_LSM(lockdown) = {
 #else
