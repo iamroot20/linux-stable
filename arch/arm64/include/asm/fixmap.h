@@ -77,6 +77,12 @@ enum fixed_addresses {
 	 * Temporary boot-time mappings, used by early_ioremap(),
 	 * before ioremap() is functional.
 	 */
+
+	/* IAMROOT20 20240217 
+	 * NR_FIX_BITMAPS = 0x40000 / 2^12 = 64
+	 * TOTAL_FIX_BITMAPS = 448 
+	 * FIX_BITMAP_BEGIN = 523 + 447 = 970
+	 */
 #define NR_FIX_BTMAPS		(SZ_256K / PAGE_SIZE)
 #define FIX_BTMAPS_SLOTS	7
 #define TOTAL_FIX_BTMAPS	(NR_FIX_BTMAPS * FIX_BTMAPS_SLOTS)
