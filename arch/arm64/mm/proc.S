@@ -499,13 +499,14 @@ SYM_FUNC_START(__cpu_setup)
 	 */
 	idmap_get_t0sz	x9
 #endif
-	/* IAMROOT20_REVIEW_END 20240203 */
+	/* IAMROOT20_REVIEW_END 20240203 */ /* IAMROOT20_REVIEW_START 20240217 */
 	tcr_set_t0sz	tcr, x9
 
 	/*
 	 * Set the IPS bits in TCR_EL1.
 	 */
 	tcr_compute_pa_size tcr, #TCR_IPS_SHIFT, x5, x6
+	/* IAMROOT20_REVIEW_END 20240217 */
 #ifdef CONFIG_ARM64_HW_AFDBM
 	/*
 	 * Enable hardware update of the Access Flags bit.
