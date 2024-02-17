@@ -314,9 +314,16 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
 	 */
 	arm64_use_ng_mappings = kaslr_requires_kpti();
 
+	/*
+	 * IAMROOT20 20240217
+	 * fixmap으로 각 페이지 테이블의 물리 주소에 접근할 수 있게 된다.
+	 * head.S에서 이미 한 번 호출이 되었기 때문에, 아래 호출에선 페이지 테이블 주소가
+	 * 잘 설정되어 있는지만 확인하는 것 같다.
+	 */
 	early_fixmap_init();
 	early_ioremap_init();
 
+	/* IAMROOT20_END 20240217 */
 	setup_machine_fdt(__fdt_pointer);
 
 	/*
