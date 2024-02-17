@@ -384,6 +384,12 @@ alternative_cb_end
  * tcr_set_t0sz - update TCR.T0SZ so that we can load the ID map
  */
 	.macro	tcr_set_t0sz, valreg, t0sz
+	/* IAMROOT20_REVEIW 20240217 
+	 * bif Xd, Xn, #lsb, #width
+	 *   - Xn 레지스터 값에서 하위 #width 비트 수만큼의 값을, Xd의 #lsb 비트 위치에 넣는다.
+	 * uint64_t mask = ((1ULL << TCR_TxSZ_WIDTH) - 1) << TCR_T0SZ_OFFSET;
+	 * valreg = (varleg & ~mask) | ((t0sz << TCR_T0SZ_OFFSET) & mask;
+	 */
 	bfi	\valreg, \t0sz, #TCR_T0SZ_OFFSET, #TCR_TxSZ_WIDTH
 	.endm
 
@@ -424,13 +430,23 @@ alternative_cb_end
  *	pos:		IPS or PS bitfield position
  *	tmp{0,1}:	temporary registers
  */
+/* IAMROOT20_REVIEW 20240217 
+ * tcr_compute_pa_size : 아키텍처가 지원하는 최대 PA 사이즈와, 커널 빌드 시 지정한
+ * PA 사이즈를 비교하여, 더 작은 값을 사용하도록 한다.
+ *
+ */
 	.macro	tcr_compute_pa_size, tcr, pos, tmp0, tmp1
+	// tmp0 = ID_AA64MMFR0_EL1
 	mrs	\tmp0, ID_AA64MMFR0_EL1
 	// Narrow PARange to fit the PS field in TCR_ELx
+	// tmp0 = (tmp0 >> ID_AA64MMFR0_EL1_PARANGE_SHIFT) & 0x7
 	ubfx	\tmp0, \tmp0, #ID_AA64MMFR0_EL1_PARANGE_SHIFT, #3
+	// tmp1 = #ID_AA64MMFR0_EL1_PARANGE_MAX
 	mov	\tmp1, #ID_AA64MMFR0_EL1_PARANGE_MAX
+	// if (tmp0 > tmp1) tmp0 = tmp1
 	cmp	\tmp0, \tmp1
 	csel	\tmp0, \tmp1, \tmp0, hi
+	// tcr = 
 	bfi	\tcr, \tmp0, \pos, #3
 	.endm
 	
