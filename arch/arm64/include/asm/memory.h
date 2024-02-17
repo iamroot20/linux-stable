@@ -241,6 +241,9 @@ static inline unsigned long kaslr_offset(void)
 	return kimage_vaddr - KIMAGE_VADDR;
 }
 
+/* IAMROOT20 20240217 
+ * kalsr_offset이 2MB 이상이면 kaslr이 enable되었다고 판단함
+ */
 static inline bool kaslr_enabled(void)
 {
 	/*

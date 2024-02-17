@@ -1620,6 +1620,10 @@ has_useable_cnp(const struct arm64_cpu_capabilities *entry, int scope)
  * state once the SMP CPUs are up and thus make the switch to non-global
  * mappings if required.
  */
+/* IAMROOT20 20240217 
+ * arm64 e0pd 기능을 사용할 수 있으면 kpti는 필요없다고 판단하여 false 반환
+ * e0pd 기능을 사용할 수 없으면 kaslr이 켜져 있는지만 확인하여 true 반환
+ */
 bool kaslr_requires_kpti(void)
 {
 	if (!IS_ENABLED(CONFIG_RANDOMIZE_BASE))
@@ -1629,7 +1633,13 @@ bool kaslr_requires_kpti(void)
 	 * E0PD does a similar job to KPTI so can be used instead
 	 * where available.
 	 */
-	/* IAMROOT20_REVIEW_END 20240203 */
+	/* IAMROOT20_END 20240203 */
+	/* IAMROOT20_START 20240217 */
+	/* IAMROOT20 20240217
+	 * ID_AA64MMFR2_EL1.E0PD를 읽어와서 E0PD 기능을 지원하는지 확인
+	 * 만약 지원하면 false를 반환
+	 * 만약 지원하지 않으면 계속 진행
+	 */
 	if (IS_ENABLED(CONFIG_ARM64_E0PD)) {
 		u64 mmfr2 = read_sysreg_s(SYS_ID_AA64MMFR2_EL1);
 		if (cpuid_feature_extract_unsigned_field(mmfr2,
@@ -1640,6 +1650,9 @@ bool kaslr_requires_kpti(void)
 	/*
 	 * Systems affected by Cavium erratum 24756 are incompatible
 	 * with KPTI.
+	 */
+	/* IAMROOT20 20240217
+	 * 특정 벤더사에 대한 예외 상황으로 넘어감
 	 */
 	if (IS_ENABLED(CONFIG_CAVIUM_ERRATUM_27456)) {
 		extern const struct midr_range cavium_erratum_27456_cpus[];
