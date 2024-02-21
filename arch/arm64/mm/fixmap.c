@@ -146,7 +146,7 @@ void __set_fixmap(enum fixed_addresses idx,
 
 	if (pgprot_val(flags)) {
 		/* IAMROOT20 20231216
-		 * FIX_P*D의 가상주소(ptep)에 bm_p*d(phys)를 매핑한다.
+		 * phys주소를 bm_pte[][]에 쓴다(매핑한다).
 		 */
 		set_pte(ptep, pfn_pte(phys >> PAGE_SHIFT, flags));
 	} else {
