@@ -96,6 +96,10 @@ int fdt_check_header(const void *fdt)
 
 	if (fdt_magic(fdt) != FDT_MAGIC)
 		return -FDT_ERR_BADMAGIC;
+	/* IAMROOT20 20240224 
+	 * can_assume : DTB에 운용자가 값을 설정하지 않는 경우 false, 
+	 * 그렇지 않은 경우에는 true를 반환한다.
+	 */
 	if (!can_assume(LATEST)) {
 		if ((fdt_version(fdt) < FDT_FIRST_SUPPORTED_VERSION)
 		    || (fdt_last_comp_version(fdt) >

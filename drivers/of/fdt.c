@@ -1071,6 +1071,7 @@ int __init early_init_dt_scan_root(void)
 	dt_root_size_cells = OF_ROOT_NODE_SIZE_CELLS_DEFAULT;
 	dt_root_addr_cells = OF_ROOT_NODE_ADDR_CELLS_DEFAULT;
 
+	/* IAMROOT20_END 20240224 */
 	prop = of_get_flat_dt_prop(node, "#size-cells", NULL);
 	if (prop)
 		dt_root_size_cells = be32_to_cpup(prop);
@@ -1281,6 +1282,9 @@ bool __init early_init_dt_verify(void *params)
 
 	/* Setup flat device-tree pointer */
 	initial_boot_params = params;
+	/* IAMROOT20 20240224 
+	 * crc32 알고리즘을 사용하여 이후 fdt에 변경 사항이 생겼는지를 확인한다.
+	 */
 	of_fdt_crc32 = crc32_be(~0, initial_boot_params,
 				fdt_totalsize(initial_boot_params));
 	return true;
