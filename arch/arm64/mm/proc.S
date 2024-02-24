@@ -506,24 +506,34 @@ SYM_FUNC_START(__cpu_setup)
 	 * Set the IPS bits in TCR_EL1.
 	 */
 	tcr_compute_pa_size tcr, #TCR_IPS_SHIFT, x5, x6
-	/* IAMROOT20_REVIEW_END 20240217 */
+	/* IAMROOT20_REVIEW_END 20240217 */ /* IAMROOT20_REVIEW_START 20240224 */
 #ifdef CONFIG_ARM64_HW_AFDBM
 	/*
 	 * Enable hardware update of the Access Flags bit.
 	 * Hardware dirty bit management is enabled later,
 	 * via capabilities.
 	 */
+	// x9 = ID_AA64MMFR1_EL1
 	mrs	x9, ID_AA64MMFR1_EL1
+	// x9 = x9 & 0xf
 	and	x9, x9, #0xf
+	// if (x9 == 0) goto 1f
 	cbz	x9, 1f
+	/* IAMROOT20_REVIEW 20240224
+	 * TCR_HA는 1로 정의되어 있으므로, 하드웨어 접근을 허용하도록 한다.
+	 */
+	// tcr = tcr | TCR_HA
 	orr	tcr, tcr, #TCR_HA		// hardware Access flag update
 1:
 #endif	/* CONFIG_ARM64_HW_AFDBM */
+	// mair_el1 = mair
 	msr	mair_el1, mair
+	// tcr_el1 = tcr
 	msr	tcr_el1, tcr
 	/*
 	 * Prepare SCTLR
 	 */
+	// x0 = INIT_SCTLR_EL1_MMU_ON
 	mov_q	x0, INIT_SCTLR_EL1_MMU_ON
 	ret					// return to head.S
 
