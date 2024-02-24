@@ -353,6 +353,9 @@
  * TBI1 : TTBR1_EL1(커널 영역)을 사용하여 번역되는 가상 주소의
  *        최상위 비트를 무시. 이 바이트는 태그용으로 사용될 수 있다.
  */
+/* IAMROOT20_REVIEW 20240224
+ * HA : Hardware Access Flag. 하드웨어가 메모리 접근을 확인하는데 사용.
+ */
 #define TCR_TBI0		(UL(1) << 37)
 #define TCR_TBI1		(UL(1) << 38)
 #define TCR_HA			(UL(1) << 39)
