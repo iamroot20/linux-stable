@@ -446,7 +446,8 @@ alternative_cb_end
 	// if (tmp0 > tmp1) tmp0 = tmp1
 	cmp	\tmp0, \tmp1
 	csel	\tmp0, \tmp1, \tmp0, hi
-	// tcr = 
+	// uint64_t mask = ((1ULL << 3) - 1) << pos;
+	// tcr = (tcr & ~mask) | ((tmp0 << pos) & mask);
 	bfi	\tcr, \tmp0, \pos, #3
 	.endm
 	
