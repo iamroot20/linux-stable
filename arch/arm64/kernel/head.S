@@ -181,6 +181,7 @@ SYM_CODE_START(primary_entry)
 #endif
 	/* IAMROOT20_REVIEW_END 20240106 */ /* IMAROOT20_REVIEW_START 20240113 */
 	bl	__cpu_setup			// initialise processor
+	/* IAMROOT20_REVIEW_END 20240224 */
 	b	__primary_switch
 SYM_CODE_END(primary_entry)
 
