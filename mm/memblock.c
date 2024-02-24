@@ -106,6 +106,10 @@ unsigned long min_low_pfn;
 unsigned long max_pfn;
 unsigned long long max_possible_pfn;
 
+/* IAMROOT20 20240224
+ * INIT_MEMBLOCK_MEMORY_REGIONS = 128 * 8
+ * INIT_MEMBLOCK_RESERVED_REGIONS = 128 + 256 + 1
+ */
 static struct memblock_region memblock_memory_init_regions[INIT_MEMBLOCK_MEMORY_REGIONS] __initdata_memblock;
 static struct memblock_region memblock_reserved_init_regions[INIT_MEMBLOCK_RESERVED_REGIONS] __initdata_memblock;
 #ifdef CONFIG_HAVE_MEMBLOCK_PHYS_MAP

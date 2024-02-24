@@ -108,7 +108,10 @@ __early_ioremap(resource_size_t phys_addr, unsigned long size, pgprot_t prot)
 	int i, slot;
 
 	WARN_ON(system_state >= SYSTEM_RUNNING);
-
+	
+	/* IAMROOT_20240224_START
+	 * slot - 사용하지 않은 slot을 찾는다
+	 */
 	slot = -1;
 	for (i = 0; i < FIX_BTMAPS_SLOTS; i++) {
 		if (!prev_map[i]) {
@@ -130,6 +133,11 @@ __early_ioremap(resource_size_t phys_addr, unsigned long size, pgprot_t prot)
 	/*
 	 * Mappings have to be page-aligned
 	 */
+	/* IAMROOT_20240224
+	 * mapping 할 영역을 page-aligned을 맞춘다.
+	 * - phys_addr : 시작주소 -> page aligned-down
+	 * - size : page aligned된 크기 (>= 1 page size)
+	 */
 	offset = offset_in_page(phys_addr);
 	phys_addr &= PAGE_MASK;
 	size = PAGE_ALIGN(last_addr + 1) - phys_addr;
@@ -146,6 +154,11 @@ __early_ioremap(resource_size_t phys_addr, unsigned long size, pgprot_t prot)
 	 */
 	idx = FIX_BTMAP_BEGIN - NR_FIX_BTMAPS*slot;
 	while (nrpages > 0) {
+		/* IAMROOT_20240224
+		 * 정규 페이징 이후에는 early_ioremap() api를 사용하지 않음
+		 * - x86, arm64는 정규 페이징 이후에도 early_ioremap() api를
+		 *   사용할 수 있음
+		 */
 		if (after_paging_init)
 			__late_set_fixmap(idx, phys_addr, prot);
 		else
