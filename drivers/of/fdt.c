@@ -1110,7 +1110,10 @@ int __init early_init_dt_scan_memory(void)
 		/* We are scanning "memory" nodes only */
 		if (type == NULL || strcmp(type, "memory") != 0)
 			continue;
-
+		
+		/* IAMROOT20_20240302 START
+		 * status property가 없거나 "ok","okay" 인지 확인
+		 */
 		if (!of_fdt_device_is_available(fdt, node))
 			continue;
 
@@ -1228,10 +1231,17 @@ void __init __weak early_init_dt_add_memory_arch(u64 base, u64 size)
 		return;
 	}
 
+	/* IAMROOT20_20240302
+	 * base를 PAGE_SIZE 만큼 올림하고, 
+	 * size는 (PAGE_SIZE - base offset)만큼 줄인다
+	 */
 	if (!PAGE_ALIGNED(base)) {
 		size -= PAGE_SIZE - (base & ~PAGE_MASK);
 		base = PAGE_ALIGN(base);
 	}
+	/* IAMROOT20_20240302
+	 * size를 PAGE_SIZE 만큼 내림한다
+	 */
 	size &= PAGE_MASK;
 
 	if (base > MAX_MEMBLOCK_ADDR) {
