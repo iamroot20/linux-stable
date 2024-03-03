@@ -214,14 +214,23 @@ static void __init setup_machine_fdt(phys_addr_t dt_phys)
 			cpu_relax();
 	}
 
+	/* IAMROOT20_20240302
+	 * 가상 메모리의 fdt 영역을 read-only로 remapping
+	 */
 	/* Early fixups are done, map the FDT as read-only now */
 	fixmap_remap_fdt(dt_phys, &size, PAGE_KERNEL_RO);
 
+	/* IAMROOT20_20240302
+	 * dtb root 노드에서 model 프로퍼티의 문자열을 name에 가져옴
+	 */
 	name = of_flat_dt_get_machine_name();
 	if (!name)
 		return;
 
 	pr_info("Machine model: %s\n", name);
+	/* IAMROOT20_20240302
+	 * 디버깅 로그를 위해 dump_stack_arch_desc_str 전역 변수에 앞에서 가져온 name을 저장 해놈
+	 */
 	dump_stack_set_arch_desc("%s (DT)", name);
 }
 

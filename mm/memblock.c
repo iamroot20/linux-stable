@@ -723,6 +723,9 @@ int __init_memblock memblock_add_node(phys_addr_t base, phys_addr_t size,
  * Return:
  * 0 on success, -errno on failure.
  */
+/* IAMROOT20_20240302
+ * memblock.memory에 base부터 end까지 region을 등록 
+ */
 int __init_memblock memblock_add(phys_addr_t base, phys_addr_t size)
 {
 	phys_addr_t end = base + size - 1;
@@ -867,6 +870,10 @@ int __init_memblock memblock_phys_free(phys_addr_t base, phys_addr_t size)
 	return memblock_remove_range(&memblock.reserved, base, size);
 }
 
+/* IAMROOT20_20240302
+ * memblock.reserved에 base부터 end까지 region을 등록
+ */
+/* IAMROOT20_END 20240302 */
 int __init_memblock memblock_reserve(phys_addr_t base, phys_addr_t size)
 {
 	phys_addr_t end = base + size - 1;
