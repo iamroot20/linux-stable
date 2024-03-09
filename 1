@@ -514,9 +514,6 @@ static int __init_memblock memblock_double_array(struct memblock_type *type,
  * @end_rgn: end scanning at (@end_rgn - 1)
  * Scan @type and merge neighboring compatible regions in [@start_rgn - 1, @end_rgn)
  */
-/* IAMROOT20 20240309
- * (start_rgn - 1) index부터 end_rgn index미만까지 merge
- */
 static void __init_memblock memblock_merge_regions(struct memblock_type *type,
 						   unsigned long start_rgn,
 						   unsigned long end_rgn)
@@ -533,22 +530,13 @@ static void __init_memblock memblock_merge_regions(struct memblock_type *type,
 		    memblock_get_region_node(this) !=
 		    memblock_get_region_node(next) ||
 		    this->flags != next->flags) {
-			/* IAMROOT20 20240309
-			 * this region과 next region이 인접하지 않거나 같은 node가 아니면 merge할 수 없으므로 다음 region을 확인하러 넘어감
-			 */
 			BUG_ON(this->base + this->size > next->base);
 			i++;
 			continue;
 		}
 
-		/* IAMROOT20 20240309
-		 * this region과 next region을 merge
-		 */
 		this->size += next->size;
 		/* move forward from next + 1, index of which is i + 2 */
-		/* IAMROOT20 20240309
-		 * (next + 1)부터 (type->cnt - (i + 2))개를 앞으로 한칸씩 이동시킴 
-		 */
 		memmove(next, next + 1, (type->cnt - (i + 2)) * sizeof(*next));
 		type->cnt--;
 		end_rgn--;
@@ -567,9 +555,6 @@ static void __init_memblock memblock_merge_regions(struct memblock_type *type,
  * Insert new memblock region [@base, @base + @size) into @type at @idx.
  * @type must already have extra room to accommodate the new region.
  */
-/* IAMROOT20 20240309 
- * (base ~ size) 영역을 memblock->type->region[idx] 위치에 insert
- */
 static void __init_memblock memblock_insert_region(struct memblock_type *type,
 						   int idx, phys_addr_t base,
 						   phys_addr_t size,
@@ -579,13 +564,7 @@ static void __init_memblock memblock_insert_region(struct memblock_type *type,
 	struct memblock_region *rgn = &type->regions[idx];
 
 	BUG_ON(type->cnt >= type->max);
-	/* IAMROOT20 20240309
-	 * memblock->type->region[idx]부터 뒤로 한 칸씩 이동시킴
-	 */
 	memmove(rgn + 1, rgn, (type->cnt - idx) * sizeof(*rgn));
-	/* IAMROOT20 20240309
-	 * memblock->type->region[idx] 위치에 new region을 insert
-	 */
 	rgn->base = base;
 	rgn->size = size;
 	rgn->flags = flags;
@@ -611,9 +590,6 @@ static void __init_memblock memblock_insert_region(struct memblock_type *type,
  * 0 on success, -errno on failure.
  */
 /* IAMROOT20_START 20240309 */
-/* IAMROOT20 20240309 
- * 참고: http://jake.dothome.co.kr/memblock-1/
- */
 static int __init_memblock memblock_add_range(struct memblock_type *type,
 				phys_addr_t base, phys_addr_t size,
 				int nid, enum memblock_flags flags)
@@ -650,16 +626,11 @@ static int __init_memblock memblock_add_range(struct memblock_type *type,
 	 * regions directly.
 	 */
 	/* IAMROOT20 20240309
-	 * 현재 최대로 넣을 수 있는 region 갯수는 type->max인데
-	 * 최악의 경우인 (type->cnt * 2 + 1)보다 type->max가 작거나 같으면 insert를 true로 설정하여 repeat을 방지함 
+	 * 
 	 */
 	if (type->cnt * 2 + 1 <= type->max)
 		insert = true;
 
-/* IAMROOT20 20240309
- * insert가 false이면 먼저 정확한 new_region이 필요한 영역을 확인하고 insert를 true로 변경
- * insert가 true이면 repeat을 다시 실행하지 않고 실제 new region을 insert
- */
 repeat:
 	/*
 	 * The following is executed twice.  Once with %false @insert and
@@ -669,29 +640,17 @@ repeat:
 	base = obase;
 	nr_new = 0;
 
-	/* IAMROOT20 20240309
-	 * 기존에 존재하는 region을 순회
-	 */
 	for_each_memblock_type(idx, type, rgn) {
 		phys_addr_t rbase = rgn->base;
 		phys_addr_t rend = rbase + rgn->size;
 
-		/* IAMROOT20 20240309
-		 * (rbase >= end)일 경우 더 이상 new region이 기존 region과 겹치지 않으므로 반복문 종료
-		 */
 		if (rbase >= end)
 			break;
-		/* IAMROOT20 20240309
-		 * (rend <= base)일 경우 new region의 현재 비교하고 있는 region과 겹치지 않으므로 다음 region으로 진행
-		 */
 		if (rend <= base)
 			continue;
 		/*
 		 * @rgn overlaps.  If it separates the lower part of new
 		 * area, insert that portion.
-		 */
-		/* IAMROOT20 20240309
-		 * (rbase > base)일 경우 new region의 하위 부분과 현재 비교하고 있는 region이 겹치므로 new region을 하위 부분인 (base ~ rbase) 영역를 insert
 		 */
 		if (rbase > base) {
 #ifdef CONFIG_NUMA
@@ -709,16 +668,10 @@ repeat:
 			}
 		}
 		/* area below @rend is dealt with, forget about it */
-		/* IAMROOT20 20240309
-		 * base를 새롭게 설정
-		 */
 		base = min(rend, end);
 	}
 
 	/* insert the remaining portion */
-	/* IAMROOT20 20240309
-	 * 나머지 (base ~ end) 영역을 insert
-	 */
 	if (base < end) {
 		nr_new++;
 		if (insert) {
@@ -730,9 +683,6 @@ repeat:
 		}
 	}
 
-	/* IAMROOT20 20240309
-	 * insert 해야하는 new region이 없으면 함수 종료
-	 */
 	if (!nr_new)
 		return 0;
 
@@ -741,18 +691,12 @@ repeat:
 	 * insertions; otherwise, merge and return.
 	 */
 	if (!insert) {
-		/* IAMROOT20 20240309
-		 * insert 해야될 new region이 max region size보다 크면 memblock_double_array를 호출하여 memblock.type의 사이즈를 2배 증가시킴
-		 */
 		while (type->cnt + nr_new > type->max)
 			if (memblock_double_array(type, obase, size) < 0)
 				return -ENOMEM;
 		insert = true;
 		goto repeat;
 	} else {
-		/* IAMROOT20 20240309
-		 * 모든 insert 작업이 끝나고 인접한 region들끼리 merge를 수행
-		 */
 		memblock_merge_regions(type, start_rgn, end_rgn);
 		return 0;
 	}
