@@ -227,12 +227,24 @@ __memblock_find_range_bottom_up(phys_addr_t start, phys_addr_t end,
 {
 	phys_addr_t this_start, this_end, cand;
 	u64 i;
-
+	
+	/* IAMROOT20 20240309
+	 * 빈 memblock 공간을 루프를 돌며 하나씩 알아옴
+	 */	
 	for_each_free_mem_range(i, nid, flags, &this_start, &this_end, NULL) {
+		/* IAMROOT20 20240309
+	     * start ~ end 범위를 벗어나면 조정
+	     */	
 		this_start = clamp(this_start, start, end);
 		this_end = clamp(this_end, start, end);
 
+		/* IAMROOT20 20240309
+	     * 요청 사이즈의 비교를 align된 크기로 하기 위해 올림
+	     */	
 		cand = round_up(this_start, align);
+		/* IAMROOT20 20240309
+	     * 알아온 free 영역의 범위에 size가 포함될 수 있으면 cand 주소를 리턴
+	     */	
 		if (cand < this_end && this_end - cand >= size)
 			return cand;
 	}
@@ -340,6 +352,9 @@ again:
 	ret = memblock_find_in_range_node(size, align, start, end,
 					    NUMA_NO_NODE, flags);
 
+	/* IAMROOT20 20240309
+	 * 미러 플래그가 요청된 상태에서 공간을 찾지 못한 경우 미러 플래그를 제거하고 다시 공간을 찾음
+	 */	
 	if (!ret && (flags & MEMBLOCK_MIRROR)) {
 		pr_warn_ratelimited("Could not allocate %pap bytes of mirrored memory\n",
 			&size);
@@ -456,9 +471,15 @@ static int __init_memblock memblock_double_array(struct memblock_type *type,
 		if (type != &memblock.reserved)
 			new_area_start = new_area_size = 0;
 
+		/* IAMROOT20 20240309
+		 * 새로 관리 영역을 할당받을 공간은 추가 요청 영역을 피해야 하므로 요청 영역의 상부를 먼저 검색
+		 */
 		addr = memblock_find_in_range(new_area_start + new_area_size,
 						memblock.current_limit,
 						new_alloc_size, PAGE_SIZE);
+		/* IAMROOT20 20240309
+		 * 첫 번째 검색에서 할당받지 못 하고 요청 타입이 reserved인 경우에 추가 요청 영역을 피해 하부를 검색
+		 */						
 		if (!addr && new_area_size)
 			addr = memblock_find_in_range(0,
 				min(new_area_start, memblock.current_limit),
@@ -822,6 +843,9 @@ int __init_memblock memblock_add(phys_addr_t base, phys_addr_t size)
  * Return:
  * 0 on success, -errno on failure.
  */
+/* IAMROOT20 20240309
+ * 제거할 영역만 분리하기 region을 나눔
+ */
 static int __init_memblock memblock_isolate_range(struct memblock_type *type,
 					phys_addr_t base, phys_addr_t size,
 					int *start_rgn, int *end_rgn)
@@ -836,6 +860,10 @@ static int __init_memblock memblock_isolate_range(struct memblock_type *type,
 		return 0;
 
 	/* we'll create at most two more regions */
+	/* IAMROOT20 20240309
+	 * 기존 region수에 위아래 최대로 추가될 수 있는 2개의 region수를 더한 값이 max region size보다 크면 
+	 * memblock_double_array를 호출하여 memblock.type의 사이즈를 2배씩 증가시킴
+	 */
 	while (type->cnt + 2 > type->max)
 		if (memblock_double_array(type, base, size) < 0)
 			return -ENOMEM;
@@ -844,11 +872,21 @@ static int __init_memblock memblock_isolate_range(struct memblock_type *type,
 		phys_addr_t rbase = rgn->base;
 		phys_addr_t rend = rbase + rgn->size;
 
+		/* IAMROOT20 20240309
+		 * (rbase >= end)일 경우 분리할 영역이 기존 region과 겹치지 않으므로 반복문 종료
+		 */
 		if (rbase >= end)
 			break;
+		/* IAMROOT20 20240309
+		 * (rend <= base)일 경우 분리할 영역이 현재 비교하고 있는 region과 겹치지 않으므로 다음 region으로 진행
+		 */
 		if (rend <= base)
 			continue;
 
+		/* IAMROOT20 20240309
+		 * (rbase < base)일 경우 분리할 영역의 하위 부분과 현재 비교하고 있는 region의 상위 부분이 겹치므로 
+		 * 비교하는 region의 겹치지 않는 하위 부분인 (rbase ~ base)영역을 분리해 new region으로 insert 
+		 */
 		if (rbase < base) {
 			/*
 			 * @rgn intersects from below.  Split and continue
@@ -860,6 +898,11 @@ static int __init_memblock memblock_isolate_range(struct memblock_type *type,
 			memblock_insert_region(type, idx, rbase, base - rbase,
 					       memblock_get_region_node(rgn),
 					       rgn->flags);
+		/* IAMROOT20 20240309
+		 * (rend > end)일 경우 분리할 영역의 상위 부분과 현재 비교하고 있는 region의 하위 부분이 겹치므로 
+		 * 비교하는 region의 겹치는 하위 부분인 (rbase ~ end)영역을 분리해 new region으로 insert
+		 * region추가 후 idx를 하나 줄여 다음 루프에서 제거할 region을 가리키도록 함
+		 */
 		} else if (rend > end) {
 			/*
 			 * @rgn intersects from above.  Split and redo the
@@ -892,6 +935,9 @@ static int __init_memblock memblock_remove_range(struct memblock_type *type,
 	if (ret)
 		return ret;
 
+	/* IAMROOT20 20240309
+	 * 분리된 region을 제거 
+	 */
 	for (i = end_rgn - 1; i >= start_rgn; i--)
 		memblock_remove_region(type, i);
 	return 0;
@@ -906,6 +952,7 @@ int __init_memblock memblock_remove(phys_addr_t base, phys_addr_t size)
 
 	return memblock_remove_range(&memblock.memory, base, size);
 }
+/* IAMROOT20_END 20240309 */
 
 /**
  * memblock_free - free boot memory allocation
@@ -1138,6 +1185,9 @@ void __next_mem_range(u64 *idx, int nid, enum memblock_flags flags,
 		      struct memblock_type *type_b, phys_addr_t *out_start,
 		      phys_addr_t *out_end, int *out_nid)
 {
+    /* IAMROOT20 20240309
+     * idx 값을 절반으로 나누어 lsb: idx_a의 카운터,, msb: idx_b의 카운터
+     */		
 	int idx_a = *idx & 0xffffffff;
 	int idx_b = *idx >> 32;
 
@@ -1155,6 +1205,9 @@ void __next_mem_range(u64 *idx, int nid, enum memblock_flags flags,
 		if (should_skip_region(type_a, m, nid, flags))
 			continue;
 
+        /* IAMROOT20 20240309
+         * type_b에 대한 영역이 지정되지 않으면(null) 현재 1차 루프 인덱스의 memblock에 대한 영역을 반환
+         */	
 		if (!type_b) {
 			if (out_start)
 				*out_start = m_start;
@@ -1174,6 +1227,9 @@ void __next_mem_range(u64 *idx, int nid, enum memblock_flags flags,
 			phys_addr_t r_end;
 
 			r = &type_b->regions[idx_b];
+			/* IAMROOT20 20240309
+             * idx_b가 0보다 크면 현재 이전 memblock의 끝 주소를 가리키고 idx_b가 0이면 0번 주소를 지정
+             */	
 			r_start = idx_b ? r[-1].base + r[-1].size : 0;
 			r_end = idx_b < type_b->cnt ?
 				r->base : PHYS_ADDR_MAX;
@@ -1182,9 +1238,17 @@ void __next_mem_range(u64 *idx, int nid, enum memblock_flags flags,
 			 * if idx_b advanced past idx_a,
 			 * break out to advance idx_a
 			 */
+			/* IAMROOT20 20240309
+             * reserve memblock 영역이 memory memblock 영역을 벗어난 경우 2차 루프를 빠져나가서 다음 memory memblock을 준비
+             */				
 			if (r_start >= m_end)
 				break;
 			/* if the two regions intersect, we're done */
+			/* IAMROOT20 20240309
+             * 두 영역이 교차하는 경우 
+			 * out_start에 하단 reserve 영역값의 끝 주소나 memory 영역값의 시작 주소중 가장 큰 주소
+			 * out_end에 상단 reserve 영역값의 시작 주소나 memory 영역값의 끝 주소중에 가장 작은 주소
+             */	
 			if (m_start < r_end) {
 				if (out_start)
 					*out_start =
@@ -1197,6 +1261,10 @@ void __next_mem_range(u64 *idx, int nid, enum memblock_flags flags,
 				 * The region which ends first is
 				 * advanced for the next iteration.
 				 */
+				/* IAMROOT20 20240309
+			     * reserve 영역의 끝 주소가 memory 영역의 끝주소와 비교하여 큰 경우 idx_a를 증가, 다음 memory 영역을 준비
+			     * 크지 않은 경우 idx_b를 증가, 다음 reserve 영역을 준비
+                 */	
 				if (m_end <= r_end)
 					idx_a++;
 				else

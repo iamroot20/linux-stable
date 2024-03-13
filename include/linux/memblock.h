@@ -340,6 +340,9 @@ int __init deferred_page_init_max_threads(const struct cpumask *node_cpumask);
  * Walks over free (memory && !reserved) areas of memblock.  Available as
  * soon as memblock is initialized.
  */
+/* IAMROOT20 20240309
+ * 루프를 돌며 memory 영역에서 reserved 영역을 제외한 영역인 free 메모리 영역을 알아옴
+ */	
 #define for_each_free_mem_range(i, nid, flags, p_start, p_end, p_nid)	\
 	__for_each_mem_range(i, &memblock.memory, &memblock.reserved,	\
 			     nid, flags, p_start, p_end, p_nid)
