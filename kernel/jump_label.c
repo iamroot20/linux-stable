@@ -67,6 +67,11 @@ static void jump_label_swap(void *a, void *b, int size)
 	struct jump_entry *jeb = b;
 	struct jump_entry tmp = *jea;
 
+	/* IAMROOT20 20240316
+	 * jump_entry_code/target/key() 함수에서 
+	 * '주소 + 값'으로 값을 비교
+	 *  -> '주소'가 변한 만큼(delta) '값'에서 보상을 해줘야 한다
+	 */
 	jea->code	= jeb->code - delta;
 	jea->target	= jeb->target - delta;
 	jea->key	= jeb->key - delta;

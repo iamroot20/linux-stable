@@ -1315,7 +1315,8 @@ void __init early_init_dt_scan_nodes(void)
 
 	/* Setup memory, calling early_init_dt_add_memory_arch */
 	early_init_dt_scan_memory();
-
+	
+	/* IAMROOT20_20240316 START */
 	/* Handle linux,usable-memory-range property */
 	early_init_dt_check_for_usable_mem_range();
 }
