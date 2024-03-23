@@ -351,6 +351,7 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
 	 */
 	local_daif_restore(DAIF_PROCCTX_NOIRQ);
 
+	/* IAMROOT20_20240323 END */
 	/*
 	 * TTBR0 is only used for the identity mapping at this stage. Make it
 	 * point to zero page to avoid speculatively fetching new entries.

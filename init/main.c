@@ -736,6 +736,10 @@ noinline void __ref __noreturn rest_init(void)
 }
 
 /* Check for early params. */
+/* IAMROOT20_20240323 START
+ * ex) param = "console", val = "ttyS0,115200n8"
+ *     unused = "early options", arg = null
+ */
 static int __init do_early_param(char *param, char *val,
 				 const char *unused, void *arg)
 {

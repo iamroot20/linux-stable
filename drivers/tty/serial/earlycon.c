@@ -36,6 +36,11 @@ static struct earlycon_device early_console_dev = {
 	.con = &early_con,
 };
 
+/* IAMROOT20_20240323
+ * boot command line 파라티머로 들어온 physical address를 
+ * FIX_EARLYCON_MEM_BASE 에 매핑한다.
+ * FIX_EARLYCON_MEM_BASE virtual address + page offset을 반환한다
+ */
 static void __iomem * __init earlycon_map(resource_size_t paddr, size_t size)
 {
 	void __iomem *base;
@@ -60,6 +65,11 @@ static void __init earlycon_init(struct earlycon_device *device,
 	size_t len;
 
 	/* scan backwards from end of string for first non-numeral */
+	/* IAMROOT20_20240223
+	 * ex) name = "pl011"
+	 *     - earlycon->index = 011
+	 *     - earlycon->name = "pl"
+	 */
 	for (s = name + strlen(name);
 	     s > name && s[-1] >= '0' && s[-1] <= '9';
 	     s--)
@@ -96,6 +106,12 @@ static int __init parse_options(struct earlycon_device *device, char *options)
 	int length;
 	resource_size_t addr;
 
+	/* IAROOT20_20240223
+	 * ex) options = "0x3f201000,115200n8"
+	 *     - iotype = UPIO_MEM
+	 *     - addr = 0x3f201000
+	 *     - options = "115200n8"
+	 */
 	if (uart_parse_earlycon(options, &port->iotype, &addr, &options))
 		return -EINVAL;
 
@@ -147,6 +163,10 @@ static int __init register_earlycon(char *buf, const struct earlycon_id *match)
 	spin_lock_init(&port->lock);
 	if (!port->uartclk)
 		port->uartclk = BASE_BAUD * 16;
+	/* IAMROOT20_20240223
+	 * port->mapbase를 FIX_EARLYCON_MEM_BASE에 매핑하고, 
+	 * virtual address를 다시 저장
+	 */
 	if (port->mapbase)
 		port->membase = earlycon_map(port->mapbase, 64);
 
@@ -192,6 +212,15 @@ int __init setup_earlycon(char *buf)
 		return -EALREADY;
 
 again:
+	/* IAMROOT20_20240323
+	 * ex) rpi2 early console : "earlycon=pl011,0x3f201000,115200n8"
+	 *     OF_EARLYCON_DECLARE(pl011, "arm,pl011", pl011_early_console_setup);
+	 *
+	 *     struct earlycon_id
+	 *     - name = "pl011"
+	 *     - compatible = "arm,pl011"
+	 *     - setup = pl011_early_console_setup
+	 */
 	for (match = __earlycon_table; match < __earlycon_table_end; match++) {
 		size_t len = strlen(match->name);
 
@@ -201,7 +230,13 @@ again:
 		/* prefer entries with empty compatible */
 		if (empty_compatible && *match->compatible)
 			continue;
-
+		/* IAMROOT20_20240323
+		 * ex) buf = "pl011,0x3f201000,115200n8"
+		 *     buf[len] -> ','를 가리킴
+		 *
+		 *     buf += len + 1; 이후에 
+		 *     buf = "0x3f201000,115200n8"
+		 */
 		if (buf[len]) {
 			if (buf[len] != ',')
 				continue;
@@ -227,6 +262,9 @@ again:
 bool earlycon_acpi_spcr_enable __initdata;
 
 /* early_param wrapper for setup_earlycon() */
+/* IAMROOT20_20240323
+ * ex) buf = "ttyS0,115200n8"
+ */
 static int __init param_setup_earlycon(char *buf)
 {
 	int err;
