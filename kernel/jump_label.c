@@ -512,17 +512,33 @@ void __init jump_label_init(void)
 	jump_label_lock();
 	jump_label_sort_entries(iter_start, iter_stop);
 
+	/* IAMROOT20 20240316
+	 * 모든 jump entry 순회
+	 */
 	for (iter = iter_start; iter < iter_stop; iter++) {
 		struct static_key *iterk;
 		bool in_init;
 
 		/* rewrite NOPs */
+		/* IAMROOT20 20240316
+		 * nop 엔트리일 경우 nop 명령어로 교환
+		 * arm64의 경우 컴파일 타임에 nop으로 생성되어 있으므로 생략됨
+		 */
 		if (jump_label_type(iter) == JUMP_LABEL_NOP)
 			arch_jump_label_transform_static(iter, JUMP_LABEL_NOP);
 
+		/* IAMROOT20 20240316
+		 * entry의 code가 init 섹션에 있는지 확인
+		 * init 섹션에 있을 경우 나중에 init 섹션 내용은 삭제되므로
+		 * init 섹션안에 포함된 jump entry들은 업데이트 할 필요가 없음
+		 */
 		in_init = init_section_contains((void *)jump_entry_code(iter), 1);
 		jump_entry_set_init(iter, in_init);
 
+		/* IAMROOT20 20240316
+		 * key의 type의 하위 2비트에 nop 엔트리인지 jump 엔트리인지 기록하고
+		 * key의 entries와 sorting되어 있는 첫번째 jump 엔트리만 연결
+		 */
 		iterk = jump_entry_key(iter);
 		if (iterk == key)
 			continue;

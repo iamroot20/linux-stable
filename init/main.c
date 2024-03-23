@@ -770,6 +770,10 @@ void __init parse_early_param(void)
 		return;
 
 	/* All fall through to do_early_param. */
+	/* IAMROOT20 20240316
+	 * boot_command_line에는 dt에서 가져온 bootargs의 문자열이 저장되어 있음
+	 * ex) boot_command_line = "console=ttyS0,115200n8 earlyprintk"
+	 */
 	strscpy(tmp_cmdline, boot_command_line, COMMAND_LINE_SIZE);
 	parse_early_options(tmp_cmdline);
 	done = 1;

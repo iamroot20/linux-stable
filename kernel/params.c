@@ -151,6 +151,10 @@ static int parse_one(char *param,
 
 	if (handle_unknown) {
 		pr_debug("doing %s: %s='%s'\n", doing, param, val);
+		/* IAMROOT20 20240316
+		 * ex) do_early_param("console", "ttyS0,115200n8", "early options", NULL);
+		 */
+		/* IAMROOT20_END 20240316 */
 		return handle_unknown(param, val, doing, arg);
 	}
 
@@ -172,6 +176,9 @@ char *parse_args(const char *doing,
 	char *param, *val, *err = NULL;
 
 	/* Chew leading spaces */
+	/* IAMROOT20 20240316
+	 * args 앞에 존재하는 space를 제거
+	 */
 	args = skip_spaces(args);
 
 	if (*args)
@@ -181,6 +188,10 @@ char *parse_args(const char *doing,
 		int ret;
 		int irq_was_disabled;
 
+		/* IAMROOT20 20240316
+		 * ex) args = "console=ttyS0,115200n8 earlyprintk"
+		 *     param = console, val = ttyS0,115200n8
+		 */
 		args = next_arg(args, &param, &val);
 		/* Stop at -- */
 		if (!val && strcmp(param, "--") == 0)
