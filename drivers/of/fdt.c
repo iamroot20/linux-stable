@@ -80,6 +80,10 @@ void __init of_fdt_limit_memory(int limit)
 	}
 }
 
+/* IAMROOT20 20240330 
+ * status가 없거나
+ * status="ok" 또는 status="okay"이면 true
+ */
 static bool of_fdt_device_is_available(const void *blob, unsigned long node)
 {
 	const char *status = fdt_getprop(blob, node, "status", NULL);
@@ -479,6 +483,9 @@ static u32 of_fdt_crc32;
 static int __init early_init_dt_reserve_memory(phys_addr_t base,
 					       phys_addr_t size, bool nomap)
 {
+	/* IAMROOT20 20240330 
+	 * nomap일 경우
+	 */
 	if (nomap) {
 		/*
 		 * If the memory is already reserved (by another region), we
@@ -489,8 +496,14 @@ static int __init early_init_dt_reserve_memory(phys_addr_t base,
 		    memblock_is_region_reserved(base, size))
 			return -EBUSY;
 
+		/* IAMROOT20 20240330
+		 * NOMAP flag 설정하고 reserve 등록안하고 종료
+		 */
 		return memblock_mark_nomap(base, size);
 	}
+	/* IAMROOT20 20240330
+	 * nomap이 아닐 경우 memblock.reserved에 등록
+	 */
 	return memblock_reserve(base, size);
 }
 
@@ -507,6 +520,9 @@ static int __init __reserved_mem_reserve_reg(unsigned long node,
 	int first = 1;
 	bool nomap;
 
+	/* IAMROOT20 20240330
+	 * reg 프로퍼티 가져옴
+	 */
 	prop = of_get_flat_dt_prop(node, "reg", &len);
 	if (!prop)
 		return -ENOENT;
@@ -517,12 +533,22 @@ static int __init __reserved_mem_reserve_reg(unsigned long node,
 		return -EINVAL;
 	}
 
+	/* IAMROOT20 20240330
+	 * no-map 프로퍼티 가져옴
+	 */
 	nomap = of_get_flat_dt_prop(node, "no-map", NULL) != NULL;
 
 	while (len >= t_len) {
+		/* IAMROOT20 20240330
+		 * reg 프로퍼티에서 base와 size값을 읽음
+		 */
 		base = dt_mem_next_cell(dt_root_addr_cells, &prop);
 		size = dt_mem_next_cell(dt_root_size_cells, &prop);
 
+		/* IAMROOT20 20240330 
+		 * nomap일 경우 nomap flag만 설정
+		 * nomap이 아닐 경우 memblock.reserved에 등록
+		 */
 		if (size &&
 		    early_init_dt_reserve_memory(base, size, nomap) == 0)
 			pr_debug("Reserved memory: reserved region for node '%s': base %pa, size %lu MiB\n",
@@ -533,6 +559,10 @@ static int __init __reserved_mem_reserve_reg(unsigned long node,
 
 		len -= t_len;
 		if (first) {
+			/* IAMROOT20 20240330
+			 * reserved_mem에 reg의 첫번째 region 정보만 저장
+			 */
+			/* IAMROOT20_END 20240330 */
 			fdt_reserved_mem_save_node(node, uname, base, size);
 			first = 0;
 		}
@@ -544,6 +574,11 @@ static int __init __reserved_mem_reserve_reg(unsigned long node,
  * __reserved_mem_check_root() - check if #size-cells, #address-cells provided
  * in /reserved-memory matches the values supported by the current implementation,
  * also check if ranges property has been provided
+ */
+/* IAMROOT20 20240330
+ * reserved-memory노드에 size-cells, address-cless, ranges 속성이 있는지 확인
+ * 현재 node의 size-cells 값과 dt_root_size_cells 값이 같은지 확인 
+ * 현재 node의 address-cells 값과 dt_root_address_cells 값이 같은지 확인 
  */
 static int __init __reserved_mem_check_root(unsigned long node)
 {
@@ -571,6 +606,9 @@ static int __init fdt_scan_reserved_mem(void)
 	int node, child;
 	const void *fdt = initial_boot_params;
 
+	/* IAMROOT20 20240330 
+	 * reserved-memory 노드를 가리킴
+	 */
 	node = fdt_path_offset(fdt, "/reserved-memory");
 	if (node < 0)
 		return -ENODEV;
@@ -580,13 +618,22 @@ static int __init fdt_scan_reserved_mem(void)
 		return -EINVAL;
 	}
 
+	/* IAMROOT20 20240330
+	 * reserved-memory노드의 sub-node들을 순회
+	 */
 	fdt_for_each_subnode(child, fdt, node) {
 		const char *uname;
 		int err;
 
 		if (!of_fdt_device_is_available(fdt, child))
 			continue;
-
+		/* IAMROOT20 20240330 
+		 * ex)  hyp_mem: hyp@80000000 {
+		 *		reg = <0x0 0x80000000 0x0 0x600000>;
+		 *		no-map;
+		 *	};
+		 *      uname = "hyp_mem"
+		 */
 		uname = fdt_get_name(fdt, child, NULL);
 
 		err = __reserved_mem_reserve_reg(child, uname);

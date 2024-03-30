@@ -260,6 +260,11 @@ early_param("mem", early_mem);
 
 void __init arm64_memblock_init(void)
 {
+	/* IAMROOT20 20240330
+	 * ex) PAGE_END = 0xffff_8000_0000_0000
+	 *     _PAGE_OFFSET(vabits_actual) = 0xffff_0000_0000_0000
+	 *     0xffff_0000_0000_0000 ~ 0xffff_8000_0000_0000은 linear
+	 */
 	s64 linear_region_size = PAGE_END - _PAGE_OFFSET(vabits_actual);
 
 	/*
@@ -277,10 +282,18 @@ void __init arm64_memblock_init(void)
 	}
 
 	/* Remove memory above our supported physical address size */
+	/* IAMROOT20 20240330
+	 * ex) pa 48bit 사용 시
+	 *     0x0001_0000_0000_0000 ~ 0xffff_ffff_ffff_ffff의 범위의 물리 메모리는 사용되지 않음으로 memblock.memory에서 제거
+	 */
 	memblock_remove(1ULL << PHYS_MASK_SHIFT, ULLONG_MAX);
 
 	/*
 	 * Select a suitable value for the base of physical memory.
+	 */
+	/* IAMROOT20 20240330 
+	 * memblock.memory.regions[0]의 base를 ARM64_MEMSTART_ALIGN(ex 1GB)에 맞춰서 내림하여 memstart_addr을 설정
+	 * ex) memstart_addr = 0x0000_0000_4000_0000
 	 */
 	memstart_addr = round_down(memblock_start_of_DRAM(),
 				   ARM64_MEMSTART_ALIGN);
@@ -293,12 +306,26 @@ void __init arm64_memblock_init(void)
 	 * linear mapping. Take care not to clip the kernel which may be
 	 * high in memory.
 	 */
+	/* IAMROOT20 20240330
+	 * ex) memstart_addr = 0x0000_0000_4000_0000
+	 *     linear_region_size = 0x0000_8000_0000_0000
+	 * memstart_addr + linear_region_size과 __pa_symbol(_end) 중 더 큰 값부터 0xffff_ffff_ffff_ffff까지 범위를 memblock.memory에서 제거
+	 */
 	memblock_remove(max_t(u64, memstart_addr + linear_region_size,
 			__pa_symbol(_end)), ULLONG_MAX);
+	/* IAMROOT20 20240330
+	 * memstart_addr부터 memblock_end_of_DRAM()까지의 크기가 linear_region_size보다 큰 경우
+	 */
 	if (memstart_addr + linear_region_size < memblock_end_of_DRAM()) {
 		/* ensure that memstart_addr remains sufficiently aligned */
+		/* IAMROOT20 20240330 
+		 * memblock_end_of_DRAM()에서 아래쪽으로 linear_region_size만큼으로 memstart_addr을 재설정
+		 */
 		memstart_addr = round_up(memblock_end_of_DRAM() - linear_region_size,
 					 ARM64_MEMSTART_ALIGN);
+		/* IAMROOT20 20240330
+		 * 0부터 새로운 memstart_addr까지 memblock.memory에서 제거
+		 */
 		memblock_remove(0, memstart_addr);
 	}
 
@@ -309,6 +336,10 @@ void __init arm64_memblock_init(void)
 	 * we have to move it upward. Since memstart_addr represents the
 	 * physical address of PAGE_OFFSET, we have to *subtract* from it.
 	 */
+	/* IAMROOT20 20240330
+	 * CONFIG_VA_52bit이고 vabits_actual이 52bit가 아닐 경우
+	 * 52bit 기준으로 설정된 가상 주소를 48bit 기준으로 변경
+	 */
 	if (IS_ENABLED(CONFIG_ARM64_VA_BITS_52) && (vabits_actual != 52))
 		memstart_addr -= _PAGE_OFFSET(48) - _PAGE_OFFSET(52);
 
@@ -317,16 +348,26 @@ void __init arm64_memblock_init(void)
 	 * high up in memory, add back the kernel region that must be accessible
 	 * via the linear mapping.
 	 */
+	/* IAMROOT20 20240330
+	 * arm64의 경우 memory_limit는 PHYS_ADDR_MAX로 선언할때 초기화되어 있음
+	 * 만약 boot parameter의 mem으로 값이 설정되어 들어왔다면 memory_limit는 해당 값으로 변경되어 있었을 것
+	 */
 	if (memory_limit != PHYS_ADDR_MAX) {
 		memblock_mem_limit_remove_map(memory_limit);
 		memblock_add(__pa_symbol(_text), (u64)(_end - _text));
 	}
 
+	/* IAMROOT20 20240330
+	 * fdt에서 initrd의 메모리 영역을 설정했다면
+	 */
 	if (IS_ENABLED(CONFIG_BLK_DEV_INITRD) && phys_initrd_size) {
 		/*
 		 * Add back the memory we just removed if it results in the
 		 * initrd to become inaccessible via the linear mapping.
 		 * Otherwise, this is a no-op
+		 */
+		/* IAMROOT20 20240330
+		 * base와 size를 설정
 		 */
 		u64 base = phys_initrd_start & PAGE_MASK;
 		u64 size = PAGE_ALIGN(phys_initrd_start + phys_initrd_size) - base;
@@ -339,23 +380,49 @@ void __init arm64_memblock_init(void)
 		 * each other) so that all granule/#levels combinations can
 		 * always access both.
 		 */
+		/* IAMROOT20 20240330
+		 * base가 memblock_start_of_DRAM()보다 작거나
+		 * (base + size)가 (memblock_start_of_DRAm() + linear_region_size)보다 크면
+		 * initrd의 메모리 영역이 linear mapping될 수 없으므로 warning
+		 */
 		if (WARN(base < memblock_start_of_DRAM() ||
 			 base + size > memblock_start_of_DRAM() +
 				       linear_region_size,
 			"initrd not fully accessible via the linear mapping -- please check your bootloader ...\n")) {
 			phys_initrd_size = 0;
 		} else {
+			/* IAMROOT20 20240330
+			 * initrd의 메모리 영역을 memblock.memory에 등록
+			 */
 			memblock_add(base, size);
+			/* IAMROOT20 20240330
+			 * memblock.memory에서 해당 region에서 MEMBLOCK_NOMAP flag를 clear
+			 */
 			memblock_clear_nomap(base, size);
+			/* IAMROOT20 20240330
+			 * initrd의 메모리 영역을 memblock.reserved에 등록
+			 */
 			memblock_reserve(base, size);
 		}
 	}
 
 	if (IS_ENABLED(CONFIG_RANDOMIZE_BASE)) {
 		extern u16 memstart_offset_seed;
+		/* IAMROOT20 20240330
+		 * id_aa64mmfr0_el1 레지스터 값을 읽음
+		 */
 		u64 mmfr0 = read_cpuid(ID_AA64MMFR0_EL1);
+		/* IAMROOT20 20240330
+		 * id_aa64mmfr0_el1.parange 필드 값을 추출
+		 * ex) pa 48bit, parange = 0b0101
+		 */
 		int parange = cpuid_feature_extract_unsigned_field(
 					mmfr0, ID_AA64MMFR0_EL1_PARANGE_SHIFT);
+		/* IAMROOT20 20240330
+		 * ex) pa 48bit
+		 *     range = 0x0000_8000_0000_0000 - 0x0001_0000_0000_0000
+		 *     range = -0x0000_8000_0000_0000
+		 */
 		s64 range = linear_region_size -
 			    BIT(id_aa64mmfr0_parange_to_phys_shift(parange));
 
@@ -363,6 +430,9 @@ void __init arm64_memblock_init(void)
 		 * If the size of the linear region exceeds, by a sufficient
 		 * margin, the size of the region that the physical memory can
 		 * span, randomize the linear region as well.
+		 */
+		/* IAMROOT20 20240330
+		 * ex) pa 48bit일 경우 range가 음수이므로 해당 if문에 진입하지 못함
 		 */
 		if (memstart_offset_seed > 0 && range >= (s64)ARM64_MEMSTART_ALIGN) {
 			range /= ARM64_MEMSTART_ALIGN;
@@ -375,7 +445,13 @@ void __init arm64_memblock_init(void)
 	 * Register the kernel text, kernel data, initrd, and initial
 	 * pagetables with memblock.
 	 */
+	/* IAMROOT20 20240330
+	 * kernel image 물리 주소 region을 memblock.reserved에 저장
+	 */
 	memblock_reserve(__pa_symbol(_stext), _end - _stext);
+	/* IAMROOT20 20240330
+	 * initrd_start, initrd_end에 가상주소를 저장
+	 */
 	if (IS_ENABLED(CONFIG_BLK_DEV_INITRD) && phys_initrd_size) {
 		/* the generic initrd code expects virtual addresses */
 		initrd_start = __phys_to_virt(phys_initrd_start);

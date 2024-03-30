@@ -356,9 +356,16 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
 	 * TTBR0 is only used for the identity mapping at this stage. Make it
 	 * point to zero page to avoid speculatively fetching new entries.
 	 */
+	/* IAMROOT20_START 20240330 */
 	cpu_uninstall_idmap();
 
+	/* IAMROOT20 20240330
+	 * xen_early_init은 분석하지 않음
+	 */
 	xen_early_init();
+	/* IAMROOT20 20240330
+	 * efi_init은 분석하지 않음
+	 */
 	efi_init();
 
 	if (!efi_enabled(EFI_BOOT)) {

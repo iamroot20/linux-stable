@@ -96,12 +96,29 @@ static inline void __cpu_set_tcr_t0sz(unsigned long t0sz)
  */
 static inline void cpu_uninstall_idmap(void)
 {
+	/* IAMROOT20 20240330 
+	 * current는 init_task (head.S에서 sp_el0에 init_task 주소를 적어놨음)
+	 * current->active_mm은 init_mm을 가리킴 (현재 init_mm.pgd는 init_pg_dir이 들어있음)
+	 */
 	struct mm_struct *mm = current->active_mm;
 
+	/* IAMROOT20 20240330
+	 * reserved_pg_dir의 물리 주소를 ttbr0_el1에 write
+	 * reserved_pg_dir은 아무 정보가 없는 zero page table
+	 */
 	cpu_set_reserved_ttbr0();
+	/* IAMROOT20 20240330
+	 * tlb invalidation
+	 */
 	local_flush_tlb_all();
+	/* IAMROOT20 20240330
+	 * tcr_el1.t0sz의 값을 현재 사용중인 va bit로 설정해줌
+	 */
 	cpu_set_default_tcr_t0sz();
 
+	/* IAMROOT20 20240330 
+	 * mm과 init_mm이 같으므로 현재 호출되지 않음
+	 */
 	if (mm != &init_mm && !system_uses_ttbr0_pan())
 		cpu_switch_mm(mm->pgd, mm);
 }

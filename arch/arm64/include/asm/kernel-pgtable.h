@@ -146,6 +146,13 @@
  * has a direct correspondence, and needs to appear sufficiently aligned
  * in the virtual address space.
  */
+/* IAMROOT20 20240330 
+ * ex) 4k page 기준
+ *     ARM64_MEMSTART_SHIFT = 30
+ *     SECTION_SIZE_BITS = 27
+ *     ARM64_MEMSTART_SHIFT > SECTION_SIZE_BITS 이므로
+ *     ARM64_MEMSTART_ALIGN = 0x0000_0000_4000_0000(1GB)
+ */
 #if ARM64_MEMSTART_SHIFT < SECTION_SIZE_BITS
 #define ARM64_MEMSTART_ALIGN	(1UL << SECTION_SIZE_BITS)
 #else
