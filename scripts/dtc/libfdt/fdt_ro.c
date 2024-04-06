@@ -177,6 +177,9 @@ int fdt_get_mem_rsv(const void *fdt, int n, uint64_t *address, uint64_t *size)
 	const struct fdt_reserve_entry *re;
 
 	FDT_RO_PROBE(fdt);
+	/* IAMROOT20 20240406
+	 * fdt의 memory reservation block에서 n번째 위치의 fdt_reserve_enty 포인터를 가져옴
+	 */
 	re = fdt_mem_rsv(fdt, n);
 	if (!can_assume(VALID_INPUT) && !re)
 		return -FDT_ERR_BADOFFSET;

@@ -41,6 +41,12 @@ extern unsigned int pageblock_order;
  * Huge pages are a constant size, but don't exceed the maximum allocation
  * granularity.
  */
+/* IAMROOT20 20240406
+ * ex) VA_BITS : 39, page size : 4KB
+ * 	- HUGETLB_PAGE_ORDER	9
+ * 	- MAX_ORDER		10
+ * 	- pageblock_order	(unsigned int)9
+ */
 #define pageblock_order		min_t(unsigned int, HUGETLB_PAGE_ORDER, MAX_ORDER)
 
 #endif /* CONFIG_HUGETLB_PAGE_SIZE_VARIABLE */

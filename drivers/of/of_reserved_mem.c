@@ -119,6 +119,9 @@ static int __init __reserved_mem_alloc_size(unsigned long node,
 	    && of_flat_dt_is_compatible(node, "shared-dma-pool")
 	    && of_get_flat_dt_prop(node, "reusable", NULL)
 	    && !nomap)
+		/* IAMROOT20 20240406
+		 * ex) CMA_MIN_ALIGNMENT_BYTES 2M (VA_BITS:39, page size:4KB)
+		 */
 		align = max_t(phys_addr_t, align, CMA_MIN_ALIGNMENT_BYTES);
 
 	prop = of_get_flat_dt_prop(node, "alloc-ranges", &len);
@@ -137,6 +140,10 @@ static int __init __reserved_mem_alloc_size(unsigned long node,
 			end = start + dt_mem_next_cell(dt_root_size_cells,
 						       &prop);
 
+			/* IAMROOT20 20240406
+			 * start ~ end 사이에서 size 만큼reserved memory 영역을 할당한다
+			 * - base에 할당받은 영역의 시작 주소가 저장된다
+			 */
 			ret = early_init_dt_alloc_reserved_memory_arch(size,
 					align, start, end, nomap, &base);
 			if (ret == 0) {
@@ -227,6 +234,9 @@ static void __init __rmem_check_for_overlap(void)
 	if (reserved_mem_count < 2)
 		return;
 
+	/* IAMROOT20 20240406
+	 * overlap을 확인하기 전에 reserved_mem의 base, size 순으로 정렬한다
+	 */
 	sort(reserved_mem, reserved_mem_count, sizeof(reserved_mem[0]),
 	     __rmem_cmp, NULL);
 	for (i = 0; i < reserved_mem_count - 1; i++) {
@@ -234,7 +244,10 @@ static void __init __rmem_check_for_overlap(void)
 
 		this = &reserved_mem[i];
 		next = &reserved_mem[i + 1];
-
+		
+		/* IAMROOT20 20240406
+		 * this영역과 next 영역이 overlap하는 경우 error log 출력
+		 */
 		if (this->base + this->size > next->base) {
 			phys_addr_t this_end, next_end;
 

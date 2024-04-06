@@ -563,6 +563,9 @@ static int __init __reserved_mem_reserve_reg(unsigned long node,
 			 * reserved_mem에 reg의 첫번째 region 정보만 저장
 			 */
 			/* IAMROOT20_END 20240330 */
+			/* IAMROOT20_START 20240406
+			 * reserved memory 영역을 reserved_mem[64]에 저장한다.
+			 */
 			fdt_reserved_mem_save_node(node, uname, base, size);
 			first = 0;
 		}
@@ -637,6 +640,22 @@ static int __init fdt_scan_reserved_mem(void)
 		uname = fdt_get_name(fdt, child, NULL);
 
 		err = __reserved_mem_reserve_reg(child, uname);
+		/* IAMROOT20 20240406
+		 * reg property가 없는 경우 -ENOENT를 return
+		 * - size property가 있는 경우에는 reserved_mem[64]에 base와size를 0으로 해서 저장 
+		 * ex)     reserved-memory {                                                           
+		 *		#address-cells = <1>;                                                   
+		 *		#size-cells = <1>;                                                      
+		 * 		ranges;                                                                 
+		 * 
+		 *		linux,cma@80000000 {                                                    
+		 * 			compatible = "shared-dma-pool";    
+		 *			alloc-ranges = <0x80000000 0x30000000>;    
+		 *			size = <0x10000000>;                                    
+		 *			linux,cma-default;
+		 *			reusable;
+		 *		};
+		 */
 		if (err == -ENOENT && of_get_flat_dt_prop(child, "size", NULL))
 			fdt_reserved_mem_save_node(child, uname, 0, 0);
 	}
@@ -687,6 +706,10 @@ void __init early_init_fdt_scan_reserved_mem(void)
 
 	/* Process header /memreserve/ fields */
 	for (n = 0; ; n++) {
+		/* IAMROOT20 20240406
+		 * initial_boot_params(fdt 가상주소)에서 memory reservation block 영역의
+		 * base, size를 읽어와서 size가 있는 경우 memblock.reserved에 저장
+		 */
 		fdt_get_mem_rsv(initial_boot_params, n, &base, &size);
 		if (!size)
 			break;
