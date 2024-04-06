@@ -280,10 +280,16 @@ __memblock_find_range_top_down(phys_addr_t start, phys_addr_t end,
 		this_start = clamp(this_start, start, end);
 		this_end = clamp(this_end, start, end);
 
+		/* IAMROOT20 20240406
+		 * 만약 할당된 크기가 size보다 작으면 continue
+		 */
 		if (this_end < size)
 			continue;
 
 		cand = round_down(this_end - size, align);
+		/* IAMROOT20 20240406 
+		 * 영역을 할당받았지만, round_down된 주소가 this_start보다 작으면 continue
+		 */
 		if (cand >= this_start)
 			return cand;
 	}
@@ -1130,6 +1136,9 @@ static bool should_skip_region(struct memblock_type *type,
 	if (type != memblock_memory)
 		return false;
 
+	/* IAMROOT20 20240406
+	 * NUMA_NO_NODE이거나, 현재 region의 노드의 nid가, 찾고자 하는 노드의 nid와 다른 경우 skip
+	 */
 	/* only memory regions are associated with nodes, check it */
 	if (nid != NUMA_NO_NODE && nid != m_nid)
 		return true;
@@ -1309,6 +1318,9 @@ void __init_memblock __next_mem_range_rev(u64 *idx, int nid,
 	if (WARN_ONCE(nid == MAX_NUMNODES, "Usage of MAX_NUMNODES is deprecated. Use NUMA_NO_NODE instead\n"))
 		nid = NUMA_NO_NODE;
 
+	/* IAMROOT20 20240406
+	 * 만약 idx가 가장 끝 주소인 경우, idx_a를 마지막 리전이 되고, idx_b를 마지막 리전의 + 1이 된다
+	 */
 	if (*idx == (u64)ULLONG_MAX) {
 		idx_a = type_a->cnt - 1;
 		if (type_b != NULL)
@@ -1327,6 +1339,9 @@ void __init_memblock __next_mem_range_rev(u64 *idx, int nid,
 		if (should_skip_region(type_a, m, nid, flags))
 			continue;
 
+		/* IAMROOT20 20240406 
+		 * 만약 type_b가 지정되지 않으면, 첫 번째 loop의 memblock 영역을 반환
+		 */
 		if (!type_b) {
 			if (out_start)
 				*out_start = m_start;
@@ -1345,6 +1360,11 @@ void __init_memblock __next_mem_range_rev(u64 *idx, int nid,
 			phys_addr_t r_start;
 			phys_addr_t r_end;
 
+			/* IAMROOT20 20240406
+			 * idx_b의 리전을 바탕으로, 해당 리전의 이전 리전의 끝 주소를 r_start로 설정
+			 * 현재 리전의 시작 주소를 r_end로 설정
+			 * (만약 idx_b가 마지막 리전 이후를 가리키면 PHYS_ADDR_MAX로 설정)
+			 */
 			r = &type_b->regions[idx_b];
 			r_start = idx_b ? r[-1].base + r[-1].size : 0;
 			r_end = idx_b < type_b->cnt ?
@@ -1353,7 +1373,6 @@ void __init_memblock __next_mem_range_rev(u64 *idx, int nid,
 			 * if idx_b advanced past idx_a,
 			 * break out to advance idx_a
 			 */
-
 			if (r_end <= m_start)
 				break;
 			/* if the two regions intersect, we're done */
@@ -1368,6 +1387,13 @@ void __init_memblock __next_mem_range_rev(u64 *idx, int nid,
 					idx_a--;
 				else
 					idx_b--;
+				/* IAMROOT20 20240406
+				 * idx_a = 0, idx_b = 1
+				 * idx = 0000_0001_0000_0000
+				 * 
+				 * idx_a = -1, idx_b = 0
+				 * idx = 0000_0000_ffff_ffff
+				 */
 				*idx = (u32)idx_a | (u64)idx_b << 32;
 				return;
 			}

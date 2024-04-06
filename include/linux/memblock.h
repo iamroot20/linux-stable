@@ -200,6 +200,9 @@ static inline void __next_physmem_range(u64 *idx, struct memblock_type *type,
  * @p_end: ptr to phys_addr_t for end address of the range, can be %NULL
  * @p_nid: ptr to int for nid of the range, can be %NULL
  */
+/* IAMROOT20 20240406
+ * ULLONG_MAX가 반환될 때까지 역순으로 순회하며, 가장 첫 번째 reserved되지 않은 영역으로 설정
+ */
 #define __for_each_mem_range_rev(i, type_a, type_b, nid, flags,		\
 				 p_start, p_end, p_nid)			\
 	for (i = (u64)ULLONG_MAX,					\

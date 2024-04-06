@@ -37,8 +37,15 @@ static int __init early_init_dt_alloc_reserved_memory_arch(phys_addr_t size,
 	phys_addr_t base;
 	int err = 0;
 
+	/* IAMROOT20 20240406
+	 * MEMBLOCK_ALLOC_ANYWHERE = 0xffff_ffff_ffff_ffff
+	 * SMP_CACHE_BYTES = (1 << 6) = 64
+	 */
 	end = !end ? MEMBLOCK_ALLOC_ANYWHERE : end;
 	align = !align ? SMP_CACHE_BYTES : align;
+	/* IAMROOT20 20240406
+	 * base = 할당된 메모리 영역의 시작 주소 
+	 */
 	base = memblock_phys_alloc_range(size, align, start, end);
 	if (!base)
 		return -ENOMEM;
