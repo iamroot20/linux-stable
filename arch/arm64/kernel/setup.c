@@ -376,6 +376,7 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
 	}
 
 	arm64_memblock_init();
+	/* IAMROOT20_END 20240413 */
 
 	paging_init();
 

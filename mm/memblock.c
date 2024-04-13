@@ -1579,7 +1579,11 @@ again:
 					    flags);
 	if (found && !memblock_reserve(found, size))
 		goto done;
-
+	
+	/* IAMROOT20 20240413
+	 * nid가 지정되어있고, exact_nid가 false 인 경우
+	 * nid를 NUMA_NO_NODE로 변경하여 모든 nid에 대해 memory를 찾는다
+	 */
 	if (nid != NUMA_NO_NODE && !exact_nid) {
 		found = memblock_find_in_range_node(size, align, start,
 						    end, NUMA_NO_NODE,
@@ -1588,6 +1592,10 @@ again:
 			goto done;
 	}
 
+	/* IAMROOT20 20240413
+	 * MEMBLOCK_MIRROR region에서 먼저 memory 할당을 시도했지만 실패하는 경우
+	 * mirror가 아닌 region에서 다시 할당을 시도한다
+	 */
 	if (flags & MEMBLOCK_MIRROR) {
 		flags &= ~MEMBLOCK_MIRROR;
 		pr_warn_ratelimited("Could not allocate %pap bytes of mirrored memory\n",

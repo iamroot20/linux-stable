@@ -358,6 +358,18 @@ static const struct reserved_mem_ops rmem_dma_ops = {
 	.device_release	= rmem_dma_device_release,
 };
 
+/* IAMROOT20 20240413
+ * ex) ipa_fws_region: ipa@f6800000 {
+ *             compatible = "shared-dma-pool";
+ *             reg = <0x0 0xf6800000 0x0 0x5000>;
+ *             no-map;
+ *     };
+ *     zap_shader_region: gpu@f6900000 {
+ *             compatible = "shared-dma-pool";
+ *             reg = <0x0 0xf6900000 0x0 0x2000>;
+ *             no-map;
+ *     };
+ */
 static int __init rmem_dma_setup(struct reserved_mem *rmem)
 {
 	unsigned long node = rmem->fdt_node;

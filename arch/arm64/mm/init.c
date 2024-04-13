@@ -460,6 +460,11 @@ void __init arm64_memblock_init(void)
 
 	early_init_fdt_scan_reserved_mem();
 
+	/* IAMROOT20 20240413
+	 * __va : 물리 주소를 '리니어 커널 메모리 매핑 영역'의 가상 주소로 변환
+	 *  - 리니어 커널 메모리 매핑 영역(4K, VA_BITS=48)
+	 *    : PAGE_OFFSET(0xffff_0000_0000_0000) ~ 0xffff_8000_0000_0000
+	 */
 	high_memory = __va(memblock_end_of_DRAM() - 1) + 1;
 }
 

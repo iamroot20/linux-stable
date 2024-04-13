@@ -131,6 +131,10 @@ static int __init __reserved_mem_alloc_size(unsigned long node,
 		 */
 		align = max_t(phys_addr_t, align, CMA_MIN_ALIGNMENT_BYTES);
 
+	/* IAMROOT20_START 20240413
+	 * "alloc-ranges" property가 있으면, start ~ end 사이에서 memory 할당
+	 * 			     없으면, 전체 영역(0 ~ 0xffff_..._ffff)에서 memory 할당
+	 */
 	prop = of_get_flat_dt_prop(node, "alloc-ranges", &len);
 	if (prop) {
 
@@ -143,6 +147,10 @@ static int __init __reserved_mem_alloc_size(unsigned long node,
 		base = 0;
 
 		while (len > 0) {
+			/* IAMROOT20 20240413
+			 * alloc-ranges에 base, size가 여러개가 명시되엉 있는 경우
+			 * 순서대로 할당을 시도하고, 성공하면 break로 빠져나감
+			 */
 			start = dt_mem_next_cell(dt_root_addr_cells, &prop);
 			end = start + dt_mem_next_cell(dt_root_size_cells,
 						       &prop);
@@ -159,6 +167,12 @@ static int __init __reserved_mem_alloc_size(unsigned long node,
 					(unsigned long)(size / SZ_1M));
 				break;
 			}
+			/* IAMROOT20 20240413
+			 * alloc-ranges에 base, size가 여러개가 명시되어 있는 경우
+			 * 다음 range에서 할당하기 위해서 len -= t_len을 수행
+			 * ex) alloc-ranges = <0x80000000 0x30000000
+			 * 			0x90000000 0x30000000>;
+			 */
 			len -= t_len;
 		}
 
@@ -194,6 +208,11 @@ static int __init __reserved_mem_init_node(struct reserved_mem *rmem)
 	const struct of_device_id *i;
 	int ret = -ENOENT;
 
+	/* IAMROOT20 20240413
+	 * __reservedmem_of_table은 RESERVEDMEM_OF_DECLARE 매크로로 of_device_id 구조체를 등록함
+	 * ex) RESERVEDMEM_OF_DECLARE(tegra210_emc_table, "nvidia,tegra210-emc-table",
+         *		              tegra210_emc_table_init);
+	 */
 	for (i = __reservedmem_of_table; i < &__rmem_of_table_sentinel; i++) {
 		reservedmem_of_init_fn initfn = i->data;
 		const char *compat = i->compatible;
