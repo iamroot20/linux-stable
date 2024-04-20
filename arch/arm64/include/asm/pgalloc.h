@@ -22,8 +22,8 @@
 
 static inline void __pud_populate(pud_t *pudp, phys_addr_t pmdp, pudval_t prot)
 {
-	/* IAMROOT20 20231202
-	 * pudp = (pmdp | prot)
+	/* IAMROOT20 20231202, 20240420
+	 * (*pudp) = (pmdp | prot)
 	 */
 	set_pud(pudp, __pud(__phys_to_pud_val(pmdp) | prot));
 }

@@ -810,6 +810,11 @@ static inline pmd_t *pud_pgtable(pud_t pud)
 
 static inline void set_p4d(p4d_t *p4dp, p4d_t p4d)
 {
+	/* IAMROOT20 20240420
+	 * fixmap_copy() 에서 호출하는 경우,
+	 * swapper_pg_dir을 FIX_PGD에 mapping한 후 이 함수로 들어오기 때문에
+	 * 아래 in_swapper_pgdir 함수에서 false를 return
+	 */
 	if (in_swapper_pgdir(p4dp)) {
 		set_swapper_pgd((pgd_t *)p4dp, __pgd(p4d_val(p4d)));
 		return;

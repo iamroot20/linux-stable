@@ -2410,6 +2410,9 @@ void __init vm_area_add_early(struct vm_struct *vm)
 	struct vm_struct *tmp, **p;
 
 	BUG_ON(vmap_initialized);
+	/* IAMROOT20 20240420
+	 * virt addr이 작은 것부터 큰것 순서대로 삽입
+	 */
 	for (p = &vmlist; (tmp = *p) != NULL; p = &tmp->next) {
 		if (tmp->addr >= vm->addr) {
 			BUG_ON(tmp->addr < vm->addr + vm->size);

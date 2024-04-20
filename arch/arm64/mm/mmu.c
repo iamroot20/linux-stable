@@ -118,6 +118,10 @@ static phys_addr_t __init early_pgtable_alloc(int shift)
 	 * slot will be free, so we can (ab)use the FIX_PTE slot to initialise
 	 * any level of table.
 	 */
+	/* IAMROOT20 20240420
+	 * cpu에서는 물리주소(phys)에 접근할 수 없기 때문에, FIX_PTE에 mapping
+	 * 하여 cpu에서 접근할 수 있도록 설정
+	 */
 	ptr = pte_set_fixmap(phys);
 
 	memset(ptr, 0, PAGE_SIZE);
@@ -125,6 +129,9 @@ static phys_addr_t __init early_pgtable_alloc(int shift)
 	/*
 	 * Implicit barriers also ensure the zeroed page is visible to the page
 	 * table walker
+	 */
+	/* IAMROOT20 20240420
+	 * cpu에서 가상 주소로 page를 clear해 준다음, FIX_PTE mapping을 제거
 	 */
 	pte_clear_fixmap();
 
@@ -351,15 +358,20 @@ static void alloc_init_pud(pgd_t *pgdp, unsigned long addr, unsigned long end,
 		if (flags & NO_EXEC_MAPPINGS)
 			p4dval |= P4D_TABLE_PXN;
 		BUG_ON(!pgtable_alloc);
+		/* IAMROOT20 20240420
+		 * ex) pgtable_alloc = early_pgtable_alloc의 경우
+		 * 	- memblock에서 1 PAGE를 할당하고, 물리 주소를 return
+		 */
 		pud_phys = pgtable_alloc(PUD_SHIFT);
 		__p4d_populate(p4dp, pud_phys, p4dval);
 		p4d = READ_ONCE(*p4dp);
 	}
 	BUG_ON(p4d_bad(p4d));
 	
-	/* IAMROOT20 20231209
-	 * FIX_PUD를 bm_pud에 매핑한다
-	 * pudp = virt(FIX_PUD) + (phys_addr & (PAGE_SIZE - 1))
+	/* IAMROOT20 20231209, 20240420
+	 * - pudp(물리주소) = (*p4dp) + pud_index(addr)를 FIX_PUD에 매핑한다
+	 * - pudp(가상주소) = virt(FIX_PUD) + (pudp 물리주소 & (PAGE_SIZE - 1))를 
+	 *   return
 	 */
 	pudp = pud_set_fixmap_offset(p4dp, addr);
 	do {
@@ -757,6 +769,9 @@ static void __init map_kernel(pgd_t *pgdp)
 	 * mapping to install SW breakpoints. Allow this (only) when
 	 * explicitly requested with rodata=off.
 	 */
+	/* IAMROOT20 20240420
+	 * SW breakpoint -> "b ."
+	 */
 	pgprot_t text_prot = rodata_enabled ? PAGE_KERNEL_ROX : PAGE_KERNEL_EXEC;
 
 	/*
@@ -782,6 +797,7 @@ static void __init map_kernel(pgd_t *pgdp)
 	map_kernel_segment(pgdp, _data, _end, PAGE_KERNEL, &vmlinux_data, 0, 0);
 
 	fixmap_copy(pgdp);
+	/* IAMROOT20_END 20240420 */
 	kasan_copy_shadow(pgdp);
 }
 
@@ -820,6 +836,13 @@ void __init paging_init(void)
 	pgd_t *pgdp = pgd_set_fixmap(__pa_symbol(swapper_pg_dir));
 	extern pgd_t init_idmap_pg_dir[];
 
+	/* IAMROOT20 20240420
+	 * idmap_t0sz = ID map 영역이 mapping 할 수 있는 크기
+	 * - _end가 2^VA_BIT_MIN보다 큰 주소 위치에 있을 경우를 대비하여 설정
+	 *
+	 * ex)  __fls(0b1110) = 3
+	 *  cf. __ffs(0b1110) = 1
+	 */
 	idmap_t0sz = 63UL - __fls(__pa_symbol(_end) | GENMASK(VA_BITS_MIN - 1, 0));
 
 	map_kernel(pgdp);

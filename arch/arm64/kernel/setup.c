@@ -378,6 +378,7 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
 	arm64_memblock_init();
 	/* IAMROOT20_END 20240413 */
 
+	/* IAMROOT20_START 20240420 */	
 	paging_init();
 
 	acpi_table_upgrade();

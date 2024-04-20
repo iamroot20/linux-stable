@@ -203,6 +203,10 @@ void *__init fixmap_remap_fdt(phys_addr_t dt_phys, int *size, pgprot_t prot)
  */
 void __init fixmap_copy(pgd_t *pgdir)
 {
+	/* IAMROOT20 20240420
+	 * init_pg_dir에서 FIXADDR_TOT_START 주소가 가리키는 index의 descriptor를 
+	 * swapper_pg_dir에 복사한다 
+	 */
 	if (!READ_ONCE(pgd_val(*pgd_offset_pgd(pgdir, FIXADDR_TOT_START)))) {
 		/*
 		 * The fixmap falls in a separate pgd to the kernel, and doesn't
