@@ -356,6 +356,14 @@ void cpu_do_switch_mm(phys_addr_t pgd_phys, struct mm_struct *mm)
 	if (system_supports_cnp() && asid)
 		ttbr0 |= TTBR_CNP_BIT;
 
+	/* IAMROOT20 20240427
+	 * TTBR_ASID_MASK = 0xffff << 48
+	 * __bf_shf(TTBR_ASID_MASK) = 48
+	 *
+	 * FIELD_PREP(TTBR_ASID_MASK, asid) = (asid << 48 ) & (0xffff << 48)
+	 *
+	 * TTBR의 AISD 필드의 mask와 asid를 AND 연산한 값을 가져온다.
+	 */
 	/* SW PAN needs a copy of the ASID in TTBR0 for entry */
 	if (IS_ENABLED(CONFIG_ARM64_SW_TTBR0_PAN))
 		ttbr0 |= FIELD_PREP(TTBR_ASID_MASK, asid);

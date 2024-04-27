@@ -811,6 +811,14 @@ static inline bool system_has_full_ptr_auth(void)
 
 static __always_inline bool system_uses_irq_prio_masking(void)
 {
+	/* IAMROOT20 20240427
+	 * PSUDO_NMI : daif를 set해도 마스킹이 되지 않는 인터럽트(NMI)를
+	 * 활성화하기 위해 GIC를 사용하여 인터럽트를 발생시킨다.
+	 * GIC : Generic Interrupt Controller
+	 *   - 인터럽트를 받아서 분배하는 하드웨어 모듈
+	 *
+	 * ARM64_HAS_GIC_PRIO_MASKING = 27
+	 */
 	return IS_ENABLED(CONFIG_ARM64_PSEUDO_NMI) &&
 	       cpus_have_const_cap(ARM64_HAS_GIC_PRIO_MASKING);
 }

@@ -42,9 +42,17 @@ static inline unsigned long local_daif_save_flags(void)
 {
 	unsigned long flags;
 
+	/* IAMROOT20 20240427
+	 * msr daif, flags
+	 */
 	flags = read_sysreg(daif);
 
 	if (system_uses_irq_prio_masking()) {
+		/* IAMROOT20 20240427
+		 * ICC_PMR_EL1 : 특정 인터럽트 필터보다 더 높은 수준의
+		 * 인터럽트가 발생했을 때만 core에게 신호를 보낸다.
+		 */
+		/* IAMROOT20_END 20240427 */
 		/* If IRQs are masked with PMR, reflect it in the flags */
 		if (read_sysreg_s(SYS_ICC_PMR_EL1) != GIC_PRIO_IRQON)
 			flags |= PSR_I_BIT | PSR_F_BIT;

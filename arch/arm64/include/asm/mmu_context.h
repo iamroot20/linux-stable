@@ -53,6 +53,11 @@ static inline void cpu_switch_mm(pgd_t *pgd, struct mm_struct *mm)
 {
 	BUG_ON(pgd == swapper_pg_dir);
 	cpu_set_reserved_ttbr0();
+	/* IAMROOT20 20240427
+	 * cpu_do_switch_mm()
+	 *   - ttbr0를 pgd로 설정한다.
+	 *   - pgd, ttbr1의 ASID 필드에 mm의 asid를 설정한다.
+	 */
 	cpu_do_switch_mm(virt_to_phys(pgd),mm);
 }
 
@@ -192,6 +197,10 @@ static inline void cpu_replace_ttbr1(pgd_t *pgdp, pgd_t *idmap)
 
 	replace_phys = (void *)__pa_symbol(idmap_cpu_replace_ttbr1);
 
+	/* IAMROOT20 20240427
+	 * idmap을 ttbr0으로 설정하고,
+	 * ttbr0, ttbr1의 ASID를 init_mm의 asid로 설정한다.
+	 */
 	__cpu_install_idmap(idmap);
 
 	/*
