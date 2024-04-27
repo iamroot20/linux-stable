@@ -173,6 +173,9 @@ static inline void cpu_replace_ttbr1(pgd_t *pgdp, pgd_t *idmap)
 	unsigned long daif;
 
 	/* phys_to_ttbr() zeros lower 2 bits of ttbr with 52-bit PA */
+	/* IAMROOT20 20240427
+	 * swapper_pg_dir의 phys address를 구해서 ttbr1에 저장
+	 */
 	phys_addr_t ttbr1 = phys_to_ttbr(virt_to_phys(pgdp));
 
 	if (system_supports_cnp() && !WARN_ON(pgdp != lm_alias(swapper_pg_dir))) {

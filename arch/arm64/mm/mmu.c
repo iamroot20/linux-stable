@@ -610,6 +610,11 @@ static inline void arm64_kfence_map_pool(phys_addr_t kfence_pool, pgd_t *pgdp) {
 
 static void __init map_mem(pgd_t *pgdp)
 {
+	/* IAMROOT20 20240427
+	 * ex) VA_BITS_MIN = 48인 경우
+	 * 	_PAGE_END(47) = 0xFFFF_8000_0000_0000 
+	 * 	: 리니어 커널 메모리 매핑 영역의 끝 주소를 의미
+	 */
 	static const u64 direct_map_end = _PAGE_END(VA_BITS_MIN);
 	phys_addr_t kernel_start = __pa_symbol(_stext);
 	phys_addr_t kernel_end = __pa_symbol(__init_begin);
@@ -638,9 +643,17 @@ static void __init map_mem(pgd_t *pgdp)
 	 * So temporarily mark them as NOMAP to skip mappings in
 	 * the following for-loop
 	 */
+	/* IAMROOT20 20240427
+	 * read-only text와 rodata 섹션을 nomap으로 설정하여 
+	 * 아래 for-loop에서 매핑하는 것을 방지
+	 */
 	memblock_mark_nomap(kernel_start, kernel_end - kernel_start);
 
 	/* map all the memory banks */
+	/* IAMROOT20 20240427
+	 * memblock.memory의 모든 region을 순회하며 
+	 * 리니어 매핑 영역(0xFFFF_0000_0000_0000 ~ 0xFFFF_8000_0000_0000)에 매핑한다
+	 */
 	for_each_mem_range(i, &start, &end) {
 		if (start >= end)
 			break;
@@ -662,6 +675,10 @@ static void __init map_mem(pgd_t *pgdp)
 	 * but protects it from inadvertent modification or execution.
 	 * Note that contiguous mappings cannot be remapped in this way,
 	 * so we should avoid them here.
+	 */
+	/* IAMROOT20 20240427
+	 * 커널 영역을 커널 페이지 속성으로 리니어 영역에 매핑
+	 * - contiguous 매핑 허용하지 않음
 	 */
 	__map_memblock(pgdp, kernel_start, kernel_end,
 		       PAGE_KERNEL, NO_CONT_MAPPINGS);
@@ -798,6 +815,7 @@ static void __init map_kernel(pgd_t *pgdp)
 
 	fixmap_copy(pgdp);
 	/* IAMROOT20_END 20240420 */
+	/* IAMROOT20_START 20240427 */
 	kasan_copy_shadow(pgdp);
 }
 
