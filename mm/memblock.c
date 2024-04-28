@@ -1194,9 +1194,9 @@ void __next_mem_range(u64 *idx, int nid, enum memblock_flags flags,
 		      struct memblock_type *type_b, phys_addr_t *out_start,
 		      phys_addr_t *out_end, int *out_nid)
 {
-    /* IAMROOT20 20240309
-     * idx 값을 절반으로 나누어 lsb: idx_a의 카운터,, msb: idx_b의 카운터
-     */		
+	/* IAMROOT20 20240309
+	 * idx 값을 절반으로 나누어 lsb: idx_a의 카운터,, msb: idx_b의 카운터
+	 */		
 	int idx_a = *idx & 0xffffffff;
 	int idx_b = *idx >> 32;
 
@@ -1214,9 +1214,10 @@ void __next_mem_range(u64 *idx, int nid, enum memblock_flags flags,
 		if (should_skip_region(type_a, m, nid, flags))
 			continue;
 
-        /* IAMROOT20 20240309
-         * type_b에 대한 영역이 지정되지 않으면(null) 현재 1차 루프 인덱스의 memblock에 대한 영역을 반환
-         */	
+		/* IAMROOT20 20240309
+		 * type_b에 대한 영역이 지정되지 않으면(null) 현재 1차 루프
+		 * 인덱스의 memblock에 대한 영역을 반환
+		 */	
 		if (!type_b) {
 			if (out_start)
 				*out_start = m_start;
@@ -1237,8 +1238,9 @@ void __next_mem_range(u64 *idx, int nid, enum memblock_flags flags,
 
 			r = &type_b->regions[idx_b];
 			/* IAMROOT20 20240309
-             * idx_b가 0보다 크면 현재 이전 memblock의 끝 주소를 가리키고 idx_b가 0이면 0번 주소를 지정
-             */	
+			 * idx_b가 0보다 크면 현재 이전 memblock의 끝 주소를
+			 * 가리키고 idx_b가 0이면 0번 주소를 지정
+			 */	
 			r_start = idx_b ? r[-1].base + r[-1].size : 0;
 			r_end = idx_b < type_b->cnt ?
 				r->base : PHYS_ADDR_MAX;
@@ -1248,16 +1250,17 @@ void __next_mem_range(u64 *idx, int nid, enum memblock_flags flags,
 			 * break out to advance idx_a
 			 */
 			/* IAMROOT20 20240309
-             * reserve memblock 영역이 memory memblock 영역을 벗어난 경우 2차 루프를 빠져나가서 다음 memory memblock을 준비
-             */				
+			 * reserve memblock 영역이 memory memblock 영역을 벗어난
+			 * 경우 2차 루프를 빠져나가서 다음 memory memblock을 준비
+			 */				
 			if (r_start >= m_end)
 				break;
 			/* if the two regions intersect, we're done */
 			/* IAMROOT20 20240309
-             * 두 영역이 교차하는 경우 
+			 * 두 영역이 교차하는 경우 
 			 * out_start에 하단 reserve 영역값의 끝 주소나 memory 영역값의 시작 주소중 가장 큰 주소
 			 * out_end에 상단 reserve 영역값의 시작 주소나 memory 영역값의 끝 주소중에 가장 작은 주소
-             */	
+			 */	
 			if (m_start < r_end) {
 				if (out_start)
 					*out_start =
@@ -1271,9 +1274,10 @@ void __next_mem_range(u64 *idx, int nid, enum memblock_flags flags,
 				 * advanced for the next iteration.
 				 */
 				/* IAMROOT20 20240309
-			     * reserve 영역의 끝 주소가 memory 영역의 끝주소와 비교하여 큰 경우 idx_a를 증가, 다음 memory 영역을 준비
-			     * 크지 않은 경우 idx_b를 증가, 다음 reserve 영역을 준비
-                 */	
+				 * reserve 영역의 끝 주소가 memory 영역의 끝주소와
+				 * 비교하여 큰 경우 idx_a를 증가, 다음 memory 영역을 준비
+				 * 크지 않은 경우 idx_b를 증가, 다음 reserve 영역을 준비
+				 */	
 				if (m_end <= r_end)
 					idx_a++;
 				else
