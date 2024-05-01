@@ -106,6 +106,10 @@ extern int mmap_rnd_compat_bits __read_mostly;
 #define page_to_virt(x)	__va(PFN_PHYS(page_to_pfn(x)))
 #endif
 
+/* IAMROOT20 20240427
+ * lm_alias : vmalloc 영역의 커널 이미지 가상 주소(x)에서 
+ * 	      리니어 매핑 영역에 매핑되어 있는 가상 주소 반환
+ */
 #ifndef lm_alias
 /* IAMROOT20 20240427
  * Linear Mappling alias

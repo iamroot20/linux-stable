@@ -226,9 +226,40 @@ alternative_endif
 static __always_inline bool
 alternative_has_feature_likely(const unsigned long feature)
 {
+	/* IAMROOT20 20240427
+	 * ARM64_NCAPS = 88
+	 */
 	compiletime_assert(feature < ARM64_NCAPS,
 			   "feature must be < ARM64_NCAPS");
 
+	/* IAMROOT20 20240427
+	 * ALTERNATIVE_CB(oldinstr, feature, cb)
+	 * __ALTERNATIVE_CFG_CB(oldinstr, (1 << ARM64_CB_SHIFT) 
+	 * | (ARM64_ALWAYS_SYSTEM), 1, alt_cb_patch_nops)
+       	 * 
+   	 * 
+   	 * if cfg_enabled == 1
+   	 * 661:
+   	 *     oldinstr( "b       %l[l_no]" )
+   	 * 662:
+   	 *     .pushsection .altinstructions,"a"
+   	 * 
+   	 * //  ALTINSTR_ENTRY_CB(ARM64_ALWAYS_SYSTEM, alt_cb_patch_nops)
+   	 *     .word 661b - .                                label
+   	 *     .word  __stringify(alt_cb_patch_nops) - .     callback
+   	 *     .hword __stringify(ARM64_ALWAYS_SYSTEM)       feature bit
+   	 *     .byte 662b-661b                        source len
+   	 *     .byte 664f-663f                        replacement len
+   	 * 
+   	 *     .popsection
+   	 * 663:
+   	 * 664:
+   	 * endif
+   	 *     return true;
+   	 * 
+   	 * l_no:
+   	 *     return false
+	 */
 	asm_volatile_goto(
 	ALTERNATIVE_CB("b	%l[l_no]", %[feature], alt_cb_patch_nops)
 	:
