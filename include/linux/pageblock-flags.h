@@ -58,6 +58,9 @@ extern unsigned int pageblock_order;
 
 #endif /* CONFIG_HUGETLB_PAGE */
 
+/* IAMROOT20 20240416
+ * pageblock_nr_pages		512
+ */
 #define pageblock_nr_pages	(1UL << pageblock_order)
 #define pageblock_align(pfn)	ALIGN((pfn), pageblock_nr_pages)
 #define pageblock_aligned(pfn)	IS_ALIGNED((pfn), pageblock_nr_pages)

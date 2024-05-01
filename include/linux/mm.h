@@ -107,6 +107,11 @@ extern int mmap_rnd_compat_bits __read_mostly;
 #endif
 
 #ifndef lm_alias
+/* IAMROOT20 20240427
+ * Linear Mappling alias
+ *	PAGE_OFFSET | (x - kimage_voffset - PHYS_OFFSET)
+ *	-> 0xffff_0000_~ |  (x - kimage_voffset - memstart_addr)
+ */
 #define lm_alias(x)	__va(__pa_symbol(x))
 #endif
 

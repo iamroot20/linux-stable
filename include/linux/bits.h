@@ -33,6 +33,11 @@
 #define __GENMASK(h, l) \
 	(((~UL(0)) - (UL(1) << (l)) + 1) & \
 	 (~UL(0) >> (BITS_PER_LONG - 1 - (h))))
+/* IAMROOT20 20240427
+ * ex)	GENMASK(16, 4)	0x0000_0000_0001_fff0
+ *	GENMASK(15, 0)	0x0000_0000_0000_ffff
+ *	GENMASK(47, 0)	0x0000_ffff_ffff_ffff
+ */
 #define GENMASK(h, l) \
 	(GENMASK_INPUT_CHECK(h, l) + __GENMASK(h, l))
 

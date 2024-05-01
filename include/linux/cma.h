@@ -21,6 +21,10 @@
  * -- can deal with only some pageblocks of a higher-order page being
  *  MIGRATE_CMA, we can use pageblock_nr_pages.
  */
+/* IAMROOT20 20240416
+ * CMA_MIN_ALIGNMENT_PAGES	9
+ * CMA_MIN_ALIGNMENT_BYTES	2M_SZ
+ */
 #define CMA_MIN_ALIGNMENT_PAGES pageblock_nr_pages
 #define CMA_MIN_ALIGNMENT_BYTES (PAGE_SIZE * CMA_MIN_ALIGNMENT_PAGES)
 

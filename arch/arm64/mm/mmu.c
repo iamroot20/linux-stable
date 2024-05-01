@@ -610,6 +610,9 @@ static inline void arm64_kfence_map_pool(phys_addr_t kfence_pool, pgd_t *pgdp) {
 
 static void __init map_mem(pgd_t *pgdp)
 {
+	/* IAMROOT20 20240427
+	 * _PAGE_END(48)	0xffff800000000000 (-0x800000000000)
+	 */
 	static const u64 direct_map_end = _PAGE_END(VA_BITS_MIN);
 	phys_addr_t kernel_start = __pa_symbol(_stext);
 	phys_addr_t kernel_end = __pa_symbol(__init_begin);
@@ -648,6 +651,12 @@ static void __init map_mem(pgd_t *pgdp)
 		 * The linear map must allow allocation tags reading/writing
 		 * if MTE is present. Otherwise, it has the same attributes as
 		 * PAGE_KERNEL.
+		 */
+		/* IAMROOT20 20240427
+		 * MTE : ARMv8.5 에서 추가된 보안기법으로, 메모리 할당/해제 연산마다
+		 *	사용되는 포인터와 (2) 접근하는 메모리 간에 상호 태그를 하고,
+		 *	태그 정보 비교를 통해 안전한 접근인지 체크하는 일종의 Sanitizer 기법이다.
+		 * https://velog.io/@pensieveview/MTE-Memory-Tagging-Extension-%EB%A9%94%EB%AA%A8%EB%A6%AC%ED%83%9C%EA%B9%85
 		 */
 		__map_memblock(pgdp, start, end, pgprot_tagged(PAGE_KERNEL),
 			       flags);

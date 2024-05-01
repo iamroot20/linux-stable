@@ -80,6 +80,10 @@
 #define VA_BITS_MIN		(VA_BITS)
 #endif
 
+/* IAMROOT20 20240426
+ * exam) va : 48
+ *	_PAGE_END(48)		0xffff800000000000 (-0x800000000000)
+ */
 #define _PAGE_END(va)		(-(UL(1) << ((va) - 1)))
 
 #define KERNEL_START		_text
@@ -328,6 +332,8 @@ static inline const void *__tag_set(const void *addr, u8 tag)
  /*
   * IAMROOT20 20231202: 
   * __is_lm_address(addr) =>  PAGE_OFFSET <= addr < PAGE_END
+  *	exam)	VA_BITS : 48
+  *		0xffff_0000_0000_0000 ~ 0xffff_8000_0000_0000
   */
 #define __is_lm_address(addr)	(((u64)(addr) - PAGE_OFFSET) < (PAGE_END - PAGE_OFFSET))
 
