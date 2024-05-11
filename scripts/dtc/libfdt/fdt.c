@@ -143,6 +143,10 @@ int fdt_check_header(const void *fdt)
 
 const void *fdt_offset_ptr(const void *fdt, int offset, unsigned int len)
 {
+	/* IAMROOT20 20240511
+	 * uoffset : structure block 내에서의 offset
+	 * absoffset : fdt 시작 주소로부터 offset
+	 */
 	unsigned int uoffset = offset;
 	unsigned int absoffset = offset + fdt_off_dt_struct(fdt);
 
@@ -160,9 +164,16 @@ const void *fdt_offset_ptr(const void *fdt, int offset, unsigned int len)
 		    || ((offset + len) > fdt_size_dt_struct(fdt)))
 			return NULL;
 
+	/* IAMROOT20 20240511
+	 * fdt + structure block offset + structure block 내에서의 offset
+	 */
 	return fdt_offset_ptr_(fdt, offset);
 }
 
+/* IAMROOT20 20240511
+ * startoffset이 가리키는 tag를 반환
+ * nextoffset : 다음 tag의 offset을 저장
+ */
 uint32_t fdt_next_tag(const void *fdt, int startoffset, int *nextoffset)
 {
 	const fdt32_t *tagp, *lenp;
@@ -171,6 +182,10 @@ uint32_t fdt_next_tag(const void *fdt, int startoffset, int *nextoffset)
 	const char *p;
 
 	*nextoffset = -FDT_ERR_TRUNCATED;
+	/* IAMROOT20 20240511
+	 * 현재 offset이 가리키는 위치의 주소를 반환
+	 * - fdt + 'structure block offset' + 'structure block 내에서의 offset'
+	 */
 	tagp = fdt_offset_ptr(fdt, offset, FDT_TAGSIZE);
 	if (!can_assume(VALID_DTB) && !tagp)
 		return FDT_END; /* premature end */
@@ -227,6 +242,10 @@ uint32_t fdt_next_tag(const void *fdt, int startoffset, int *nextoffset)
 int fdt_check_node_offset_(const void *fdt, int offset)
 {
 	if (!can_assume(VALID_INPUT)
+	/* IAMROOT20 20240511
+	 * FDT_TAGSIZE = sizeof(fdt32_t) = 4
+	 * - offset % FDT_TAGSIZE : 4바이트 단위로 정렬이 되어 있지 않는 경우
+	 */
 	    && ((offset < 0) || (offset % FDT_TAGSIZE)))
 		return -FDT_ERR_BADOFFSET;
 
@@ -248,6 +267,9 @@ int fdt_check_prop_offset_(const void *fdt, int offset)
 	return offset;
 }
 
+/* IAMROOT20 20240511
+ * offset(현재 node)이 가리키는 위치의 다음 node의 offset를 반환
+ */
 int fdt_next_node(const void *fdt, int offset, int *depth)
 {
 	int nextoffset = 0;
@@ -272,14 +294,27 @@ int fdt_next_node(const void *fdt, int offset, int *depth)
 			break;
 
 		case FDT_END_NODE:
+			/* IAMROOT20 20240511
+			 * (*depth) < 0 인 경우
+			 *  -> 부모 노드로 올라가는 경우이므로,
+			 *     여기서 nextoffset을 return하여 하위 노드만 돌도록 함
+			 *     (부모 노드로 올라가지 못하도록)
+			 */
 			if (depth && ((--(*depth)) < 0))
 				return nextoffset;
 			break;
 
 		case FDT_END:
+			/* IAMROOT20 20240511
+			 * fdt 끝(END) 인 경우 또는 
+			 * nextoffset == -FDT_ERR_TRUNCATED 인 경우
+			 */
 			if ((nextoffset >= 0)
 			    || ((nextoffset == -FDT_ERR_TRUNCATED) && !depth))
 				return -FDT_ERR_NOTFOUND;
+			/* IAMROOT20 20240511
+			 * nextoffset == -FDT_ERR_BADSTRUCTURE 일 경우
+			 */
 			else
 				return nextoffset;
 		}

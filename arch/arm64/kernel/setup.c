@@ -381,6 +381,9 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
 	/* IAMROOT20_START 20240420 */	
 	paging_init();
 
+	/* IAMROOT20 20240511
+	 * acpi는 분석하지 않음
+	 */
 	acpi_table_upgrade();
 
 	/* Parse the ACPI tables for possible boot-time configuration */

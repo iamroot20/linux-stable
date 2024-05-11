@@ -295,9 +295,15 @@ static int unflatten_dt_nodes(const void *blob,
 #define FDT_MAX_DEPTH	64
 	struct device_node *nps[FDT_MAX_DEPTH];
 	void *base = mem;
+	/* IAMROOT20 20240511
+	 * first pass - 크기 계산 -> dryrun = true
+	 */
 	bool dryrun = !base;
 	int ret;
 
+	/* IAMROOT20 20240511
+	 * first pass - nodepp = null;
+	 */
 	if (nodepp)
 		*nodepp = NULL;
 
@@ -323,6 +329,7 @@ static int unflatten_dt_nodes(const void *blob,
 		if (!IS_ENABLED(CONFIG_OF_KOBJ) &&
 		    !of_fdt_device_is_available(blob, offset))
 			continue;
+		/* IAMROOT20_END 20240511 */
 
 		ret = populate_node(blob, offset, &mem, nps[depth],
 				   &nps[depth+1], dryrun);

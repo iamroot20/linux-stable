@@ -25,6 +25,9 @@ static inline void local_daif_mask(void)
 		(read_sysreg_s(SYS_ICC_PMR_EL1) == (GIC_PRIO_IRQOFF |
 						    GIC_PRIO_PSR_I_SET)));
 
+	/* IAMROOT20 20240511
+	 * "msr daifset, #0xf" : daif를 모두 masking 해서 인터럽트가 발생하지 않음
+	 */
 	asm volatile(
 		"msr	daifset, #0xf		// local_daif_mask\n"
 		:
@@ -43,7 +46,7 @@ static inline unsigned long local_daif_save_flags(void)
 	unsigned long flags;
 
 	/* IAMROOT20 20240427
-	 * msr daif, flags
+	 * mrs flags, daif
 	 */
 	flags = read_sysreg(daif);
 
@@ -67,6 +70,7 @@ static inline unsigned long local_daif_save(void)
 
 	flags = local_daif_save_flags();
 
+	/* IAMROOT20_START 20240511 */
 	local_daif_mask();
 
 	return flags;
@@ -122,6 +126,9 @@ static inline void local_daif_restore(unsigned long flags)
 		gic_write_pmr(pmr);
 	}
 
+	/* IAMROOT20 20240511
+	 * msr	daif, flags
+	 */
 	write_sysreg(flags, daif);
 
 	if (irq_disabled)

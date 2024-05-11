@@ -171,6 +171,10 @@ SYM_FUNC_END(cpu_do_resume)
 
 .macro	__idmap_cpu_set_reserved_ttbr1, tmp1, tmp2
 	adrp	\tmp1, reserved_pg_dir
+	/* IAMROOT20 20240511
+	 * PA_BITS가 52가 아닌 경우에는
+	 * -> phys_to_ttbr : mov tmp2, tmp1
+	 */	
 	phys_to_ttbr \tmp2, \tmp1
 	offset_ttbr1 \tmp2, \tmp1
 	msr	ttbr1_el1, \tmp2
@@ -187,6 +191,9 @@ SYM_FUNC_END(cpu_do_resume)
  * called by anything else. It can only be executed from a TTBR0 mapping.
  */
 SYM_TYPED_FUNC_START(idmap_cpu_replace_ttbr1)
+	/* IAMROOT20 20240511
+	 * msr	ttbr1_el1, reserved_pg_dir
+	 */
 	__idmap_cpu_set_reserved_ttbr1 x1, x3
 
 	offset_ttbr1 x0, x3

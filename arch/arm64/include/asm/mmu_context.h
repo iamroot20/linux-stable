@@ -208,6 +208,11 @@ static inline void cpu_replace_ttbr1(pgd_t *pgdp, pgd_t *idmap)
 	 * in the process of being replaced so mask everything.
 	 */
 	daif = local_daif_save();
+	/* IAMROOT20 20240511
+	 * msr	ttbr1_el1, ttbr1
+	 *
+	 * replace_phys는 idmap에 매핑된 주소이다.(ttbr0 사용)  
+	 */
 	replace_phys(ttbr1);
 	local_daif_restore(daif);
 

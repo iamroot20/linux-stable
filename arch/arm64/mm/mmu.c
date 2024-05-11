@@ -833,12 +833,25 @@ static void __init create_idmap(void)
 	u64 pgd_phys;
 
 	/* check if we need an additional level of translation */
+	/* IAMROOT20 20240511
+	 * 물리 주소의 idmap이 동일한 주소의 유저 가상 주소 공간에 배치가 불가능한 경우
+	 * -> 테이블 단계를 증가시켜 유저 가상 주소 공간을 키워 매핑하게 함
+	 *
+	 * ex) VA_BITS = 42, VA_BITS_MIN = 42
+	 *     idmap_t0sz = 16
+	 *     if( (42 < 48) && (16 < 22) ) -> 페이지 테이블 단계를 증가시킴 
+	 */
 	if (VA_BITS < 48 && idmap_t0sz < (64 - VA_BITS_MIN)) {
 		pgd_phys = early_pgtable_alloc(PAGE_SHIFT);
 		set_pgd(&idmap_pg_dir[start >> VA_BITS],
 			__pgd(pgd_phys | P4D_TYPE_TABLE));
 		pgd = __va(pgd_phys);
 	}
+	/* IAMROOT20 20240511
+	 * __idmap_text_start ~ __idmap_text_end 까지를 idmap_pg_dir에 매핑한다
+	 * idmap_pg_dir : 가상 주소와 물리 주소가 1:1로 매핑되어 사용될 때 
+	 * 		  필요한 테이블로 영구적으로 사용
+	 */
 	__create_pgd_mapping(pgd, start, start, size, PAGE_KERNEL_ROX,
 			     early_pgtable_alloc, 0);
 
@@ -877,9 +890,17 @@ void __init paging_init(void)
 	cpu_replace_ttbr1(lm_alias(swapper_pg_dir), init_idmap_pg_dir);
 	init_mm.pgd = swapper_pg_dir;
 
+	/* IAMROOT20 20240511
+	 * 부팅 초기에 사용했던 init_pg_dir이 swapper_pg_dir로 대체되었고,
+	 * init_pg_dir을 memblock.reserved에서 지운다
+	 */
 	memblock_phys_free(__pa_symbol(init_pg_dir),
 			   __pa_symbol(init_pg_end) - __pa_symbol(init_pg_dir));
 
+	/* IAMROOT20 20240511
+	 * 이 함수 호출 이후에 memblock_double_array에서 memblock array가 부족할 때
+	 * 크기를 2배씩 증가시킬 수 있다
+	 */
 	memblock_allow_resize();
 
 	create_idmap();
