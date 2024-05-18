@@ -31,6 +31,10 @@ static int fdt_nodename_eq_(const void *fdt, int offset,
 		return 0;
 }
 
+/* IAMROOT20 20240518
+ * string block 안에서 stroffset이 가리키는 위치의 string(name)을 return
+ * *lenp : name의 길이를 저장
+ */
 const char *fdt_get_string(const void *fdt, int stroffset, int *lenp)
 {
 	int32_t totalsize;
@@ -52,6 +56,10 @@ const char *fdt_get_string(const void *fdt, int stroffset, int *lenp)
 		goto fail;
 
 	err = -FDT_ERR_BADOFFSET;
+	/* IAMROOT20 20240518
+	 * absoffset : fdt 안에서 stroffset이 가리키는 위치까지 offset
+	 * - stroffset : string block 안에서의 offset
+	 */
 	absoffset = stroffset + fdt_off_dt_strings(fdt);
 	if (absoffset >= (unsigned)totalsize)
 		goto fail;
@@ -201,6 +209,9 @@ int fdt_num_mem_rsv(const void *fdt)
 	return -FDT_ERR_TRUNCATED;
 }
 
+/* IAMROOT20 20240518
+ * 현재 offset 위치에서 다음 FDT_PROP tag의 offset을 return
+ */
 static int nextprop_(const void *fdt, int offset)
 {
 	uint32_t tag;
@@ -277,7 +288,7 @@ int fdt_path_offset_namelen(const void *fdt, const char *path, int namelen)
 		const char *q;
 
 		while (*p == '/') {
-			p++;
+			:p++;
 			if (p == end)
 				return offset;
 		}
@@ -300,6 +311,10 @@ int fdt_path_offset(const void *fdt, const char *path)
 	return fdt_path_offset_namelen(fdt, path, strlen(path));
 }
 
+/* IAMROOT20 20240518
+ * 현재 nodeoffset 위치의 node name 주소를 return
+ * *len : node name의 길이를 저장
+ */
 const char *fdt_get_name(const void *fdt, int nodeoffset, int *len)
 {
 	const struct fdt_node_header *nh = fdt_offset_ptr_(fdt, nodeoffset);
@@ -317,6 +332,10 @@ const char *fdt_get_name(const void *fdt, int nodeoffset, int *len)
 		 * For old FDT versions, match the naming conventions of V16:
 		 * give only the leaf name (after all /). The actual tree
 		 * contents are loosely checked.
+		 */
+		/* IAMROOT20 20240518
+		 * ex) nameptr = "/memory/gpu"
+		 * 			 ^-- leaf
 		 */
 		const char *leaf;
 		leaf = strrchr(nameptr, '/');
@@ -356,6 +375,10 @@ int fdt_next_property_offset(const void *fdt, int offset)
 	return nextprop_(fdt, offset);
 }
 
+/* IAMROOT20 20240518
+ * offset이 가리키는 위치의 fdt_property 포인터 return
+ * *lenp : property value 길이 저장
+ */
 static const struct fdt_property *fdt_get_property_by_offset_(const void *fdt,
 						              int offset,
 						              int *lenp)
@@ -370,6 +393,9 @@ static const struct fdt_property *fdt_get_property_by_offset_(const void *fdt,
 		return NULL;
 	}
 
+	/* IAMROOT20 20240518
+	 * prop : offset이 가리키는 위치의 가상 '주소'
+	 */
 	prop = fdt_offset_ptr_(fdt, offset);
 
 	if (lenp)
@@ -469,6 +495,11 @@ const void *fdt_getprop_namelen(const void *fdt, int nodeoffset,
 	return prop->data;
 }
 
+/* IAMROOT20 20240518
+ * offset이 가리키는 property value(prop->data)를 return
+ * *namep : property name 저장
+ * *lenp : name 길이 저장
+ */
 const void *fdt_getprop_by_offset(const void *fdt, int offset,
 				  const char **namep, int *lenp)
 {
