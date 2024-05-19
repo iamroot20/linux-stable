@@ -290,6 +290,14 @@ static int unflatten_dt_nodes(const void *blob,
 			      struct device_node *dad,
 			      struct device_node **nodepp)
 {
+	/* IAMROOT20 20240515
+	 * First pass
+	 * unflatten_dt_nodes(initial_boot_params, NULL, NULL, NULL);
+	 */
+	/* IAMROOT20 20240518
+	 * Second pass
+	 * unflatten_dt_nodes(initial_boot_params, mem, NULL, &of_root)
+	 */
 	struct device_node *root;
 	int offset = 0, depth = 0, initial_depth = 0;
 #define FDT_MAX_DEPTH	64
@@ -379,6 +387,10 @@ void *__unflatten_device_tree(const void *blob,
 			      void *(*dt_alloc)(u64 size, u64 align),
 			      bool detached)
 {
+	/*
+	 *__unflatten_device_tree(initial_boot_params, NULL, &of_root,
+	 *			early_init_dt_alloc_memory_arch, false);
+	 */
 	int size;
 	void *mem;
 	int ret;
@@ -422,6 +434,9 @@ void *__unflatten_device_tree(const void *blob,
 
 	pr_debug("  unflattening %p...\n", mem);
 
+	/* IAMROOT20 20240518
+	 * unflatten_dt_nodes( initial_boot_params, mem, NULL, &of_root)
+	 */
 	/* Second pass, do actual unflattening */
 	ret = unflatten_dt_nodes(blob, mem, dad, mynodes);
 

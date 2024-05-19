@@ -28,6 +28,12 @@
 #define _BITUL(x)	(_UL(1) << (x))
 #define _BITULL(x)	(_ULL(1) << (x))
 
+/* IAMROOT20 20240518
+ * __ALIGN_KERNEL(14, 8)
+ *	-> __ALIGN_KERNEL_MASK(14, 7)
+ *	-> (14+7) & ~7 = 21 & 0xffff_..._fff8
+ *	-> 16
+ */
 #define __ALIGN_KERNEL(x, a)		__ALIGN_KERNEL_MASK(x, (__typeof__(x))(a) - 1)
 #define __ALIGN_KERNEL_MASK(x, mask)	(((x) + (mask)) & ~(mask))
 

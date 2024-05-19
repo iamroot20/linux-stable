@@ -5,6 +5,11 @@
 #include <linux/const.h>
 
 /* @a is a power of 2 value */
+/* IAMROOT20 20240518
+ * ALIGN(14, 8)	
+ *	-> (14+7) & ~7 = 21 & 0xffff_..._fff8
+ *	-> 16
+ */
 #define ALIGN(x, a)		__ALIGN_KERNEL((x), (a))
 #define ALIGN_DOWN(x, a)	__ALIGN_KERNEL((x) - ((a) - 1), (a))
 #define __ALIGN_MASK(x, mask)	__ALIGN_KERNEL_MASK((x), (mask))
