@@ -97,11 +97,18 @@ static bool of_fdt_device_is_available(const void *blob, unsigned long node)
 	return false;
 }
 
+/* IAMROOT20 20240518
+ * 현재 *mem을 align에 맞춰 올림한 후 return
+ * *mem : *mem += size를 저장
+ */
 static void *unflatten_dt_alloc(void **mem, unsigned long size,
 				       unsigned long align)
 {
 	void *res;
 
+	/* IAMROOT20 20240518
+	 * PTR_ALIGN(*mem, align) : *mem 값을 align 단위로 올림
+	 */
 	*mem = PTR_ALIGN(*mem, align);
 	res = *mem;
 	*mem += size;
@@ -139,6 +146,10 @@ static void populate_properties(const void *blob,
 			continue;
 		}
 
+		/* IAMROOT20 20240518
+		 * 현재 node의 name property가 있다면,
+		 * 아래 if (!has_name) 조건문에서 만들지 않는다
+		 */
 		if (!strcmp(pname, "name"))
 			has_name = true;
 
@@ -176,10 +187,18 @@ static void populate_properties(const void *blob,
 	/* With version 0x10 we may not have the name property,
 	 * recreate it here from the unit name if absent
 	 */
+	/* IAMROOT20 20240518
+	 * 현재 node의 name property를 만들어 연결한다 
+	 */
 	if (!has_name) {
 		const char *p = nodename, *ps = p, *pa = NULL;
 		int len;
 
+		/* IAMROOT20 20240518
+		 * ex) p = "/soc/uart@7e201000"
+		 *                   ^--- pa
+		 *               ^--- ps
+		 */
 		while (*p) {
 			if ((*p) == '@')
 				pa = p;
@@ -217,6 +236,10 @@ static int populate_node(const void *blob,
 	const char *pathp;
 	int len;
 
+	/* IAMROOT20 20240518
+	 * len : node name의 길이 저장
+	 * pathp : node name의 가상 주소(offset 아님)
+	 */
 	pathp = fdt_get_name(blob, offset, &len);
 	if (!pathp) {
 		*pnp = NULL;
@@ -225,11 +248,19 @@ static int populate_node(const void *blob,
 
 	len++;
 
+	/* IAMROOT20 20240518
+	 * ex) *mem = 7, len = 7, sizeof(struct device_node) = 208
+	 *   -> *mem = (7 + 1(align 올림)) + 7 + 208 = 223
+	 *      np = (7 + 1(align 올림) = 8
+	 */
 	np = unflatten_dt_alloc(mem, sizeof(struct device_node) + len,
 				__alignof__(struct device_node));
 	if (!dryrun) {
 		char *fn;
 		of_node_init(np);
+		/* IAMROOT20 20240518
+		 * device_node 끝에 node name을 저장
+		 */
 		np->full_name = fn = ((char *)np) + sizeof(*np);
 
 		memcpy(fn, pathp, len);
@@ -241,6 +272,9 @@ static int populate_node(const void *blob,
 		}
 	}
 
+	/* IAMROOT20 20240518
+	 * node의 '모든 property' + 'node name property'를 추가
+	 */
 	populate_properties(blob, offset, mem, np, pathp, dryrun);
 	if (!dryrun) {
 		np->name = of_get_property(np, "name", NULL);
@@ -305,6 +339,7 @@ static int unflatten_dt_nodes(const void *blob,
 	void *base = mem;
 	/* IAMROOT20 20240511
 	 * first pass - 크기 계산 -> dryrun = true
+	 * second pass -> dryrun = false
 	 */
 	bool dryrun = !base;
 	int ret;
@@ -339,6 +374,7 @@ static int unflatten_dt_nodes(const void *blob,
 			continue;
 		/* IAMROOT20_END 20240511 */
 
+		/* IAMROOT20_START 20240518 */
 		ret = populate_node(blob, offset, &mem, nps[depth],
 				   &nps[depth+1], dryrun);
 		if (ret < 0)
@@ -362,6 +398,9 @@ static int unflatten_dt_nodes(const void *blob,
 	if (!dryrun)
 		reverse_nodes(root);
 
+	/* IAMROOT20 20240518
+	 * first pass : (mem - base) 로 필요한 크기를 구함
+	 */
 	return mem - base;
 }
 
@@ -1437,6 +1476,7 @@ void __init unflatten_device_tree(void)
 {
 	__unflatten_device_tree(initial_boot_params, NULL, &of_root,
 				early_init_dt_alloc_memory_arch, false);
+	/* IAMROOT20_END 20240518 */
 
 	/* Get pointer to "/chosen" and "/aliases" nodes for use everywhere */
 	of_alias_scan(early_init_dt_alloc_memory_arch);

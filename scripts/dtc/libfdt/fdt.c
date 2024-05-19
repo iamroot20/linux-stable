@@ -239,6 +239,10 @@ uint32_t fdt_next_tag(const void *fdt, int startoffset, int *nextoffset)
 	return tag;
 }
 
+/* IAMROOT20 20240518
+ * offset을 그대로 return
+ * - offset이 유효한지 확인, 현재 offset의 tag가 FDT_BEGIN_NODE인 지 확인
+ */
 int fdt_check_node_offset_(const void *fdt, int offset)
 {
 	if (!can_assume(VALID_INPUT)
@@ -255,6 +259,10 @@ int fdt_check_node_offset_(const void *fdt, int offset)
 	return offset;
 }
 
+/* IAMROOT20 20240518
+ * offset을 그대로 return
+ * - offset이 유효한지 확인, 현재 offset의 tag가 FDT_PROP인지 확인 
+ */
 int fdt_check_prop_offset_(const void *fdt, int offset)
 {
 	if (!can_assume(VALID_INPUT)
