@@ -9,6 +9,10 @@
 #define NODES_SHIFT     0
 #endif
 
+/* IAMROOT20 20240525
+ * NODES_SHIFT = CONFIG_NODES_SHIFT = 4
+ * MAX_NUMNODES = 1<<4 = 16
+ */
 #define MAX_NUMNODES    (1 << NODES_SHIFT)
 
 #define	NUMA_NO_NODE	(-1)

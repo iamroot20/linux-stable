@@ -324,6 +324,12 @@ EXPORT_SYMBOL(strncmp);
  * Note that the %NUL-terminator is considered part of the string, and can
  * be searched for.
  */
+/* IAMROOT20 20240525
+ * ex1) s = "foo/bar", c = '/'
+ *              ^---- s : return
+ * ex2) s = "foo/bar", c = ':'
+ * 	- return NULL
+ */
 char *strchr(const char *s, int c)
 {
 	for (; *s != (char)c; ++s)
@@ -342,6 +348,12 @@ EXPORT_SYMBOL(strchr);
  *
  * Returns pointer to first occurrence of 'c' in s. If c is not found, then
  * return a pointer to the null byte at the end of s.
+ */
+/* IAMROOT20 20240525
+ * ex) s = "foo/bar", c = '/'
+ *             ^----s : return
+ * ex) s = "foo/bar", c = ':'
+ *                 ^----s : return
  */
 char *strchrnul(const char *s, int c)
 {
@@ -458,6 +470,11 @@ EXPORT_SYMBOL(strspn);
  * strcspn - Calculate the length of the initial substring of @s which does not contain letters in @reject
  * @s: The string to be searched
  * @reject: The string to avoid
+ */
+/* IAMROOT20 20240525
+ * ex) s = "foo/bar", reject = "/:"
+ *             ^----p
+ *     return : p-s = 3
  */
 size_t strcspn(const char *s, const char *reject)
 {

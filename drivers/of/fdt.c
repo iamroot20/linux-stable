@@ -1463,6 +1463,7 @@ void __init unflatten_device_tree(void)
 				early_init_dt_alloc_memory_arch, false);
 	/* IAMROOT20_END 20240518 */
 
+	/* IAMROOT20_START 20240525 */
 	/* Get pointer to "/chosen" and "/aliases" nodes for use everywhere */
 	of_alias_scan(early_init_dt_alloc_memory_arch);
 

@@ -55,6 +55,12 @@ DEFINE_MUTEX(of_mutex);
  */
 DEFINE_RAW_SPINLOCK(devtree_lock);
 
+/* IAMROOT20 20240525
+ * ex) np = 'cpu0: cpu@10000' 노드, name = "cpu"
+ *
+ *     node_name = "cpu@10000"
+ *     len = 3
+ */
 bool of_node_name_eq(const struct device_node *np, const char *name)
 {
 	const char *node_name;
@@ -644,6 +650,30 @@ struct device_node *of_get_next_cpu_node(struct device_node *prev)
 	unsigned long flags;
 	struct device_node *node;
 
+	/* IAMROOT20 20240525
+	 * ex) 
+	 *     cpus {
+	 *                #address-cells = <1>;
+	 *                #size-cells = <0>;
+	 *
+	 *                cpu0: cpu@10000 {
+         *               	device_type = "cpu";
+         *               	compatible = "arm,cortex-a72";
+         *               	reg = <0x10000>;
+         *               	enable-method = "psci";
+         *               	next-level-cache = <&cluster0_l2>;
+         *               	numa-node-id = <0>;
+         *                };
+	 *
+         *       	  cpu1: cpu@10001 {
+         *               	device_type = "cpu";
+	 *                      compatible = "arm,cortex-a72";
+	 *                      reg = <0x10001>;
+	 *                      enable-method = "psci";
+	 *                      next-level-cache = <&cluster0_l2>;
+	 *                      numa-node-id = <0>;
+	 *                 };
+	 */
 	if (!prev)
 		node = of_find_node_by_path("/cpus");
 
@@ -657,6 +687,10 @@ struct device_node *of_get_next_cpu_node(struct device_node *prev)
 	for (; next; next = next->sibling) {
 		if (__of_device_is_fail(next))
 			continue;
+		/* IAMROOT20 20240525
+		 * node name이 "cpu"로 시작하는 지 확인 - ex) "cpu@10000"
+		 * device_type = "cpu" 인지 확인 
+		 */
 		if (!(of_node_name_eq(next, "cpu") ||
 		      __of_node_is_type(next, "cpu")))
 			continue;
@@ -717,6 +751,12 @@ struct device_node *of_get_child_by_name(const struct device_node *node,
 }
 EXPORT_SYMBOL(of_get_child_by_name);
 
+/* IAMROOT20 20240525
+ * parent 노드의 모든 child의 마지막 path가 path와 일치하는 child를 return
+ * ex) parent : of_root("/"), path : "aliases"
+ *     child : "/soc", "/chosen", "/aliases"
+ *     -> "/aliases" 노드를 return
+ */
 struct device_node *__of_find_node_by_path(struct device_node *parent,
 						const char *path)
 {
@@ -747,6 +787,14 @@ struct device_node *__of_find_node_by_full_path(struct device_node *node,
 		node = __of_find_node_by_path(node, path);
 		of_node_put(tmp);
 		path = strchrnul(path, '/');
+		/* IAMROOT20 20240525
+		 * separator가 NULL이 아닌 경우 while문 탈출 조건
+		 * ex) path = "/foo/bar:bao"
+		 *                     ^---- separator
+		 * 1-round)        ^--- path
+		 * 2-round)                ^--- path
+		 *                         : separator < path -> break
+		 */
 		if (separator && separator < path)
 			break;
 	}
@@ -771,6 +819,10 @@ struct device_node *__of_find_node_by_full_path(struct device_node *node,
  * Return: A node pointer with refcount incremented, use
  * of_node_put() on it when done.
  */
+/* IAMROOT20 20240525
+ * ex) path = "i2c2_pins_a: i2c2"
+ *     - opts가 null이 아니면 *opts에 ':' 다음 위치를 저장
+ */
 struct device_node *of_find_node_opts_by_path(const char *path, const char **opts)
 {
 	struct device_node *np = NULL;
@@ -781,9 +833,23 @@ struct device_node *of_find_node_opts_by_path(const char *path, const char **opt
 	if (opts)
 		*opts = separator ? separator + 1 : NULL;
 
+	/* IAMROOT20 20240525
+	 * path = "/" : root path인 경우 of_root를 return
+	 */
 	if (strcmp(path, "/") == 0)
 		return of_node_get(of_root);
 
+	/* IAMROOT20 20240525
+	 * aliases를 사용하는 path의 경우
+	 * ex1) path = "foo"
+	 * 	           ^----p
+	 * ex2) path = "foo/bar"
+	 * 		   ^----p
+	 * len : aliases의 길이
+	 *
+	 * np : aliases가 가리키는 노드 ex) foo aliases의 노드
+	 * path : p
+	 */
 	/* The path could begin with an alias */
 	if (*path != '/') {
 		int len;
@@ -1729,11 +1795,22 @@ void of_alias_scan(void * (*dt_alloc)(u64 size, u64 align))
 		/* linux,stdout-path and /aliases/stdout are for legacy compatibility */
 		const char *name = NULL;
 
+		/* IAMROOT20 20240525
+		 * ex) chosen {                                                                       
+       		 *		 stdout-path = "/pl011@9000000";
+		 *	};
+		 *
+		 *	-> name = "/pl011@9000000"
+		 */
 		if (of_property_read_string(of_chosen, "stdout-path", &name))
 			of_property_read_string(of_chosen, "linux,stdout-path",
 						&name);
 		if (IS_ENABLED(CONFIG_PPC) && !name)
 			of_property_read_string(of_aliases, "stdout", &name);
+		/* IAMROOT20 20240525
+		 * name으로 of_stdout node를 찾는다
+		 * - ':'이 name에 있으면(옵션 문자열), of_stdout_options에 저장
+		 */
 		if (name)
 			of_stdout = of_find_node_opts_by_path(name, &of_stdout_options);
 		if (of_stdout)
@@ -1743,6 +1820,11 @@ void of_alias_scan(void * (*dt_alloc)(u64 size, u64 align))
 	if (!of_aliases)
 		return;
 
+	/* IAMROOT20 20240525
+	 * of_aliases 노드의 property를 순회하면서 alias_prop 구조체를 만들어
+	 * aliases_lookup 리스트에 추가한다
+	 * - 나중에 aliases가 나오면 노드, name 등을 빠르게 찾기 위해
+	 */
 	for_each_property_of_node(of_aliases, pp) {
 		const char *start = pp->name;
 		const char *end = start + strlen(start);
@@ -1760,6 +1842,16 @@ void of_alias_scan(void * (*dt_alloc)(u64 size, u64 align))
 		if (!np)
 			continue;
 
+		/* IAMROOT20 20240525
+		 * aliases {
+		 *        serial0 = &uart0;
+		 *        ^----------- start = alias = "serial0"
+		 *               ^---- end 1
+		 *              ^----- end 2
+		 *              <>     id = 0
+		 *        <----->      stem = "serial"
+		 * };
+		 */
 		/* walk the alias backwards to extract the id and work out
 		 * the 'stem' string */
 		while (isdigit(*(end-1)) && end > start)

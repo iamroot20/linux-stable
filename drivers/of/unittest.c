@@ -3405,6 +3405,11 @@ static void * __init dt_alloc_memory(u64 size, u64 align)
  *
  * Have to stop before resolving phandles, because that uses kmalloc.
  */
+/* IAMROOT20 20240525
+ * dtb overlay unittest를 위한 dt tree를 생성하여 &overlay_base_root에 저장
+ * - overlay에 대한 dtbo는 scripts/Makefile.lib에서 생성
+ *   -> 정확하게 어떤 부분에서 생성하는 지는 모름...
+ */
 void __init unittest_unflatten_overlay_base(void)
 {
 	struct overlay_info *info;

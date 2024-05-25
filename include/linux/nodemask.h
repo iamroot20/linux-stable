@@ -96,6 +96,11 @@
 #include <linux/numa.h>
 #include <linux/random.h>
 
+/* IAMROOT20 20240525
+ * MAX_NUMNODES = 1<<4 = 16
+ *
+ * bits[BITS_TO_LONGS(MAX_NUMNODES)] = bits[1]
+ */
 typedef struct { DECLARE_BITMAP(bits, MAX_NUMNODES); } nodemask_t;
 extern nodemask_t _unused_nodemask_arg_;
 
@@ -314,6 +319,10 @@ static inline unsigned int __first_unset_node(const nodemask_t *maskp)
 
 #if MAX_NUMNODES <= BITS_PER_LONG
 
+/* IAMROOT20 20240525
+ * ex) MAX_NUMNODES = 16 인 경우
+ *     -> NODE_MASK_ALL = {{ [0] = 0xffff }}
+ */
 #define NODE_MASK_ALL							\
 ((nodemask_t) { {							\
 	[BITS_TO_LONGS(MAX_NUMNODES)-1] = NODE_MASK_LAST_WORD		\
