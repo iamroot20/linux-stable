@@ -244,6 +244,12 @@ static inline void memzero_explicit(void *s, size_t count)
  *
  * @path: path to extract the filename from.
  */
+/* IAMROOT20 20240525
+ * ex1) path = "foo/bar"
+ *                 ^---- tail, return : tail + 1
+ * ex2) path = "foo"
+ * 		^---- return
+ */
 static inline const char *kbasename(const char *path)
 {
 	const char *tail = strrchr(path, '/');

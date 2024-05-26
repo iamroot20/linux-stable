@@ -30,6 +30,16 @@ static void __init of_numa_parse_cpu_nodes(void)
 	 * hisilicon/hip07.dtsi 참고
 	 */
 	for_each_of_cpu_node(np) {
+		/* IAMROOT20 20240525
+		 * ex)     cpu1: cpu@10001 {
+		 *                   device_type = "cpu";
+		 *                   compatible = "arm,cortex-a72";
+		 *                   reg = <0x10001>;
+		 *                   enable-method = "psci";
+		 *                   next-level-cache = <&cluster0_l2>;
+		 *       ------>     numa-node-id = <0>;
+		 *          };
+		 */
 		r = of_property_read_u32(np, "numa-node-id", &nid);
 		if (r)
 			continue;
@@ -49,6 +59,15 @@ static int __init of_numa_parse_memory_nodes(void)
 	u32 nid;
 	int i, r;
 
+	/* IAMROOT20 20240525
+	 * ex)    memory@0 {
+ 	 *                device_type = "memory";
+	 *                reg = <0x0 0x00000000 0x0 0x40000000>;
+	 *                numa-node-id = <0>;
+	 *        };
+	 * device_type = "memory"인 모든 노드를 순회
+	 * - 'numa-node-id' property 값을 nid에 저장
+	 */
 	for_each_node_by_type(np, "memory") {
 		r = of_property_read_u32(np, "numa-node-id", &nid);
 		if (r == -EINVAL)
@@ -64,6 +83,7 @@ static int __init of_numa_parse_memory_nodes(void)
 			r = -EINVAL;
 		}
 
+		/* IAMROOT20_END 20240525 */
 		for (i = 0; !r && !of_address_to_resource(np, i, &rsrc); i++)
 			r = numa_add_memblk(nid, rsrc.start, rsrc.end + 1);
 

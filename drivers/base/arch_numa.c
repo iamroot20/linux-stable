@@ -18,6 +18,8 @@
 struct pglist_data *node_data[MAX_NUMNODES] __read_mostly;
 EXPORT_SYMBOL(node_data);
 /* IAMROOT20 20240525
+ * numa_nodes_parsed = { bits[1] }
+ *
  * numa_init
  *	nodes_clear(numa_nodes_parsed)
  */
@@ -291,7 +293,11 @@ static int __init numa_alloc_distance(void)
 	int i, j;
 
 	/* IAMROOT20 20240525
-	 * size = 16 * 16 * 1 = 256
+	 * ex) MAX_NUMNODES > 1 이면
+	 *     - nr_node_ids = MAX_NUMNODES = 16
+	 *     -> size = 16 * 16 * 1(u8) = 256
+	 *
+	 *     numa_distance : 16 x 16 배열, 원소 하나는 1byte
 	 */
 	size = nr_node_ids * nr_node_ids * sizeof(numa_distance[0]);
 	/* IAMROOT20 20240525
