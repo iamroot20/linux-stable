@@ -427,7 +427,7 @@ void *__unflatten_device_tree(const void *blob,
 			      bool detached)
 {
 	/*
-	 *__unflatten_device_tree(initial_boot_params, NULL, &of_root,
+	 * __unflatten_device_tree(initial_boot_params, NULL, &of_root,
 	 *			early_init_dt_alloc_memory_arch, false);
 	 */
 	int size;

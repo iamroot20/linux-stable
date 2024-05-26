@@ -717,6 +717,9 @@ struct device_node *of_get_child_by_name(const struct device_node *node,
 }
 EXPORT_SYMBOL(of_get_child_by_name);
 
+/* IAMROOT20 20240525
+ * __of_find_node_by_path(of_root, "aliases");
+ */
 struct device_node *__of_find_node_by_path(struct device_node *parent,
 						const char *path)
 {
@@ -735,6 +738,9 @@ struct device_node *__of_find_node_by_path(struct device_node *parent,
 	return NULL;
 }
 
+/* IAMROOT20 20240525
+ * __of_find_node_by_full_path(of_root, "/aliases");
+ */
 struct device_node *__of_find_node_by_full_path(struct device_node *node,
 						const char *path)
 {
@@ -771,13 +777,20 @@ struct device_node *__of_find_node_by_full_path(struct device_node *node,
  * Return: A node pointer with refcount incremented, use
  * of_node_put() on it when done.
  */
+/* IAMROOT20 20240525
+ * of_find_node_by_path
+ *	of_aliases = of_find_node_by_path("/aliases");
+ *	of_find_node_opts_by_path("/aliases", NULL);
+ *
+ * of_alias_scan
+ *	of_find_node_opts_by_path("/pl011@9000000", &of_stdout_options);
+ */
 struct device_node *of_find_node_opts_by_path(const char *path, const char **opts)
 {
 	struct device_node *np = NULL;
 	struct property *pp;
 	unsigned long flags;
 	const char *separator = strchr(path, ':');
-
 	if (opts)
 		*opts = separator ? separator + 1 : NULL;
 
@@ -1729,11 +1742,30 @@ void of_alias_scan(void * (*dt_alloc)(u64 size, u64 align))
 		/* linux,stdout-path and /aliases/stdout are for legacy compatibility */
 		const char *name = NULL;
 
+		/* IAMROOT20 20240525
+		 * exam)
+		 *	 chosen {
+		 *		stdout-path = "/pl011@9000000";
+		 *	 };   
+		 *	name = "/pl011@9000000"
+		 */
 		if (of_property_read_string(of_chosen, "stdout-path", &name))
 			of_property_read_string(of_chosen, "linux,stdout-path",
 						&name);
 		if (IS_ENABLED(CONFIG_PPC) && !name)
 			of_property_read_string(of_aliases, "stdout", &name);
+		/* IAMROOT20 20240525
+		 * exam) name="/pl011@9000000"
+		 * of_stdout = 
+		 *	pl011@9000000 {
+		 * 	     clock-names = "uartclk\0apb_pclk";
+		 * 	     clocks = <0x8000 0x8000>;
+		 * 	     interrupts = <0x00 0x01 0x04>;
+		 * 	     reg = <0x00 0x9000000 0x00 0x1000>;
+		 * 	     compatible = "arm,pl011\0arm,primecell";
+		 * 	};
+		 * of_stdout_options = NULL
+		 */
 		if (name)
 			of_stdout = of_find_node_opts_by_path(name, &of_stdout_options);
 		if (of_stdout)
@@ -1756,6 +1788,14 @@ void of_alias_scan(void * (*dt_alloc)(u64 size, u64 align))
 		    !strcmp(pp->name, "linux,phandle"))
 			continue;
 
+		/* IAMROOT20 20240525
+		 * eaxm)
+		 *	aliases {
+		 *		serial0 = &uart0;
+		 * 	};
+		 *	name = "serial0"
+		 *	value=&uart0
+		 */
 		np = of_find_node_by_path(pp->value);
 		if (!np)
 			continue;

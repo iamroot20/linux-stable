@@ -234,7 +234,26 @@ extern int bitmap_print_bitmask_to_buf(char *buf, const unsigned long *maskp,
 extern int bitmap_print_list_to_buf(char *buf, const unsigned long *maskp,
 				      int nmaskbits, loff_t off, size_t count);
 
+/* IAMROOT20 20240525
+ * exam) start =  1 --> 0xffff_ffff_ffff_fffe
+ * exam) start =  2 --> 0xffff_ffff_ffff_fffc
+ * exam) start =  3 --> 0xffff_ffff_ffff_fff8
+ * exam) start =  4 --> 0xffff_ffff_ffff_fff0
+ * exam) start = 16 --> 0xffff_ffff_ffff_0000
+ */
 #define BITMAP_FIRST_WORD_MASK(start) (~0UL << ((start) & (BITS_PER_LONG - 1)))
+/* IAMROOT20 20240525
+ * exam) nbits = 16
+ *	~0UL >> (-16 & 63)
+ *	= ~0UL >> (0xffff_ffff_ffff_fff0 & 0x3f)
+ *	= ~0UL >> 0x30
+ *	= ~0UL >> 48
+ *	= 0x0000_0000_0000_ffff
+ *
+ * exam) nbits = 17 --> 0x0000_0000_0001_ffff
+ * exam) nbits = 30 --> 0x0000_0000_3fff_ffff
+ * exam) nbits = 32 --> 0x0000_0000_ffff_ffff
+ */
 #define BITMAP_LAST_WORD_MASK(nbits) (~0UL >> (-(nbits) & (BITS_PER_LONG - 1)))
 
 static inline void bitmap_zero(unsigned long *dst, unsigned int nbits)

@@ -17,10 +17,25 @@
 
 struct pglist_data *node_data[MAX_NUMNODES] __read_mostly;
 EXPORT_SYMBOL(node_data);
+/* IAMROOT20 20240525
+ * numa_init
+ *	nodes_clear(numa_nodes_parsed)
+ */
 nodemask_t numa_nodes_parsed __initdata;
 static int cpu_to_node_map[NR_CPUS] = { [0 ... NR_CPUS-1] = NUMA_NO_NODE };
 
+/* IAMROOT20 20240525
+ * numa_distance_cnt = 16
+ */
 static int numa_distance_cnt;
+/* IAMROOT20 20240525
+ * 16x16 2차원 행열을 만든다. numa_alloc_distance
+ *    { { 10, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20},
+ *	{ 20, 10, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20},
+ *	{ 20, 20, 10, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20},
+ *	...
+ *	{ 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 10} }
+ */
 static u8 *numa_distance;
 bool numa_off;
 
@@ -275,7 +290,13 @@ static int __init numa_alloc_distance(void)
 	size_t size;
 	int i, j;
 
+	/* IAMROOT20 20240525
+	 * size = 16 * 16 * 1 = 256
+	 */
 	size = nr_node_ids * nr_node_ids * sizeof(numa_distance[0]);
+	/* IAMROOT20 20240525
+	 * 16x16 2차원 행열을 만든다.
+	 */
 	numa_distance = memblock_alloc(size, PAGE_SIZE);
 	if (WARN_ON(!numa_distance))
 		return -ENOMEM;
@@ -373,6 +394,12 @@ static int __init numa_register_nodes(void)
 	return 0;
 }
 
+/* IAMROOT20 20240525
+ * __init arch_numa_init
+ *	acpi_enable	numa_init(arch_acpi_numa_init)
+ *	acpi_disabled	numa_init(of_numa_init)
+ *	etc		numa_init(dummy_numa_init)
+ */
 static int __init numa_init(int (*init_func)(void))
 {
 	int ret;

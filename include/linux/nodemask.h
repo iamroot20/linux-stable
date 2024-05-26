@@ -96,6 +96,9 @@
 #include <linux/numa.h>
 #include <linux/random.h>
 
+/* IAMROOT20 20240525
+ * MAX_NUMNODES	1 << 4	16
+ */
 typedef struct { DECLARE_BITMAP(bits, MAX_NUMNODES); } nodemask_t;
 extern nodemask_t _unused_nodemask_arg_;
 

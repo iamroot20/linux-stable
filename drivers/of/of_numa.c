@@ -26,6 +26,9 @@ static void __init of_numa_parse_cpu_nodes(void)
 	int r;
 	struct device_node *np;
 
+	/* IAMROOT20 20240525
+	 * hisilicon/hip07.dtsi 참고
+	 */
 	for_each_of_cpu_node(np) {
 		r = of_property_read_u32(np, "numa-node-id", &nid);
 		if (r)

@@ -381,6 +381,9 @@ int movable_zone;
 EXPORT_SYMBOL(movable_zone);
 
 #if MAX_NUMNODES > 1
+/* IAMROOT20 20240525
+ * nr_node_ids = 16
+ */
 unsigned int nr_node_ids __read_mostly = MAX_NUMNODES;
 unsigned int nr_online_nodes __read_mostly = 1;
 EXPORT_SYMBOL(nr_node_ids);
