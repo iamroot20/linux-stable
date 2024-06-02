@@ -84,6 +84,7 @@ static int __init of_numa_parse_memory_nodes(void)
 		}
 
 		/* IAMROOT20_END 20240525 */
+		// TODO:
 		for (i = 0; !r && !of_address_to_resource(np, i, &rsrc); i++)
 			r = numa_add_memblk(nid, rsrc.start, rsrc.end + 1);
 
@@ -99,6 +100,17 @@ static int __init of_numa_parse_memory_nodes(void)
 
 static int __init of_numa_parse_distance_map_v1(struct device_node *map)
 {
+	/* IAMROOT20 20240601
+	 * hisilicon/hip07-d05.dts
+	 *   distance-map {
+	 *	compatible = "numa-distance-map-v1";
+	 * 	distance-matrix =
+	 *		<0 0 10>, <0 1 15>, <0 2 20>, <0 3 25>,
+	 *		<1 0 15>, <1 1 10>, <1 2 25>, <1 3 30>,
+	 *		<2 0 20>, <2 1 25>, <2 2 10>, <2 3 15>,
+	 *		<3 0 25>, <3 1 30>, <3 2 15>, <3 3 10>;
+	 *   };
+	 */
 	const __be32 *matrix;
 	int entry_count;
 	int i;
@@ -151,6 +163,17 @@ static int __init of_numa_parse_distance_map(void)
 	int ret = 0;
 	struct device_node *np;
 
+	/* IAMROOT20 20240601
+	 * hisilicon/hip07-d05.dts
+	 *   distance-map {
+	 *	compatible = "numa-distance-map-v1";
+	 * 	distance-matrix =
+	 *		<0 0 10>, <0 1 15>, <0 2 20>, <0 3 25>,
+	 *		<1 0 15>, <1 1 10>, <1 2 25>, <1 3 30>,
+	 *		<2 0 20>, <2 1 25>, <2 2 10>, <2 3 15>,
+	 *		<3 0 25>, <3 1 30>, <3 2 15>, <3 3 10>;
+	 *   };
+	 */
 	np = of_find_compatible_node(NULL, NULL,
 				     "numa-distance-map-v1");
 	if (np)

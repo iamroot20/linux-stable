@@ -534,7 +534,15 @@ static inline int node_random(const nodemask_t *maskp)
 #endif
 }
 
+/* IAMROOT20 20240525
+ * numa_init
+ *	nodes_clear(node_online_map);
+ */
 #define node_online_map 	node_states[N_ONLINE]
+/* IAMROOT20 20240525
+ * numa_init
+ *	nodes_clear(node_possible_map);
+ */
 #define node_possible_map 	node_states[N_POSSIBLE]
 
 #define num_online_nodes()	num_node_state(N_ONLINE)
