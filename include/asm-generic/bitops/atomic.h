@@ -15,6 +15,10 @@ static __always_inline void
 arch_set_bit(unsigned int nr, volatile unsigned long *p)
 {
 	p += BIT_WORD(nr);
+	/* IAMROOT20 20240608
+	 * nr번째 비트 필드의 값을 1로 세팅한다
+	 * *p |= BIT_MASK(nr)
+	 */
 	arch_atomic_long_or(BIT_MASK(nr), (atomic_long_t *)p);
 }
 
