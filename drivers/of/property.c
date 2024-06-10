@@ -519,6 +519,10 @@ int of_property_read_string_helper(const struct device_node *np,
 		l = strnlen(p, end - p) + 1;
 		if (p + l > end)
 			return -EILSEQ;
+		/* IAMROOT20 20240608
+		 * out_strs에 문자열 p의 주소를 복사
+		 * - 문자열을 복사하는게 아님
+		 */
 		if (out_strs && i >= skip)
 			*out_strs++ = p;
 	}

@@ -342,6 +342,38 @@ static int of_bus_default_flags_match(struct device_node *np)
 /*
  * Array of bus specific translators
  */
+/* IAMROOT20 20240608
+ * https://github.com/rockchip-toybrick/u-boot/blob/master/common/fdt_support.c
+ *
+ * struct of_bus - Callbacks for bus specific translators
+ * @name:	A string used to identify this bus in debug output.
+ * @addresses:	The name of the DT property from which addresses are
+ *		to be read, typically "reg".
+ * @match:	Return non-zero if the node whose parent is at
+ *		parentoffset in the FDT blob corresponds to a bus
+ *		of this type, otherwise return zero. If NULL a match
+ *		is assumed.
+ * @count_cells:Count how many cells (be32 values) a node whose parent
+ *		is at parentoffset in the FDT blob will require to
+ *		represent its address (written to *addrc) & size
+ *		(written to *sizec).
+ * @map:	Map the address addr from the address space of this
+ *		bus to that of its parent, making use of the ranges
+ *		read from DT to an array at range. na and ns are the
+ *		number of cells (be32 values) used to hold and address
+ *		or size, respectively, for this bus. pna is the number
+ *		of cells used to hold an address for the parent bus.
+ *		Returns the address in the address space of the parent
+ *		bus.
+ * @translate:	Update the value of the address cells at addr within an
+ *		FDT by adding offset to it. na specifies the number of
+ *		cells used to hold the address being translated. Returns
+ *		zero on success, non-zero on error.
+ *
+ * Each bus type will include a struct of_bus in the of_busses array,
+ * providing implementations of some or all of the functions used to
+ * match the bus & handle address translation for its children.
+ */
 
 static struct of_bus of_busses[] = {
 #ifdef CONFIG_PCI
@@ -522,6 +554,9 @@ static u64 __of_translate_address(struct device_node *dev,
 	parent = get_parent(dev);
 	if (parent == NULL)
 		goto bail;
+	/* IAMROOT20 20240608
+	 * bus에 NULL check 필요?
+	 */
 	bus = of_match_bus(parent);
 
 	/* Count address cells & copy address locally */
@@ -530,6 +565,9 @@ static u64 __of_translate_address(struct device_node *dev,
 		pr_debug("Bad cell count for %pOF\n", dev);
 		goto bail;
 	}
+	/* IAMROOT20 20240608
+	 * addr에 in_addr(reg 노드의 property)의 4바이트 단위로 복사
+	 */
 	memcpy(addr, in_addr, na * 4);
 
 	pr_debug("bus is %s (na=%d, ns=%d) on %pOF\n",
@@ -599,6 +637,7 @@ u64 of_translate_address(struct device_node *dev, const __be32 *in_addr)
 	struct device_node *host;
 	u64 ret;
 
+	/* IAMROOT20_END 20240608 */
 	ret = __of_translate_address(dev, of_get_parent,
 				     in_addr, "ranges", &host);
 	if (host) {
@@ -727,12 +766,20 @@ const __be32 *__of_get_address(struct device_node *dev, int index, int bar_no,
 		return NULL;
 	psize /= 4;
 
+	/* IAMROOT20 20240608
+	 * reg = <0x0 0x00000000 0x0 0x40000000>; 
+	 * na = 2, ns = 2
+	 */
 	onesize = na + ns;
 	for (i = 0; psize >= onesize; psize -= onesize, prop += onesize, i++) {
 		u32 val = be32_to_cpu(prop[0]);
 		/* PCI bus matches on BAR number instead of index */
 		if (((bar_no >= 0) && ((val & 0xff) == ((bar_no * 4) + PCI_BASE_ADDRESS_0))) ||
 		    ((index >= 0) && (i == index))) {
+			/* IAMROOT20 20240608
+			 * *size = 0x0000_0000_4000_0000;
+			 * *flags = 0x0000_0200 = IORESOURCE_MEM;
+			 */
 			if (size)
 				*size = of_read_number(prop + na, ns);
 			if (flags)

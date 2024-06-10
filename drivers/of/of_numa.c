@@ -52,6 +52,9 @@ static void __init of_numa_parse_cpu_nodes(void)
 		if (nid >= MAX_NUMNODES)
 			pr_warn("Node id %u exceeds maximum value\n", nid);
 		else
+			/* IAMROOT20 20240608
+			 * numa_nodes_parsed의 bits의 nid번째 비트 필드를 1로 설정
+			 */
 			node_set(nid, numa_nodes_parsed);
 	}
 }
@@ -232,6 +235,7 @@ int __init of_numa_init(void)
 	int r;
 
 	of_numa_parse_cpu_nodes();
+	/* IAMROOT20_START 20240608 */
 	r = of_numa_parse_memory_nodes();
 	if (r)
 		return r;
