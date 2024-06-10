@@ -7489,6 +7489,15 @@ void hugetlb_unshare_all_pmds(struct vm_area_struct *vma)
 #ifdef CONFIG_CMA
 static bool cma_reserve_called __initdata;
 
+/* IAMROOT20 20240607
+ * cmdline에 hugetlb_cma=7G,0:1G,1:2G,2:1G,3:1G 일때
+ *
+ * hugetlb_cma_size = 7*SIZE_1G
+ * hugetlb_cma_size_in_node[0] = 1*SIZE_1G
+ * hugetlb_cma_size_in_node[1] = 2*SIZE_1G
+ * hugetlb_cma_size_in_node[2] = 3*SIZE_1G
+ * hugetlb_cma_size_in_node[3] = 1*SIZE_1G
+ */
 static int __init cmdline_parse_hugetlb_cma(char *p)
 {
 	int nid, count = 0;
@@ -7496,6 +7505,10 @@ static int __init cmdline_parse_hugetlb_cma(char *p)
 	char *s = p;
 
 	while (*s) {
+		/* IAMROOT20 20240607
+		 * %n은 읽은 문자 개수를 리턴하는 기능이다.
+		 * https://woogyun.tistory.com/301
+		 */
 		if (sscanf(s, "%lu%n", &tmp, &count) != 1)
 			break;
 
@@ -7550,6 +7563,9 @@ void __init hugetlb_cma_reserve(int order)
 			continue;
 		}
 
+		/* IAMROOT20 20240607
+		 * order가 18이면 CMA 최소사이즈는 SIZE_1G
+		 */
 		if (hugetlb_cma_size_in_node[nid] < (PAGE_SIZE << order)) {
 			pr_warn("hugetlb_cma: cma area of node %d should be at least %lu MiB\n",
 				nid, (PAGE_SIZE << order) / SZ_1M);
@@ -7571,6 +7587,9 @@ void __init hugetlb_cma_reserve(int order)
 		return;
 	}
 
+	/* IAMROOT20 20240607
+	 * node별 CMA 할당을 할 필요가 없을때.
+	 */
 	if (!node_specific_cma_alloc) {
 		/*
 		 * If 3 GB area is requested on a machine with 4 numa nodes,

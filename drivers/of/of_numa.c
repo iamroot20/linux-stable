@@ -20,6 +20,10 @@
  * Even though we connect cpus to numa domains later in SMP
  * init, we need to know the node ids now for all cpus.
 */
+/* IAMROOT20 20240608
+ * in	: device tree cpu node
+ * out	: 분석된 numa-id를 numa_nodes_parsed 비트맵에 셋팅.
+ */
 static void __init of_numa_parse_cpu_nodes(void)
 {
 	u32 nid;
@@ -52,6 +56,10 @@ static void __init of_numa_parse_cpu_nodes(void)
 	}
 }
 
+/* IAMROOT20 20240608
+ * in	: device tree memory node
+ * out	: memblock meory영역 별로 numa-id 설정
+ */
 static int __init of_numa_parse_memory_nodes(void)
 {
 	struct device_node *np = NULL;
@@ -84,7 +92,6 @@ static int __init of_numa_parse_memory_nodes(void)
 		}
 
 		/* IAMROOT20_END 20240525 */
-		// TODO:
 		for (i = 0; !r && !of_address_to_resource(np, i, &rsrc); i++)
 			r = numa_add_memblk(nid, rsrc.start, rsrc.end + 1);
 

@@ -126,6 +126,10 @@ static bool vmf_orig_pte_uffd_wp(struct vm_fault *vmf)
  * highstart_pfn must be the same; there must be no gap between ZONE_NORMAL
  * and ZONE_HIGHMEM.
  */
+/* IAMROOT20 20240607
+ * high_memory = __va(memblock_end_of_DRAM() - 1) + 1;
+ *	arm64_memblock_init에서 설정
+ */
 void *high_memory;
 EXPORT_SYMBOL(high_memory);
 

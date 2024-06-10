@@ -171,6 +171,10 @@ void __init cma_reserve_pages_on_error(struct cma *cma)
  *
  * This function creates custom contiguous area from already reserved memory.
  */
+/* IAMROOT20 20240607
+ * - size, align, reserved 영역 범위 검사등을 수행하고 cma 정보를 하나 얻고 
+ *	초기화한다. 
+ */
 int __init cma_init_reserved_mem(phys_addr_t base, phys_addr_t size,
 				 unsigned int order_per_bit,
 				 const char *name,
@@ -235,6 +239,15 @@ int __init cma_init_reserved_mem(phys_addr_t base, phys_addr_t size,
  *
  * If @fixed is true, reserve contiguous area at exactly @base.  If false,
  * reserve in range from @base to @limit.
+ */ 
+/* IAMROOT20 20240607
+ * - cmdline or kernel config에 의한 cma 정보를 memblock reserved 영역을 할당하고
+ *   @res_cma(struct cma)에 등록한다.
+ *
+ * res = cma_declare_contiguous_nid(0, size, 0,
+ *	PAGE_SIZE << HUGETLB_PAGE_ORDER,	// SIZE_2M
+ * 	0, false, name,				// name="hugetlb[0-16]"
+ * 	&hugetlb_cma[nid], nid);
  */
 int __init cma_declare_contiguous_nid(phys_addr_t base,
 			phys_addr_t size, phys_addr_t limit,
