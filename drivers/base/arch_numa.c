@@ -439,6 +439,7 @@ static int __init numa_init(int (*init_func)(void))
 	if (ret < 0)
 		goto out_free_distance;
 
+	/* IAMROOT20_END 20240615 */
 	if (nodes_empty(numa_nodes_parsed)) {
 		pr_info("No NUMA configuration found\n");
 		ret = -EINVAL;

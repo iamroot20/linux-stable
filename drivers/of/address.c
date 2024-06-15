@@ -66,7 +66,25 @@ static u64 of_bus_default_map(__be32 *addr, const __be32 *range,
 		int na, int ns, int pna)
 {
 	u64 cp, s, da;
-
+	/* IAMROOT20 20240615
+	 * ex)   ethernet@0,0 {
+ 	 *                compatible = "smc,smc91c111"
+	 *                reg = <0 0 0x1000>;
+	 *        };
+	 *
+	 * ex)    range = <0 0 0x10100000 0x10000>;
+	 *
+	 * range : 자식 디바이스가 가질 수 있는 버스 주소의 범위
+	 * reg : 자식 디바이스의 주소
+	 *
+	 * cp = 0x0000_0000_0000_0000;
+	 * s = 0x0000_0000_0001_0000;
+	 * addr = reg;
+	 * da = 0x0000_0000_0000_0000;
+	 *
+	 * 자식 디바이스의 버스 범위의 시작 주소와,
+	 * 자식 디바이스의 주소의 차를 반환
+	 */
 	cp = of_read_number(range, na);
 	s  = of_read_number(range + na + pna, ns);
 	da = of_read_number(addr, na);
@@ -498,6 +516,17 @@ static int of_translate_one(struct device_node *parent, struct of_bus *bus,
 	pr_debug("walking ranges...\n");
 
 	/* Now walk through the ranges */
+	/* IAMROOT20 20240615
+	 * ranges = <자식주소 부모주소 자식주소 크기>;
+	 *
+	 * ranges = <0 0 0x10100000 0x10000
+	 *           1 0 0x10160000 0x10000
+	 *           2 0 0x30000000 0x1000000>;
+	 *
+	 * rlen = 12 * 4;
+	 * rlen /= 4 = 12;
+	 * rone = 4 = ranges 필드 하나
+	 */
 	rlen /= 4;
 	rone = na + pna + ns;
 	for (; rlen >= rone; rlen -= rone, ranges += rone) {
@@ -509,6 +538,9 @@ static int of_translate_one(struct device_node *parent, struct of_bus *bus,
 		pr_debug("not found !\n");
 		return 1;
 	}
+	/* IAMROOT20 20240615
+	 * addr에는 ranges의 OF_BAD_ADDR가 아닌 필드의 부모 주소가 복사된다.
+	 */
 	memcpy(addr, ranges + na, 4 * pna);
 
  finish:
@@ -516,6 +548,9 @@ static int of_translate_one(struct device_node *parent, struct of_bus *bus,
 	pr_debug("with offset: %llx\n", offset);
 
 	/* Translate it into parent bus space */
+	/* IAMROOT20 20240615
+	 * addr에 offset을 더해서 반환.
+	 */
 	return pbus->translate(addr, offset, pna);
 }
 
@@ -555,7 +590,7 @@ static u64 __of_translate_address(struct device_node *dev,
 	if (parent == NULL)
 		goto bail;
 	/* IAMROOT20 20240608
-	 * bus에 NULL check 필요?
+	 * of_match_bus 안에 BUG() 함수가 있으므로 NULL이 반환되지 않음.
 	 */
 	bus = of_match_bus(parent);
 
@@ -615,6 +650,18 @@ static u64 __of_translate_address(struct device_node *dev,
 		    pbus->name, pna, pns, parent);
 
 		/* Apply bus translation */
+		/* IAMROOT20 20240615
+		 * dev : 함수를 호출한 디바이스의 부모 디바이스
+		 * bus : 부모 디바이스의 버스
+		 * pbus : 조부모 디바이스의 버스
+		 * addr : 
+		 *      - 함수를 호출한 디바이스의 reg 주소
+		 *      - 이전 루프의 부모 주소 + offset
+		 * na : 부모 디바이스의 address cells 크기
+		 * ns : 부모 디바이스의 size cells 크기
+		 * pna : 조부모 디바이스의 address cells 크기
+		 * rprop : ranges의 property
+		 */
 		if (of_translate_one(dev, bus, pbus, addr, na, ns, pna, rprop))
 			break;
 
@@ -638,6 +685,7 @@ u64 of_translate_address(struct device_node *dev, const __be32 *in_addr)
 	u64 ret;
 
 	/* IAMROOT20_END 20240608 */
+	/* IAMROOT20_START 20240615 */
 	ret = __of_translate_address(dev, of_get_parent,
 				     in_addr, "ranges", &host);
 	if (host) {
@@ -1163,6 +1211,12 @@ static int __of_address_to_resource(struct device_node *dev, int index, int bar_
 	if (of_mmio_is_nonposted(dev))
 		flags |= IORESOURCE_MEM_NONPOSTED;
 
+	/* IAMROOT20 20240615
+	 * r->start = 매핑된 디바이스의 시작 주소
+	 * r->end = 매핑된 디바이스의 끝 주소
+	 * r->flags = 디바이스의 flags
+	 * r->name = 디바이스의 이름
+	 */
 	r->start = taddr;
 	r->end = taddr + size - 1;
 	r->flags = flags;
