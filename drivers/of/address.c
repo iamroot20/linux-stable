@@ -501,6 +501,11 @@ static int of_translate_one(struct device_node *parent, struct of_bus *bus,
 	rlen /= 4;
 	rone = na + pna + ns;
 	for (; rlen >= rone; rlen -= rone, ranges += rone) {
+		/* IAMROOT20 20240615
+		 * of_busses[] = { ...
+		 *		.map = of_bus_default_map,
+		 *		... };
+		 */
 		offset = bus->map(addr, ranges, na, ns, pna);
 		if (offset != OF_BAD_ADDR)
 			break;
@@ -515,6 +520,11 @@ static int of_translate_one(struct device_node *parent, struct of_bus *bus,
 	of_dump_addr("parent translation for:", addr, pna);
 	pr_debug("with offset: %llx\n", offset);
 
+	/* IAMROOT20 20240615
+	 * of_busses[] = { ...
+	 *		.translation = of_bus_default_translate,
+	 *		... };
+	 */
 	/* Translate it into parent bus space */
 	return pbus->translate(addr, offset, pna);
 }

@@ -322,6 +322,11 @@ EXPORT_SYMBOL(of_get_property);
  * 10. type
  * 11. name
  */
+/* IAMROOT20 20240615
+ * of_numa_parse_distance_map(void)
+ *     of_find_compatible_node(NULL, NULL, "numa-distance-map-v1");
+ *        __of_device_is_compatible(np, "numa-distance-map-v1", NULL, NULL)
+ */
 static int __of_device_is_compatible(const struct device_node *device,
 				     const char *compat, const char *type, const char *name)
 {
@@ -963,6 +968,10 @@ EXPORT_SYMBOL(of_find_node_by_type);
  *
  * Return: A node pointer with refcount incremented, use
  * of_node_put() on it when done.
+ */
+/* IAMROOT20 20240615
+ * of_numa_parse_distance_map(void)
+ *	of_find_compatible_node(NULL, NULL, "numa-distance-map-v1");
  */
 struct device_node *of_find_compatible_node(struct device_node *from,
 	const char *type, const char *compatible)

@@ -23,6 +23,10 @@ EXPORT_SYMBOL(node_data);
  * numa_init
  *	nodes_clear(numa_nodes_parsed)
  */
+/* IAMROOT20 20240615
+ * numa_add_memblk
+ *	node_set(nid, numa_nodes_parsed); 
+ */
 nodemask_t numa_nodes_parsed __initdata;
 static int cpu_to_node_map[NR_CPUS] = { [0 ... NR_CPUS-1] = NUMA_NO_NODE };
 
