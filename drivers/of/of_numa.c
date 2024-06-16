@@ -95,6 +95,11 @@ static int __init of_numa_parse_memory_nodes(void)
 		}
 
 		/* IAMROOT20_END 20240525 */
+		/* IAMROOT20 20240615
+		 * 매핑된 디바이스의 주소와 정보를 resource 구조체에 넣고,
+		 * 기존에 있던 memblock 영역에서, start에서 end영역의 
+		 * node id를 nid로 설정한다.
+		 */
 		for (i = 0; !r && !of_address_to_resource(np, i, &rsrc); i++)
 			r = numa_add_memblk(nid, rsrc.start, rsrc.end + 1);
 
@@ -236,6 +241,11 @@ int __init of_numa_init(void)
 
 	of_numa_parse_cpu_nodes();
 	/* IAMROOT20_START 20240608 */
+	/* IAMROOT20 20240615
+	 * memory 영역의 디바이스 노드를 파싱하여
+	 * 해당 영역의 memblock에 nid를 설정하고,
+	 * numa_distance 배열을 distance_map의 내용으로 초기화한다.
+	 */
 	r = of_numa_parse_memory_nodes();
 	if (r)
 		return r;
