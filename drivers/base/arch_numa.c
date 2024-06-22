@@ -277,7 +277,9 @@ static void __init setup_node_data(int nid, u64 start_pfn, u64 end_pfn)
 	tnid = early_pfn_to_nid(nd_pa >> PAGE_SHIFT);
 	if (tnid != nid)
 		pr_info("NODE_DATA(%d) on node %d\n", nid, tnid);
-
+	/* IAMROOT20 20240622
+	 * NODE_DATA(nid) : pglist_data 배열에서 nid 인덱스에 해당하는 배열의 주소 반환
+	 */
 	node_data[nid] = nd;
 	memset(NODE_DATA(nid), 0, sizeof(pg_data_t));
 	NODE_DATA(nid)->node_id = nid;
@@ -413,6 +415,9 @@ static int __init numa_register_nodes(void)
 		unsigned long start_pfn, end_pfn;
 
 		get_pfn_range_for_nid(nid, &start_pfn, &end_pfn);
+		/* IAMROOT20 20240622
+		 * nid에 해당하는 pglist_data의 필드를 설정
+		 */
 		setup_node_data(nid, start_pfn, end_pfn);
 		node_set_online(nid);
 	}
@@ -457,6 +462,7 @@ static int __init numa_init(int (*init_func)(void))
 	if (ret < 0)
 		goto out_free_distance;
 
+	/* IAMROOT20_END 20240622 */
 	setup_node_to_cpumask_map();
 
 	return 0;

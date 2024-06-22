@@ -467,6 +467,9 @@ extern unsigned int nr_online_nodes;
 static inline void node_set_online(int nid)
 {
 	node_set_state(nid, N_ONLINE);
+	/* IAMROOT20 20240622
+	 * node_states[N_ONLINE] 비트 필드에 1로 설정된 비트의 개수를 반환
+	 */
 	nr_online_nodes = num_node_state(N_ONLINE);
 }
 
