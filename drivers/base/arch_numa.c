@@ -296,7 +296,9 @@ void __init numa_free_distance(void)
 
 	if (!numa_distance)
 		return;
-
+	/* IAMROOT20 20240622 
+	* size = 16 x 16 x 1 = 256
+	*/
 	size = numa_distance_cnt * numa_distance_cnt *
 		sizeof(numa_distance[0]);
 
@@ -444,6 +446,7 @@ static int __init numa_init(int (*init_func)(void))
 		goto out_free_distance;
 
 	/* IAMROOT20_END 20240615 */
+	/* IAMROOT20_START 20240622 */
 	if (nodes_empty(numa_nodes_parsed)) {
 		pr_info("No NUMA configuration found\n");
 		ret = -EINVAL;

@@ -408,7 +408,11 @@ static struct kmemleak_object *__lookup_object(unsigned long ptr, int alias,
 	while (rb) {
 		struct kmemleak_object *object;
 		unsigned long untagged_objp;
-
+		
+		/* IAMROOT20 20240622 
+		* rb의 주소에  kmemleak_object구조체에서 rb_node위치의
+		* offest을 빼서 object의 주소를 구함.
+		*/
 		object = rb_entry(rb, struct kmemleak_object, rb_node);
 		untagged_objp = (unsigned long)kasan_reset_tag((void *)object->pointer);
 
@@ -793,6 +797,10 @@ static void delete_object_part(unsigned long ptr, size_t size, bool is_phys)
 	 * Create one or two objects that may result from the memory block
 	 * split. Note that partial freeing is only done by free_bootmem() and
 	 * this happens before kmemleak_init() is called.
+	 */
+	/* IAMROOT20 20240622
+	 * object보다 제거할 메모리 영역이 작을 경우, 
+	 * 앞과 뒤의 object를 각각 생성하고 메모리 영역 삭제
 	 */
 	start = object->pointer;
 	end = object->pointer + object->size;
