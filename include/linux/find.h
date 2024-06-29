@@ -384,6 +384,7 @@ unsigned long find_last_bit(const unsigned long *addr, unsigned long size)
 		return val ? __fls(val) : size;
 	}
 
+	/* IAMROOT20_END 20240629 */
 	return _find_last_bit(addr, size);
 }
 #endif

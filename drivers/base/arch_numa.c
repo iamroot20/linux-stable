@@ -463,6 +463,7 @@ static int __init numa_init(int (*init_func)(void))
 		goto out_free_distance;
 
 	/* IAMROOT20_END 20240622 */
+	/* IAMROOT20_START 20240629 */
 	setup_node_to_cpumask_map();
 
 	return 0;

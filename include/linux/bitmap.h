@@ -255,12 +255,20 @@ extern int bitmap_print_list_to_buf(char *buf, const unsigned long *maskp,
  *      = ~0UL >> 48
  *      = 0x0000_0000_0000_ffff
  *
+ * exam) nbits = 64
+ *       ~0UL >> (-64 & 63)
+ *       = ~0UL >> (0xffff_ffff_ffff_ffC0 & 0x3f)
+ *       = ~0UL >> 0x0
+ *       = 0x_ffff_ffff_ffff_ffff
+ *
  * exam) nbits =  1 --> 0x0000_0000_0000_0001
  * exam) nbits =  2 --> 0x0000_0000_0000_0003
  * exam) nbits =  3 --> 0x0000_0000_0000_0007
  * exam) nbits = 17 --> 0x0000_0000_0001_ffff
  * exam) nbits = 30 --> 0x0000_0000_3fff_ffff
- * exam) nbits = 32 --> 0x0000_0000_ffff_ffff
+ * exam) nbits = 31 --> 0x0000_0000_7fff_ffff
+ * exam) nbits = 64 --> 0xffff_ffff_ffff_ffff
+ * exam) nbits = 65 --> 0x0000_0000_0000_0001
  */
 #define BITMAP_LAST_WORD_MASK(nbits) (~0UL >> (-(nbits) & (BITS_PER_LONG - 1)))
 
