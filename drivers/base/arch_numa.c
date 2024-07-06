@@ -463,7 +463,9 @@ static int __init numa_init(int (*init_func)(void))
 		goto out_free_distance;
 
 	/* IAMROOT20_END 20240622 */
-	/* IAMROOT20_START 20240629 */
+	/* IAMROOT20_START 20240629 
+	 * 각 노드에 대한 비트맵 형태의 CPU 마스크를 할당하고 초기화
+	 */
 	setup_node_to_cpumask_map();
 
 	return 0;
@@ -482,6 +484,11 @@ out_free_distance:
  * allowed memory. It is unlikely that this function fails.
  *
  * Return: 0 on success, -errno on failure.
+ */
+/* IAMROOT20 20240706
+ * NUMA를 설정한 시스템이 아닌 경우, 더미 데이터를 위해
+ * memblock memory 영역의 region 전체의 nid를 0으로 설정 후
+ * numa_nodes_parsed의 0번째 비트를 1로 설정
  */
 static int __init dummy_numa_init(void)
 {

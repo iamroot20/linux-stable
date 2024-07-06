@@ -80,6 +80,10 @@
  * Generate a mask for array_index__nospec() that is ~0UL when 0 <= idx < sz
  * and 0 otherwise.
  */
+/* IAMROOT20 20240706
+ * idx가 sz보다 크면 0, 작으면 ULONG_MAX 반환
+ * sbc : Carry 플래그를 사용하여 빼기 연산 수행
+ */
 #define array_index_mask_nospec array_index_mask_nospec
 static inline unsigned long array_index_mask_nospec(unsigned long idx,
 						    unsigned long sz)

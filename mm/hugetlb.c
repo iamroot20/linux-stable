@@ -7490,13 +7490,16 @@ void hugetlb_unshare_all_pmds(struct vm_area_struct *vma)
 static bool cma_reserve_called __initdata;
 
 /* IAMROOT20 20240607
- * cmdline에 hugetlb_cma=7G,0:1G,1:2G,2:1G,3:1G 일때
+ * cmdline에 hugetlb_cma=0:1G,1:2G,2:1G,3:1G 일때
  *
- * hugetlb_cma_size = 7*SIZE_1G
  * hugetlb_cma_size_in_node[0] = 1*SIZE_1G
  * hugetlb_cma_size_in_node[1] = 2*SIZE_1G
  * hugetlb_cma_size_in_node[2] = 3*SIZE_1G
  * hugetlb_cma_size_in_node[3] = 1*SIZE_1G
+ *
+ * cmdline에 hugetlb_cma=7G 일때
+ * 
+ * hugetlb_cma_size = 7*SIZE_1G
  */
 static int __init cmdline_parse_hugetlb_cma(char *p)
 {
@@ -7590,6 +7593,7 @@ void __init hugetlb_cma_reserve(int order)
 	/* IAMROOT20 20240607
 	 * node별 CMA 할당을 할 필요가 없을때.
 	 */
+	/* IAMROOT20_END 20240706 */
 	if (!node_specific_cma_alloc) {
 		/*
 		 * If 3 GB area is requested on a machine with 4 numa nodes,

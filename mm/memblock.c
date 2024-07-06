@@ -1459,7 +1459,10 @@ int __init_memblock memblock_set_node(phys_addr_t base, phys_addr_t size,
 #ifdef CONFIG_NUMA
 	int start_rgn, end_rgn;
 	int i, ret;
-
+	/* IAMROOT20 20240706
+	 * base ~ base + size 영역에 해당하는 memblock type의
+	 * 시작 region 인덱스와 끝 region 인덱스를 가져온다.
+	 */
 	ret = memblock_isolate_range(type, base, size, &start_rgn, &end_rgn);
 	if (ret)
 		return ret;

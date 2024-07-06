@@ -1740,6 +1740,7 @@ void __init setup_nr_node_ids(void)
 {
 	unsigned int highest;
 
+	/* IAMROOT20_END 20240629 */ /* IAMROOT20_START 20240706 */
 	highest = find_last_bit(node_possible_map.bits, MAX_NUMNODES);
 	nr_node_ids = highest + 1;
 }

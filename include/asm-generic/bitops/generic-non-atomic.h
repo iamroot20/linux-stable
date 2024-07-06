@@ -125,6 +125,13 @@ generic_test_bit(unsigned long nr, const volatile unsigned long *addr)
 	 * so `volatile` must always stay here with no cast-aways. See
 	 * `Documentation/atomic_bitops.txt` for the details.
 	 */
+	/* IAMROOT20 20240706
+	 * exam) nr = 3
+	 * 0x0000_0000_0000_0001 & (addr >> (0x0000_0000_0000_0011 & 0x0000_0000_0011_1111))
+	 * 0x0000_0000_0000_0001 & (addr >> 3)
+	 * addr의 2번째 인덱스까지 모두 삭제
+	 * addr의 3번째 인덱스의 비트가 1로 되어있는지 확인
+	 */
 	return 1UL & (addr[BIT_WORD(nr)] >> (nr & (BITS_PER_LONG-1)));
 }
 

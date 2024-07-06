@@ -46,6 +46,10 @@ void __init arm64_hugetlb_cma_reserve(void)
 		 */
 		order = PUD_SHIFT - PAGE_SHIFT;
 	else
+		/* IAMROOT20 20240706
+		 * ex) 16K
+		 * 30 - 14 = 16
+		 */
 		order = CONT_PMD_SHIFT - PAGE_SHIFT;
 
 	/*
