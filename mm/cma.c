@@ -325,6 +325,7 @@ int __init cma_declare_contiguous_nid(phys_addr_t base,
 		goto err;
 	}
 
+	/* IAMROOT20_END 20240713 */
 	/* Reserve memory */
 	if (fixed) {
 		if (memblock_is_region_reserved(base, size) ||

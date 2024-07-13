@@ -7593,7 +7593,7 @@ void __init hugetlb_cma_reserve(int order)
 	/* IAMROOT20 20240607
 	 * node별 CMA 할당을 할 필요가 없을때.
 	 */
-	/* IAMROOT20_END 20240706 */
+	/* IAMROOT20_END 20240706 */ /* IAMROOT20_START 20240713 */
 	if (!node_specific_cma_alloc) {
 		/*
 		 * If 3 GB area is requested on a machine with 4 numa nodes,
