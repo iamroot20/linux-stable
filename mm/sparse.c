@@ -38,6 +38,9 @@ EXPORT_SYMBOL(mem_section);
  * node the page belongs to.
  */
 #if MAX_NUMNODES <= 256
+/* IAMROOT20 20240720
+ * section_to_node_table[] : section -> node 매핑 테이블
+ */
 static u8 section_to_node_table[NR_MEM_SECTIONS] __cacheline_aligned;
 #else
 static u16 section_to_node_table[NR_MEM_SECTIONS] __cacheline_aligned;
@@ -81,6 +84,9 @@ static noinline struct mem_section __ref *sparse_index_alloc(int nid)
 
 static int __meminit sparse_index_init(unsigned long section_nr, int nid)
 {
+	/* IAMROOT20 20240720
+	 * root는 *mem_section 배열에서의 index
+	 */
 	unsigned long root = SECTION_NR_TO_ROOT(section_nr);
 	struct mem_section *section;
 
@@ -94,6 +100,10 @@ static int __meminit sparse_index_init(unsigned long section_nr, int nid)
 	if (mem_section[root])
 		return 0;
 
+	/* IAMROOT20 20240720
+	 * mem_section[root]가 초기화되어 있지 않으면, 메모리를 할당하고(section)
+	 * mem_section[root]에 저장한다(mem_section[root] = section)
+	 */
 	section = sparse_index_alloc(nid);
 	if (!section)
 		return -ENOMEM;
@@ -115,6 +125,9 @@ static inline int sparse_index_init(unsigned long section_nr, int nid)
  * node.  This keeps us from having to use another data structure.  The
  * node information is cleared just before we store the real mem_map.
  */
+/* IAMROOT20 20240720
+ * SECTION_NID_SHIFT	4
+ */
 static inline unsigned long sparse_encode_early_nid(int nid)
 {
 	return ((unsigned long)nid << SECTION_NID_SHIFT);
@@ -129,6 +142,12 @@ static inline int sparse_early_nid(struct mem_section *section)
 static void __meminit mminit_validate_memmodel_limits(unsigned long *start_pfn,
 						unsigned long *end_pfn)
 {
+	/* IAMROOT20 20240720
+	 * MAX_PHYSMEM_BITS = 48
+	 * PAGE_SHIFT = 12
+	 *
+	 * max_sparsemem_pfn = 1 << 36
+	 */
 	unsigned long max_sparsemem_pfn = 1UL << (MAX_PHYSMEM_BITS-PAGE_SHIFT);
 
 	/*
@@ -226,11 +245,21 @@ void __init subsection_map_init(unsigned long pfn, unsigned long nr_pages)
 static void __init memory_present(int nid, unsigned long start, unsigned long end)
 {
 	unsigned long pfn;
+	/* IAMROOT20 20240720
+	 *
+	 */
 
 #ifdef CONFIG_SPARSEMEM_EXTREME
 	if (unlikely(!mem_section)) {
 		unsigned long size, align;
 
+		/* IAMROOT20 20240720
+		 * ex) 4K, PA=48인 경우,
+		 *     NR_SECTION_ROOTS = 2^13(8096)
+		 *
+		 * INTERNODE_CACHE_SHIFT = 6
+		 * align = 64
+		 */
 		size = sizeof(struct mem_section *) * NR_SECTION_ROOTS;
 		align = 1 << (INTERNODE_CACHE_SHIFT);
 		mem_section = memblock_alloc(size, align);
@@ -240,8 +269,14 @@ static void __init memory_present(int nid, unsigned long start, unsigned long en
 	}
 #endif
 
+	/* IAMROOT20 20240720
+	 * PAGE_SECTION_MASK = 0xFFFF_FFFF_FFFF_8000
+	 */
 	start &= PAGE_SECTION_MASK;
 	mminit_validate_memmodel_limits(&start, &end);
+	/* IAMROOT20 20240720
+	 * section 크기(PAGES_PER_SECTION, 128MB default)단위로 for문 수행
+	 */
 	for (pfn = start; pfn < end; pfn += PAGES_PER_SECTION) {
 		unsigned long section = pfn_to_section_nr(pfn);
 		struct mem_section *ms;
@@ -250,6 +285,10 @@ static void __init memory_present(int nid, unsigned long start, unsigned long en
 		set_section_nid(section, nid);
 
 		ms = __nr_to_section(section);
+		/* IAMROOT20 20240720
+		 * 부팅 초기에는 section_mem_map의 하위 몇 비트를 
+		 * nid와 section status를 표시하는 데 사용
+		 */
 		if (!ms->section_mem_map) {
 			ms->section_mem_map = sparse_encode_early_nid(nid) |
 							SECTION_IS_ONLINE;
@@ -569,6 +608,7 @@ void __init sparse_init(void)
 	/* Setup pageblock_order for HUGETLB_PAGE_SIZE_VARIABLE */
 	set_pageblock_order();
 
+	/* IAMROOT20_END 20240720 */
 	for_each_present_section_nr(pnum_begin + 1, pnum_end) {
 		int nid = sparse_early_nid(__nr_to_section(pnum_end));
 

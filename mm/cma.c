@@ -325,8 +325,15 @@ int __init cma_declare_contiguous_nid(phys_addr_t base,
 		goto err;
 	}
 
-	/* IAMROOT20_END 20240713 */
+	/* IAMROOT20_END 20240713 */ /* IAMROOT20_START 20240720 */
 	/* Reserve memory */
+	/* IAMROOT20 20240720
+	 * 1) fixed == true
+	 *    - base가 지정되어 있는 경우
+	 * 2) fixed == false
+	 *    - base가 지정되어 있지 않은 경우, 
+	 *      memblock에서 할당가능한 영역(size)을 찾아서 reserved로 설정한다 
+	 */
 	if (fixed) {
 		if (memblock_is_region_reserved(base, size) ||
 		    memblock_reserve(base, size) < 0) {
@@ -344,6 +351,11 @@ int __init cma_declare_contiguous_nid(phys_addr_t base,
 		 * Avoid using first 4GB to not interfere with constrained zones
 		 * like DMA/DMA32.
 		 */
+		/* IAMROOT20 20240720
+		 * 메모리가 충분한 경우, cma를 bottom-up으로 할당
+		 * - 메모리 compaction하는 경우, cma 할당 fail을 막을 수 있음:
+		 * - DMA32 영역의 간섭을 피하기 위해 start는 4G 이후로 설정
+		 */
 #ifdef CONFIG_PHYS_ADDR_T_64BIT
 		if (!memblock_bottom_up() && memblock_end >= SZ_4G + size) {
 			memblock_set_bottom_up(true);
@@ -359,12 +371,20 @@ int __init cma_declare_contiguous_nid(phys_addr_t base,
 		 * try allocating from high memory first and fall back to low
 		 * memory in case of failure.
 		 */
+		/* IAMROOT20 20240720
+		 * arm64의 경우 highmem을 사용하지 않기 때문에 아래 if문을 수행하지 않음
+		 * - highmem_start = memblock_end
+		 */
 		if (!addr && base < highmem_start && limit > highmem_start) {
 			addr = memblock_alloc_range_nid(size, alignment,
 					highmem_start, limit, nid, true);
 			limit = highmem_start;
 		}
 
+		/* IAMROOT20 20240720
+		 * 위의 두 if문에서 할당하지 못한 경우, 실제로 여기서 memblock 할당
+		 * - base ~ limit에서 size 만큼의 메모리 영역을 할당
+		 */
 		if (!addr) {
 			addr = memblock_alloc_range_nid(size, alignment, base,
 					limit, nid, true);

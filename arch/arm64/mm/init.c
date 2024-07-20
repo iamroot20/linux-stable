@@ -493,6 +493,9 @@ void __init bootmem_init(void)
 
 	dma_pernuma_cma_reserve();
 
+	/* IAMROOT20 20240720
+	 * kvm은 분석하지 않음
+	 */
 	kvm_hyp_reserve();
 
 	/*

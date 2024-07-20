@@ -207,3 +207,5 @@
 ### 64 주차
 - 2024.07.20 2명(이대로, 임채훈)
 - arm64_hugetlb_cma_reserve
+- dma_pernuma_cma_reserve
+- sparse_init ~

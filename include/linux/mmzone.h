@@ -1728,6 +1728,11 @@ static inline bool movable_only_nodes(nodemask_t *nodes)
 
 #define NR_MEM_SECTIONS		(1UL << SECTIONS_SHIFT)
 
+/* IAMROOT20 20240720
+ * ex) 4K인 경우,
+ * PAGES_PER_SECTION	(1 << PFN_SECTION_SHIFT) = (1 << 15)
+ * PAGE_SECTION_MASK	(~(PAGES_PER_SECTION-1)) = 0xFFFF_FFFF_FFFF_8000
+ */
 #define PAGES_PER_SECTION       (1UL << PFN_SECTION_SHIFT)
 #define PAGE_SECTION_MASK	(~(PAGES_PER_SECTION-1))
 
@@ -1814,6 +1819,18 @@ struct mem_section {
 #define SECTIONS_PER_ROOT	1
 #endif
 
+/* IAMROOT20 20240720
+ * ex) 4K, PA=48 인 경우 
+ * NR_SECTION_ROOTS    	DIV_ROUND_UP(NR_MEM_SECTIONS, SECTIONS_PER_ROOT) 
+ * 			= 2^21 / 2^8 = 2^13(8096)
+ *
+ * NR_MEM_SECTIONS 	(1 << SECTIONS_SHIFT) = (1 << 21)
+ * SECTIONS_SHIFT  	(MAX_PHYSMEM_BITS - SECTION_SIZE_BITS) = 21
+ * MAX_PHYSMEM_BITS	48
+ * SECTION_SIZE_BITS 	27
+ *
+ * SECTIONS_PER_ROOT 	(PAGE_SIZE / sizeof (struct mem_section)) = 4K / 16 = 256(2^8)
+ */
 #define SECTION_NR_TO_ROOT(sec)	((sec) / SECTIONS_PER_ROOT)
 #define NR_SECTION_ROOTS	DIV_ROUND_UP(NR_MEM_SECTIONS, SECTIONS_PER_ROOT)
 #define SECTION_ROOT_MASK	(SECTIONS_PER_ROOT - 1)
@@ -1829,6 +1846,9 @@ static inline unsigned long *section_to_usemap(struct mem_section *ms)
 	return ms->usage->pageblock_flags;
 }
 
+/* IAMROOT20 20240720
+ * __nr_to_section() : section number를 mem_section 구조체 주소로 변환
+ */
 static inline struct mem_section *__nr_to_section(unsigned long nr)
 {
 	unsigned long root = SECTION_NR_TO_ROOT(nr);

@@ -128,6 +128,12 @@ static inline __maybe_unused phys_addr_t cma_early_percent_memory(void)
 #endif
 
 #ifdef CONFIG_DMA_PERNUMA_CMA
+/* IAMROOT20 20240720
+ * kernel parameter 설정 : cma_pernuma=nn[MG]
+ * - enable 되어 있으면
+ *   DMA user가 버퍼를 할당할 때, pernuma area에서 메모리를 먼저 찾고,
+ *   실패한 경우 global default memory 에서 메모리를 할당함 
+ */
 void __init dma_pernuma_cma_reserve(void)
 {
 	int nid;
@@ -141,6 +147,9 @@ void __init dma_pernuma_cma_reserve(void)
 		struct cma **cma = &dma_contiguous_pernuma_area[nid];
 
 		snprintf(name, sizeof(name), "pernuma%d", nid);
+		/* IAMROOT20 20240720
+		 * pernuma_size_bytes 만큼 memblock에서 메모리 할당(reserved로 표시)
+		 */
 		ret = cma_declare_contiguous_nid(0, pernuma_size_bytes, 0, 0,
 						 0, false, name, cma, nid);
 		if (ret) {

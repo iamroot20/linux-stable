@@ -56,9 +56,6 @@ static int __init register_memblock_regions(void)
 	return 0;
 }
 
-/* IAMROOT20 20240607
- * TODO:
- */
 void __init kvm_hyp_reserve(void)
 {
 	u64 hyp_mem_pages = 0;

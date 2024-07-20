@@ -7626,6 +7626,10 @@ void __init hugetlb_cma_reserve(int order)
 		 * may be returned to CMA allocator in the case of
 		 * huge page demotion.
 		 */
+		/* IAMROOT20 20240720
+		 * - size 만큼 memblock에서 continguous memory 할당
+		 * - hugetlb_cma[nid]에 할당한 메모리 정보(struct cma)에 대한 포인터 저장
+		 */
 		res = cma_declare_contiguous_nid(0, size, 0,
 						PAGE_SIZE << HUGETLB_PAGE_ORDER,
 						 0, false, name,
