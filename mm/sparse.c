@@ -428,6 +428,10 @@ static void __init check_usemap_section_nr(int nid,
 		old_pgdat_snr = NR_MEM_SECTIONS;
 	}
 
+	/* IAMROOT20 20240727
+	 * usage 물리 주소를 PAGE_SHIFT 만큼 옮기게 되면 pfn이 되고,
+	 * 이 값을 가지고 section 넘버를 구한다
+	 */
 	usemap_snr = pfn_to_section_nr(__pa(usage) >> PAGE_SHIFT);
 	pgdat_snr = pfn_to_section_nr(pgdat_to_phys(pgdat) >> PAGE_SHIFT);
 	if (usemap_snr == pgdat_snr)
@@ -440,6 +444,7 @@ static void __init check_usemap_section_nr(int nid,
 	old_usemap_snr = usemap_snr;
 	old_pgdat_snr = pgdat_snr;
 
+	/* IAMROOT20_END 20240727 */
 	usemap_nid = sparse_early_nid(__nr_to_section(usemap_snr));
 	if (usemap_nid != nid) {
 		pr_info("node %d must be removed before remove section %ld\n",

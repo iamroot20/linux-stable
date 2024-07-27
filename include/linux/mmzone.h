@@ -1726,6 +1726,11 @@ static inline bool movable_only_nodes(nodemask_t *nodes)
 #define PA_SECTION_SHIFT	(SECTION_SIZE_BITS)
 #define PFN_SECTION_SHIFT	(SECTION_SIZE_BITS - PAGE_SHIFT)
 
+/* IAMROOT20 20240727
+ * SECTIONS_SHIFT = MAX_PHYSMEM_BITS - SECTION_SIZE_BITS
+ *                = 48 - 27
+ * 전체 PA에서 가질 수 있는 섹션의 개수
+ */
 #define NR_MEM_SECTIONS		(1UL << SECTIONS_SHIFT)
 
 /* IAMROOT20 20240720
