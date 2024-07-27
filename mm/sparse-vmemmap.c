@@ -316,6 +316,9 @@ int __meminit vmemmap_populate_hugepages(unsigned long start, unsigned long end,
 	pud_t *pud;
 	pmd_t *pmd;
 
+	/* IAMROOT20 20240727
+	 * PMD size(2M)만큼 증가시키면서 pgd, p4d, pud, pmd populate
+	 */
 	for (addr = start; addr < end; addr = next) {
 		next = pmd_addr_end(addr, end);
 
@@ -352,6 +355,10 @@ int __meminit vmemmap_populate_hugepages(unsigned long start, unsigned long end,
 			}
 		} else if (vmemmap_check_pmd(pmd, node, addr, next))
 			continue;
+		/* IAMROOT20 20240727
+		 * PMD size로 mapping을 실패한 경우,
+		 * page size로 mapping을 시도한다
+		 */
 		if (vmemmap_populate_basepages(addr, next, node, altmap))
 			return -ENOMEM;
 	}
@@ -450,6 +457,10 @@ struct page * __meminit __populate_section_memmap(unsigned long pfn,
 		unsigned long nr_pages, int nid, struct vmem_altmap *altmap,
 		struct dev_pagemap *pgmap)
 {
+	/* IAMROOT20 20240727
+	 * start : pfn이 가리키는 page 구조체
+	 * end : 마지막 page 구조체
+	 */
 	unsigned long start = (unsigned long) pfn_to_page(pfn);
 	unsigned long end = start + nr_pages * sizeof(struct page);
 	int r;

@@ -245,9 +245,6 @@ void __init subsection_map_init(unsigned long pfn, unsigned long nr_pages)
 static void __init memory_present(int nid, unsigned long start, unsigned long end)
 {
 	unsigned long pfn;
-	/* IAMROOT20 20240720
-	 *
-	 */
 
 #ifdef CONFIG_SPARSEMEM_EXTREME
 	if (unlikely(!mem_section)) {
@@ -347,11 +344,23 @@ static void __meminit sparse_init_one_section(struct mem_section *ms,
 	ms->usage = usage;
 }
 
+/* IAMROOT20 20240727
+ * SECTION_BLOCKFLAGS_BITS 256
+ * BITS_TO_LONGS(SECTION_BLOCKFLAGS_BITS) = 4
+ *
+ * usemap_size = 4 * 8 = 32 bytes
+ */
 static unsigned long usemap_size(void)
 {
 	return BITS_TO_LONGS(SECTION_BLOCKFLAGS_BITS) * sizeof(unsigned long);
 }
 
+/* IAMROOT20 20240727
+ * sizeof(struct mem_section_usage) = 8
+ * usemap_size() = 32
+ *
+ * -> mem_section_usage.pageblock_flags[4]가 되는 효과
+ */
 size_t mem_section_usage_size(void)
 {
 	return sizeof(struct mem_section_usage) + usemap_size();
@@ -384,6 +393,13 @@ sparse_early_usemaps_alloc_pgdat_section(struct pglist_data *pgdat,
 	 * sections become inter-dependent. This allocates usemaps
 	 * from the same section as the pgdat where possible to avoid
 	 * this problem.
+	 */
+	/* IAMROOT20 20240727
+	 * PAGE_SECTION_MASK << PAGE_SHIFT = 0xFFFF_FFFF_F800_0000
+	 *
+	 * pgdat과 usemap이 다른 section에 있으면 상호 의존성이 생겨 다른 섹션이 
+	 * usemap을 참조하고 있는 동안 해당 섹션을 제거할 수 없게 함
+	 * 이를 방지하기 위해서 pgdat과 usemap을 동일한 섹션에 할당
 	 */
 	goal = pgdat_to_phys(pgdat) & (PAGE_SECTION_MASK << PAGE_SHIFT);
 	limit = goal + (1UL << PA_SECTION_SHIFT);
@@ -454,6 +470,12 @@ static void __init check_usemap_section_nr(int nid,
 #endif /* CONFIG_MEMORY_HOTREMOVE */
 
 #ifdef CONFIG_SPARSEMEM_VMEMMAP
+/* IAMROOT20 20240727
+ * sizeof(struct page) = 64(default)
+ * PAGES_PER_SECTION = 1 << 15
+ *
+ * -> 64 * (1<<15) = 0x20_0000(2M)
+ */
 static unsigned long __init section_map_size(void)
 {
 	return ALIGN(sizeof(struct page) * PAGES_PER_SECTION, PMD_SIZE);
@@ -496,6 +518,9 @@ static inline void __meminit sparse_buffer_free(unsigned long size)
 
 static void __init sparse_buffer_init(unsigned long size, int nid)
 {
+	/* IAMROOT20 20240727
+	 * MAX_DMA_ADDRESS = PAGE_OFFSET(0xffff_0000_0000_0000)
+	 */
 	phys_addr_t addr = __pa(MAX_DMA_ADDRESS);
 	WARN_ON(sparsemap_buf);	/* forgot to call sparse_buffer_fini()? */
 	/*
@@ -550,12 +575,22 @@ static void __init sparse_init_nid(int nid, unsigned long pnum_begin,
 	unsigned long pnum;
 	struct page *map;
 
+	/* IAMROOT20 20240727
+	 * usemap 메모리 할당
+	 */
 	usage = sparse_early_usemaps_alloc_pgdat_section(NODE_DATA(nid),
 			mem_section_usage_size() * map_count);
 	if (!usage) {
 		pr_err("%s: node[%d] usemap allocation failed", __func__, nid);
 		goto failed;
 	}
+	/* IAMROOT20 20240727
+	 * section_map_size() : 2M
+	 *
+	 * page 구조체 배열 메모리 할당 
+	 * - map_count * section_map_size() 크기 만큼 memblock에서 메모리를 할당
+	 * - sparsemap_buf가 시작 주소를 가리킴
+	 */
 	sparse_buffer_init(map_count * section_map_size(), nid);
 	for_each_present_section_nr(pnum_begin, pnum) {
 		unsigned long pfn = section_nr_to_pfn(pnum);
@@ -608,7 +643,7 @@ void __init sparse_init(void)
 	/* Setup pageblock_order for HUGETLB_PAGE_SIZE_VARIABLE */
 	set_pageblock_order();
 
-	/* IAMROOT20_END 20240720 */
+	/* IAMROOT20_END 20240720 *//* IAMROOT20_START 20240727 */
 	for_each_present_section_nr(pnum_begin + 1, pnum_end) {
 		int nid = sparse_early_nid(__nr_to_section(pnum_end));
 

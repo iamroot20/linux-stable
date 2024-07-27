@@ -1736,6 +1736,13 @@ static inline bool movable_only_nodes(nodemask_t *nodes)
 #define PAGES_PER_SECTION       (1UL << PFN_SECTION_SHIFT)
 #define PAGE_SECTION_MASK	(~(PAGES_PER_SECTION-1))
 
+/* IAMROOT20 20240727
+ * PFN_SECTION_SHIFT = 27 - 12 = 15
+ * pageblock_order = 9
+ * NR_PAGEBLOCK_BITS = 4
+ *
+ * SECTION_BLOCKFLAGS_BITS = (1 << (15 - 9)) * 4 = 256 
+ */
 #define SECTION_BLOCKFLAGS_BITS \
 	((1UL << (PFN_SECTION_SHIFT - pageblock_order)) * NR_PAGEBLOCK_BITS)
 
@@ -1758,6 +1765,11 @@ static inline unsigned long section_nr_to_pfn(unsigned long sec)
 #define SUBSECTION_SHIFT 21
 #define SUBSECTION_SIZE (1UL << SUBSECTION_SHIFT)
 
+/* IAMROOT20 20240727
+ * PFN_SUBSECTION_SHIFT = 21 - 12 = 9
+ * PAGES_PER_SUBSECTION = 1 << 9 = 512
+ * PAGE_SUBSECTION_MASK = 0xFFFF_FFFF_FFFF_FE00
+ */
 #define PFN_SUBSECTION_SHIFT (SUBSECTION_SHIFT - PAGE_SHIFT)
 #define PAGES_PER_SUBSECTION (1UL << PFN_SUBSECTION_SHIFT)
 #define PAGE_SUBSECTION_MASK (~(PAGES_PER_SUBSECTION-1))
@@ -1765,6 +1777,11 @@ static inline unsigned long section_nr_to_pfn(unsigned long sec)
 #if SUBSECTION_SHIFT > SECTION_SIZE_BITS
 #error Subsection size exceeds section size
 #else
+/* IAMROOT20 20240727
+ * SECTION_SIZE_BITS = 27
+ * SUBSECTION_SHIFT = 21
+ * SUBSECTIONS_PER_SECTION = 1 << 6 = 64
+ */
 #define SUBSECTIONS_PER_SECTION (1UL << (SECTION_SIZE_BITS - SUBSECTION_SHIFT))
 #endif
 

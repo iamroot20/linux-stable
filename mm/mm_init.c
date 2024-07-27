@@ -593,6 +593,10 @@ static int __meminit __early_pfn_to_nid(unsigned long pfn,
 	if (state->last_start <= pfn && pfn < state->last_end)
 		return state->last_nid;
 
+	/* IAMROOT20 20240727
+	 * pfn에 해당하는 memblock.memory 영역을 찾아 nid를 return
+	 * - start_pfn, end_pfn을 업데이트
+	 */
 	nid = memblock_search_pfn_nid(pfn, &start_pfn, &end_pfn);
 	if (nid != NUMA_NO_NODE) {
 		state->last_start = start_pfn;
