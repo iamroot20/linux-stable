@@ -10,8 +10,19 @@
 ## 스터디 멤버
 - 이대로 <skseofh@gmail.com>
 - 임채훈 <infinite.run@gmail.com>
+- 조수민 <to.soomin@gmail.com>
+- 최경건 <gychoi.dev@gmail.com>
 
 ## History
+
+### 66 주차
+- 2024.07.27 4명(이대로, 임채훈, 조수민, 최경건)
+- sparse_init
+- sparse_init_nid
+- __populate_section_memmap
+  - vmemmap_populate
+  - vmemmap_populate_hugepages
+- check_usemap_section_nr ~
 
 ### 65 주차
 - 2024.07.20 2명(이대로, 임채훈)
