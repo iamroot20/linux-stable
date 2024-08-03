@@ -192,9 +192,19 @@ retry:
  */
 static phys_addr_t __init max_zone_phys(unsigned int zone_bits)
 {
+	/* IAMROOT20 20240803
+	 * DMA_BIT_MASK(32) = 0xFFFF_FFFF
+	 */
 	phys_addr_t zone_mask = DMA_BIT_MASK(zone_bits);
 	phys_addr_t phys_start = memblock_start_of_DRAM();
 
+	/* IAMROOT20 20240803
+	 * phys_start > 4G 인 경우
+	 * - zone_mask = 0xFFFF_FFFF_FFFF_FFFF
+	 *
+	 * 4G >= phys_start > zone_mask
+	 * - zone_mask = 0xFFFF_FFFF
+	 */
 	if (phys_start > U32_MAX)
 		zone_mask = PHYS_ADDR_MAX;
 	else if (phys_start > zone_mask)
@@ -205,6 +215,13 @@ static phys_addr_t __init max_zone_phys(unsigned int zone_bits)
 
 static void __init zone_sizes_init(void)
 {
+	/* IAMROOT20 20240803
+	 * MAX_NR_ZONES	4
+	 * - config에 따라 MAX_NR_ZONES가 달라짐
+	 * - default config에서는 ZONE_DMA, ZONE_DMA32, ZONE_NORMAL, ZONE_MOVABLE
+	 *
+	 * dma32_phys_limit = 0xFFFF_FFFF
+	 */
 	unsigned long max_zone_pfns[MAX_NR_ZONES]  = {0};
 	unsigned int __maybe_unused acpi_zone_dma_bits;
 	unsigned int __maybe_unused dt_zone_dma_bits;

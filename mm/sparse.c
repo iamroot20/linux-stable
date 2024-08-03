@@ -338,6 +338,9 @@ static void __meminit sparse_init_one_section(struct mem_section *ms,
 		unsigned long pnum, struct page *mem_map,
 		struct mem_section_usage *usage, unsigned long flags)
 {
+	/* IAMROOT20 20240803
+	 * SECTION_MAP_MASK = 0xFFFF_FFFF_FFFF_FFF0
+	 */
 	ms->section_mem_map &= ~SECTION_MAP_MASK;
 	ms->section_mem_map |= sparse_encode_mem_map(mem_map, pnum)
 		| SECTION_HAS_MEM_MAP | flags;
@@ -434,6 +437,10 @@ static void __init check_usemap_section_nr(int nid,
 	 */
 	usemap_snr = pfn_to_section_nr(__pa(usage) >> PAGE_SHIFT);
 	pgdat_snr = pfn_to_section_nr(pgdat_to_phys(pgdat) >> PAGE_SHIFT);
+	/* IAMROOT20 20240803
+	 * usemap, node data(pgdat)이 다른 section에 할당된 경우
+	 * if문에서 return하지 않고 다음 코드로 넘어감
+	 */
 	if (usemap_snr == pgdat_snr)
 		return;
 
@@ -444,7 +451,11 @@ static void __init check_usemap_section_nr(int nid,
 	old_usemap_snr = usemap_snr;
 	old_pgdat_snr = pgdat_snr;
 
-	/* IAMROOT20_END 20240727 */
+	/* IAMROOT20_END 20240727 *//* IAMROOT20_START 20240803 */
+	/* IAMROOT20 20240803
+	 * usemap이 할당된 nid, 현재 메모리의 nid가 다른 경우
+	 * usemap, node data(pgdat)이 할당된 section도 다름
+	 */
 	usemap_nid = sparse_early_nid(__nr_to_section(usemap_snr));
 	if (usemap_nid != nid) {
 		pr_info("node %d must be removed before remove section %ld\n",
@@ -456,6 +467,10 @@ static void __init check_usemap_section_nr(int nid,
 	 * Some platforms allow un-removable section because they will just
 	 * gather other removable sections for dynamic partitioning.
 	 * Just notify un-removable section's number here.
+	 */
+	/* IAMROOT20 20240803
+	 * usemap이 할당된 nid, 현재 메모리의 nid가 같은 경우
+	 * usemap, node data(pgdat)이 할당된 section은 다름
 	 */
 	pr_info("Section %ld and %ld (node %d) have a circular dependency on usemap and pgdat allocations\n",
 		usemap_snr, pgdat_snr, nid);
@@ -613,10 +628,16 @@ static void __init sparse_init_nid(int nid, unsigned long pnum_begin,
 			goto failed;
 		}
 		check_usemap_section_nr(nid, usage);
+		/* IAMROOT20 20240803
+		 * mem_section 구조체 필드들(section_mem_map, usage) 설정
+		 */
 		sparse_init_one_section(__nr_to_section(pnum), pnum, map, usage,
 				SECTION_IS_EARLY);
 		usage = (void *) usage + mem_section_usage_size();
 	}
+	/* IAMROOT20 20240803
+	 * sparsemap_buf에서 사용하지 않고 남아있는 메모리를 free
+	 */
 	sparse_buffer_fini();
 	return;
 failed:
@@ -657,6 +678,9 @@ void __init sparse_init(void)
 			continue;
 		}
 		/* Init node with sections in range [pnum_begin, pnum_end) */
+		/* IAMROOT20 20240803
+		 * 같은 node에 속한 section들을 초기화
+		 */
 		sparse_init_nid(nid_begin, pnum_begin, pnum_end, map_count);
 		nid_begin = nid;
 		pnum_begin = pnum_end;
