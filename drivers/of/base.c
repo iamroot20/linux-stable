@@ -1238,6 +1238,7 @@ int of_phandle_iterator_next(struct of_phandle_iterator *it)
 	/* If phandle is 0, then it is an empty entry with no arguments. */
 	it->phandle = be32_to_cpup(it->cur++);
 
+	/* IAMROOT20_END 20240803 */
 	if (it->phandle) {
 
 		/*

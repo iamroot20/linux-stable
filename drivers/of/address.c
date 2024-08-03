@@ -877,6 +877,13 @@ static int parser_init(struct of_pci_range_parser *parser,
 {
 	int rlen;
 
+        /* IAMROOT20_20240803
+         * pna = 현재 노드의 parent의 #address-cells
+         * na = 현재 노드의 #address-cells 이지만,
+         *      없으면 #address-cells을 가진 parent까지 거슬러 올라감
+         * ns = 현재 노드의 #size-cells 이지만,
+         *      없으면 #size-cells를 가진 parent까지 거슬러 올라감
+         */
 	parser->node = node;
 	parser->pna = of_n_addr_cells(node);
 	parser->na = of_bus_n_addr_cells(node);
@@ -884,6 +891,14 @@ static int parser_init(struct of_pci_range_parser *parser,
 	parser->dma = !strcmp(name, "dma-ranges");
 	parser->bus = of_match_bus(node);
 
+        /* IAMROOT20_20240803
+         * #address-cells = <3>
+         * #size-cells = <2>
+         *
+         * dma-ranges = <0x02000000 0 0x00000000 0x80000000 0 0x20000000>;
+         * parser->range = dma-ranges의 property 구조체의 value 값
+         * rlen = 6
+         */
 	parser->range = of_get_property(node, name, &rlen);
 	if (parser->range == NULL)
 		return -ENOENT;
