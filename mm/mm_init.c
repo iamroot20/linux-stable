@@ -446,6 +446,11 @@ static void __init find_zone_movable_pfns_for_nodes(void)
 restart:
 	/* Spread kernelcore memory as evenly as possible throughout nodes */
 	kernelcore_node = required_kernelcore / usable_nodes;
+
+	/* IAMROOT20_20240810
+	 * 노드 안의 range를 돌면서, required_kernelcore을 갱신하고
+	 * zone_movable_pfn의 시작점을 설정한다.
+	 */
 	for_each_node_state(nid, N_MEMORY) {
 		unsigned long start_pfn, end_pfn;
 
@@ -472,17 +477,35 @@ restart:
 			if (start_pfn >= end_pfn)
 				continue;
 
+			/* IAMROOT20_20240810
+			 * ZONE_NORMAL의 시작 pfn보다 아래에 있는 range의 경우,
+			 * 해당 영역을 제외하여 kernelcore_remaining과
+			 * required_kernelcore을 다시 계산한다.
+			 * 그리고 start_pfn을 ZONE_NORMAL의 시작점으로 갱신한다.
+			 */
 			/* Account for what is only usable for kernelcore */
 			if (start_pfn < usable_startpfn) {
 				unsigned long kernel_pages;
 				kernel_pages = min(end_pfn, usable_startpfn)
 								- start_pfn;
 
+				/* IAMROOT20_20240810
+				 * required_kernelcore : 전체 노드에 필요한 kernelcore의 양
+				 * kernelcore_remaining : 현재 노드에 배정된 kernelcore의 양
+				 */
 				kernelcore_remaining -= min(kernel_pages,
 							kernelcore_remaining);
 				required_kernelcore -= min(kernel_pages,
 							required_kernelcore);
 
+				/* IAMROOT20_20240810
+				 * 만약 현재 range가 ZONE_NORMAL 아래에 완전히 포함되는 경우,
+				 *   - zone_movable_pfn을 갱신하고 다음 range로 continue
+				 * 
+				 * 만약 현재 range가 ZONE_NORMAL과 겹치는 경우,
+				 *   - 아래 조건문을 타지 않고, start_pfn을
+				 *     ZONE_NORMAL의 시작점으로 갱신한다
+				 */
 				/* Continue if range is now fully accounted */
 				if (end_pfn <= usable_startpfn) {
 
@@ -497,6 +520,7 @@ restart:
 				}
 				start_pfn = usable_startpfn;
 			}
+
 
 			/*
 			 * The usable PFN range for ZONE_MOVABLE is from
@@ -521,6 +545,7 @@ restart:
 		}
 	}
 
+	/* IAMROOT20_END 20240810 */
 	/*
 	 * If there is still required_kernelcore, we do another pass with one
 	 * less node in the count. This will push zone_movable_pfn[nid] further
@@ -546,7 +571,7 @@ out2:
 
 out:
 	/* restore the node_state */
-	node_states[N_MEMORY] = saved_node_state;
+	node_states[N_MEMORY] = saved_node_state;OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
 }
 
 static void __meminit __init_single_page(struct page *page, unsigned long pfn,
@@ -577,7 +602,18 @@ struct mminit_pfnnid_cache {
 	unsigned long last_start;
 	unsigned long last_end;
 	int last_nid;
-};
+OOOOOOOOOOOOOOOOOOOOOO\OOOOOOOOOO
+OOOOOO
+OOOOO
+OOOOO
+OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+OOOOO
+sOdaOOOfOOOOsaOOdOOOfOOOOOasOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOcOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOcOOOOOOOOOOOOOOOO1OOOOOO`OOOOO`OOOOO`OOOOOOOOOOOOOO
+OOOOOOOOOOOOOOOOOOOOO
+OOOOOOOOOOOOOOOOO
+`OOOOOOOOOOOOOO
+OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOxOOOOOOxOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+};OOOOOOOOOOOOOOOOOOOOOOOO
 
 static struct mminit_pfnnid_cache early_pfnnid_cache __meminitdata;
 
