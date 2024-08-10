@@ -15,6 +15,11 @@
 
 ## History
 
+### 68 주차
+- 2024.08.10 4명(이대로, 임채훈, 조수민, 최경건)
+- free_area_init
+  - find_zone_movable_pfns_for_nodes
+
 ### 67 주차
 - 2024.08.03 4명(이대로, 임채훈, 조수민, 최경건)
 - sparse_init
