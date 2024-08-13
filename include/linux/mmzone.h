@@ -1723,6 +1723,10 @@ static inline bool movable_only_nodes(nodemask_t *nodes)
  * PA_SECTION_SHIFT		physical address to/from section number
  * PFN_SECTION_SHIFT		pfn to/from section number
  */
+/* IAMROOT20 20240809
+ * PA_SECTION_SHIFT		27
+ * PFN_SECTION_SHIFT		15	= 27 - 12
+ */
 #define PA_SECTION_SHIFT	(SECTION_SIZE_BITS)
 #define PFN_SECTION_SHIFT	(SECTION_SIZE_BITS - PAGE_SHIFT)
 
@@ -1731,12 +1735,15 @@ static inline bool movable_only_nodes(nodemask_t *nodes)
  *                = 48 - 27
  * 전체 PA에서 가질 수 있는 섹션의 개수
  */
+/* IAMROOT20 20240809
+ * NR_MEM_SECTIONS	SIZE_2M
+ */
 #define NR_MEM_SECTIONS		(1UL << SECTIONS_SHIFT)
 
 /* IAMROOT20 20240720
  * ex) 4K인 경우,
- * PAGES_PER_SECTION	(1 << PFN_SECTION_SHIFT) = (1 << 15)
- * PAGE_SECTION_MASK	(~(PAGES_PER_SECTION-1)) = 0xFFFF_FFFF_FFFF_8000
+ * PAGES_PER_SECTION	0x8000			(1 << PFN_SECTION_SHIFT) = (1 << 15)
+ * PAGE_SECTION_MASK	0xFFFF_FFFF_FFFF_8000	(~0x7fff)
  */
 #define PAGES_PER_SECTION       (1UL << PFN_SECTION_SHIFT)
 #define PAGE_SECTION_MASK	(~(PAGES_PER_SECTION-1))
@@ -1836,6 +1843,9 @@ struct mem_section {
 };
 
 #ifdef CONFIG_SPARSEMEM_EXTREME
+/* IAMROOT20 20240809
+ * SECTIONS_PER_ROOT	256
+ */
 #define SECTIONS_PER_ROOT       (PAGE_SIZE / sizeof (struct mem_section))
 #else
 #define SECTIONS_PER_ROOT	1
@@ -1844,7 +1854,7 @@ struct mem_section {
 /* IAMROOT20 20240720
  * ex) 4K, PA=48 인 경우 
  * NR_SECTION_ROOTS    	DIV_ROUND_UP(NR_MEM_SECTIONS, SECTIONS_PER_ROOT) 
- * 			= 2^21 / 2^8 = 2^13(8096)
+ * 			= 2^21 / 2^8 = 2^13 = 8192
  *
  * NR_MEM_SECTIONS 	(1 << SECTIONS_SHIFT) = (1 << 21)
  * SECTIONS_SHIFT  	(MAX_PHYSMEM_BITS - SECTION_SIZE_BITS) = 21
@@ -1852,6 +1862,11 @@ struct mem_section {
  * SECTION_SIZE_BITS 	27
  *
  * SECTIONS_PER_ROOT 	(PAGE_SIZE / sizeof (struct mem_section)) = 4K / 16 = 256(2^8)
+ */
+/* IAMROOT20 20240809
+ * SECTION_NR_TO_ROOT(sec)	(sec / 256)
+ * NR_SECTION_ROOTS		8196
+ * SECTION_ROOT_MASK		0x00ff
  */
 #define SECTION_NR_TO_ROOT(sec)	((sec) / SECTIONS_PER_ROOT)
 #define NR_SECTION_ROOTS	DIV_ROUND_UP(NR_MEM_SECTIONS, SECTIONS_PER_ROOT)
@@ -1882,6 +1897,9 @@ static inline struct mem_section *__nr_to_section(unsigned long nr)
 	if (!mem_section || !mem_section[root])
 		return NULL;
 #endif
+	/* IAMROOT20 20240809
+	 * SECTION_ROOT_MASK	0x00ff
+	 */
 	return &mem_section[root][nr & SECTION_ROOT_MASK];
 }
 extern size_t mem_section_usage_size(void);

@@ -62,6 +62,10 @@ EXPORT_SYMBOL(memstart_addr);
  * In such case, ZONE_DMA32 covers the rest of the 32-bit addressable memory,
  * otherwise it is empty.
  */
+/* IAMROOT20 20240810
+ * arm64_dma_phys_limit	0x1_0000_0000
+ *	zone_sizes_init()
+ */
 phys_addr_t __ro_after_init arm64_dma_phys_limit;
 
 /* Current arm64 boot protocol requires 2MB alignment */
@@ -221,6 +225,11 @@ static void __init zone_sizes_init(void)
 	 * - default config에서는 ZONE_DMA, ZONE_DMA32, ZONE_NORMAL, ZONE_MOVABLE
 	 *
 	 * dma32_phys_limit = 0xFFFF_FFFF
+	 */
+	/* IAMROOT20 20240810
+	 * max_zone_pfns[ZONE_DMA]	= 0x100000
+	 * max_zone_pfns[ZONE_DMA32]	= 0x100000
+	 * max_zone_pfns[ZONE_NORMAL]	= max_pfn
 	 */
 	unsigned long max_zone_pfns[MAX_NR_ZONES]  = {0};
 	unsigned int __maybe_unused acpi_zone_dma_bits;

@@ -377,6 +377,10 @@ int watermark_scale_factor = 10;
 bool mirrored_kernelcore __initdata_memblock;
 
 /* movable_zone is the "real" zone pages in ZONE_MOVABLE are taken from */
+/* IAMROOT20 20240810
+ * moveable_zone = ZONE_NORMAL
+ *	find_usable_zone_for_movable() 설정됨.
+ */
 int movable_zone;
 EXPORT_SYMBOL(movable_zone);
 

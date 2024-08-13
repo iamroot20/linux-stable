@@ -215,6 +215,10 @@ static int __init mm_sysfs_init(void)
 }
 postcore_initcall(mm_sysfs_init);
 
+/* IAMROOT20 20240810
+ * free_area_init()에서 초기화함
+ * 
+ */
 static unsigned long arch_zone_lowest_possible_pfn[MAX_NR_ZONES] __initdata;
 static unsigned long arch_zone_highest_possible_pfn[MAX_NR_ZONES] __initdata;
 static unsigned long zone_movable_pfn[MAX_NUMNODES] __initdata;

@@ -146,7 +146,7 @@ static void __meminit mminit_validate_memmodel_limits(unsigned long *start_pfn,
 	 * MAX_PHYSMEM_BITS = 48
 	 * PAGE_SHIFT = 12
 	 *
-	 * max_sparsemem_pfn = 1 << 36
+	 * max_sparsemem_pfn = 1 << 36 = 0x10_0000_0000
 	 */
 	unsigned long max_sparsemem_pfn = 1UL << (MAX_PHYSMEM_BITS-PAGE_SHIFT);
 
@@ -252,10 +252,13 @@ static void __init memory_present(int nid, unsigned long start, unsigned long en
 
 		/* IAMROOT20 20240720
 		 * ex) 4K, PA=48인 경우,
-		 *     NR_SECTION_ROOTS = 2^13(8096)
+		 *     NR_SECTION_ROOTS = 2^13(8192)
 		 *
 		 * INTERNODE_CACHE_SHIFT = 6
 		 * align = 64
+		 */
+		/* IAMROOT20 20240809
+		 * size = 16 * 8192 = 131072
 		 */
 		size = sizeof(struct mem_section *) * NR_SECTION_ROOTS;
 		align = 1 << (INTERNODE_CACHE_SHIFT);

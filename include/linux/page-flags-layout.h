@@ -28,6 +28,9 @@
 
 #ifdef CONFIG_SPARSEMEM
 #include <asm/sparsemem.h>
+/* IAMROOT20 20240809
+ * SECTIONS_SHIFT	21
+ */
 #define SECTIONS_SHIFT	(MAX_PHYSMEM_BITS - SECTION_SIZE_BITS)
 #else
 #define SECTIONS_SHIFT	0
