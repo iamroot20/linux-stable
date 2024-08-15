@@ -229,6 +229,10 @@ static void __init zone_sizes_init(void)
 
 #ifdef CONFIG_ZONE_DMA
 	acpi_zone_dma_bits = fls64(acpi_iort_dma_get_max_cpu_address());
+	/* IAMROOT20 20240810
+	 * of_dma_get_max_cpu_address(NULL)
+	 * - "dma-ranges"의 dma 주소를 cpu 주소로 변환했을 때, max 주소 값을 return
+	 */
 	dt_zone_dma_bits = fls64(of_dma_get_max_cpu_address(NULL));
 	zone_dma_bits = min3(32U, dt_zone_dma_bits, acpi_zone_dma_bits);
 	arm64_dma_phys_limit = max_zone_phys(zone_dma_bits);

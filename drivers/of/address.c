@@ -713,10 +713,28 @@ struct device_node *__of_get_dma_parent(const struct device_node *np)
 	struct of_phandle_args args;
 	int ret, index;
 
+	/* IAMROOT20 20240810
+	 * index = of_property_match_string(np, "interconnect-names", "dma-mem");
+	 * interconnect-names property에서 "dma-mem"이 몇 번째 인지를 return 
+	 * 
+	 * ex) interconnect-names = "dma-mem", "write";
+	 *     -> index = 0
+	 */
 	index = of_property_match_string(np, "interconnect-names", "dma-mem");
 	if (index < 0)
 		return of_get_parent(np);
 
+	/* IAMROOT20 20240810
+	 * #interconnect-cells 값이 index인 node를 찾는다
+	 *
+	 * ex) emc: external-memory-controller@2c60000 {
+	 *	     	  ...
+	 * 		  #interconnect-cells = <0>;
+	 * 		  ...
+	 *     };
+	 *
+	 *     -> #interconnect-cells 값이 0인 위 emc node를 return
+	 */
 	ret = of_parse_phandle_with_args(np, "interconnects",
 					 "#interconnect-cells",
 					 index, &args);
@@ -926,6 +944,12 @@ EXPORT_SYMBOL_GPL(of_pci_dma_range_parser_init);
 struct of_pci_range *of_pci_range_parser_one(struct of_pci_range_parser *parser,
 						struct of_pci_range *range)
 {
+	/* IAMROOT20 20240810
+	 * ex) na = 3, ns = 2, pna = 1
+	 *     dma-ranges = <0x02000000 0 0x00000000 0x00000000 0 0x40000000>;
+	 *                   |---------------------| |--------| |----------|
+	 *                            na                 pna         ns
+	 */
 	int na = parser->na;
 	int ns = parser->ns;
 	int np = parser->pna + na + ns;
@@ -937,25 +961,48 @@ struct of_pci_range *of_pci_range_parser_one(struct of_pci_range_parser *parser,
 	if (!parser->range || parser->range + np > parser->end)
 		return NULL;
 
+	/* IAMROOT20 20240810
+	 * flags 값을 읽어 저장
+	 * dma-ranges = <0x02000000 0 0x00000000 ... >;
+	 *                 ^--- flags
+	 */
 	range->flags = parser->bus->get_flags(parser->range);
 
 	/* A extra cell for resource flags */
 	if (parser->bus->has_flags)
 		busflag_na = 1;
 
+	/* IAMROOT20 20240810
+	 * bus 주소를 읽음
+	 * dma-ranges = <0x02000000 0 0x00000000 ... >;
+	 *                          |----------|
+	 *                            bus_addr
+	 */
 	range->bus_addr = of_read_number(parser->range + busflag_na, na - busflag_na);
 
+	/* IAMROOT20 20240810
+	 * cpu 주소를 변환하여 저장
+	 */
 	if (parser->dma)
 		range->cpu_addr = of_translate_dma_address(parser->node,
 				parser->range + na);
 	else
 		range->cpu_addr = of_translate_address(parser->node,
 				parser->range + na);
+	/* IAMROOT20 20240810
+	 * bus 크기를 저장
+	 */
 	range->size = of_read_number(parser->range + parser->pna + na, ns);
 
+	/* IAMROOT20 20240810
+	 * 다음 range로 이동
+	 */
 	parser->range += np;
 
 	/* Now consume following elements while they are contiguous */
+	/* IAMROOT20 20240810
+	 * range가 연속으로 이어져 있는 경우를 처리하기 위함
+	 */
 	while (parser->range + np <= parser->end) {
 		u32 flags = 0;
 		u64 bus_addr, cpu_addr, size;
@@ -970,12 +1017,20 @@ struct of_pci_range *of_pci_range_parser_one(struct of_pci_range_parser *parser,
 					parser->range + na);
 		size = of_read_number(parser->range + parser->pna + na, ns);
 
+		/* IAMROOT20 20240810
+		 * - flags가 다르거나
+		 * - bus 주소, cpu 주소가 연속적이지 않은 경우 
+		 *   => break
+		 */
 		if (flags != range->flags)
 			break;
 		if (bus_addr != range->bus_addr + range->size ||
 		    cpu_addr != range->cpu_addr + range->size)
 			break;
 
+		/* IAMROOT20 20240810
+		 * 주소가 연속적이면 size만 더해줌 
+		 */
 		range->size += size;
 		parser->range += np;
 	}
@@ -1125,9 +1180,16 @@ phys_addr_t __init of_dma_get_max_cpu_address(struct device_node *np)
 	if (!np)
 		np = of_root;
 
+	/* IAMROOT20_START 20240810 */
+	/* IAMROOT20 20240810
+	 * np(현재 node)에서 "dma-ranges" property가 있는지 확인
+	 */
 	ranges = of_get_property(np, "dma-ranges", &len);
 	if (ranges && len) {
 		of_dma_range_parser_init(&parser, np);
+		/* IAMROOT20 20240810
+		 * parser에 저장된 dma-ranges 영역을 돌면서, cpu_end의 최대값을 구함
+		 */
 		for_each_of_range(&parser, &range)
 			if (range.cpu_addr + range.size > cpu_end)
 				cpu_end = range.cpu_addr + range.size - 1;
@@ -1136,6 +1198,10 @@ phys_addr_t __init of_dma_get_max_cpu_address(struct device_node *np)
 			max_cpu_addr = cpu_end;
 	}
 
+	/* IAMROOT20 20240810
+	 * np(현재 node)의 자식 node에서 of_dma_get_max_cpu_address 함수를 
+	 * 재귀적으로 호출
+	 */
 	for_each_available_child_of_node(np, child) {
 		subtree_max_addr = of_dma_get_max_cpu_address(child);
 		if (max_cpu_addr > subtree_max_addr)
