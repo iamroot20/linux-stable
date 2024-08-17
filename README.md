@@ -15,6 +15,10 @@
 
 ## History
 
+### 69 주차
+- 2024.08.10 1명(임채훈)
+- [문C 블로그 zone_sizes_init](http://jake.dothome.co.kr/free_area_init_node) 정독
+
 ### 68 주차
 - 2024.08.10 4명(이대로, 임채훈, 조수민, 최경건)
 - free_area_init
