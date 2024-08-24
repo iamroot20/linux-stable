@@ -204,6 +204,9 @@ static inline unsigned long first_present_section_nr(void)
 static void subsection_mask_set(unsigned long *map, unsigned long pfn,
 		unsigned long nr_pages)
 {
+	/* IAMROOT20 20240824
+	 * subsection의 start, end 인덱스를 구해서, subsection_map에 set
+	 */
 	int idx = subsection_map_index(pfn);
 	int end = subsection_map_index(pfn + nr_pages - 1);
 
@@ -222,9 +225,16 @@ void __init subsection_map_init(unsigned long pfn, unsigned long nr_pages)
 		struct mem_section *ms;
 		unsigned long pfns;
 
+		/* IAMROOT20 20240824
+		 * pfns : 현재 section의 pfn 수
+		 * pfn  : 현재 section의 start pfn
+		 */
 		pfns = min(nr_pages, PAGES_PER_SECTION
 				- (pfn & ~PAGE_SECTION_MASK));
 		ms = __nr_to_section(nr);
+		/* IAMROOT20 20240824
+		 * subsection 단위로(2M) mem_section->usage->subsection_map에 표시
+		 */
 		subsection_mask_set(ms->usage->subsection_map, pfn, pfns);
 
 		pr_debug("%s: sec: %lu pfns: %lu set(%d, %d)\n", __func__, nr,

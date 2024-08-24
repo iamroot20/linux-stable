@@ -217,7 +217,7 @@ postcore_initcall(mm_sysfs_init);
 
 /* IAMROOT20 20240810
  * free_area_init()에서 초기화함
- * 
+ * - [ZONE_MOVABLE]은 설정하지 않음
  */
 static unsigned long arch_zone_lowest_possible_pfn[MAX_NR_ZONES] __initdata;
 static unsigned long arch_zone_highest_possible_pfn[MAX_NR_ZONES] __initdata;
@@ -338,6 +338,10 @@ static void __init find_usable_zone_for_movable(void)
  * is spread evenly between nodes as long as the nodes have enough
  * memory. When they don't, some nodes will have more kernelcore than
  * others
+ */
+/* IAMROOT20 20240824
+ * zone_movable_pfn[]에 movable zone의 start pfn 설정
+ * - 커널 파라미터 movable_node, kernelcore, movablecore 참조
  */
 static void __init find_zone_movable_pfns_for_nodes(void)
 {
@@ -549,7 +553,7 @@ restart:
 		}
 	}
 
-	/* IAMROOT20_END 20240810 */
+	/* IAMROOT20_END 20240810 *//* IAMROOT20_START 20240824 */
 	/*
 	 * If there is still required_kernelcore, we do another pass with one
 	 * less node in the count. This will push zone_movable_pfn[nid] further
@@ -1146,18 +1150,31 @@ static void __init adjust_zone_range_for_zone_movable(int nid,
 	/* Only adjust if ZONE_MOVABLE is on this node */
 	if (zone_movable_pfn[nid]) {
 		/* Size ZONE_MOVABLE */
+		/* IAMROOT20 20240824
+		 * movable_zone = ZONE_NORMAL
+		 */
 		if (zone_type == ZONE_MOVABLE) {
 			*zone_start_pfn = zone_movable_pfn[nid];
 			*zone_end_pfn = min(node_end_pfn,
 				arch_zone_highest_possible_pfn[movable_zone]);
 
 		/* Adjust for ZONE_MOVABLE starting within this range */
+		/* IAMROOT20 20240824
+		 * zone_type이 ZONE_MOVABLE이 아니고,
+		 * zone_start_pfn < zone_movable_pfn < zone_end_pfn 인 경우 
+		 * -> movable zone을 분리한다 
+		 */
 		} else if (!mirrored_kernelcore &&
 			*zone_start_pfn < zone_movable_pfn[nid] &&
 			*zone_end_pfn > zone_movable_pfn[nid]) {
 			*zone_end_pfn = zone_movable_pfn[nid];
 
 		/* Check if this whole range is within ZONE_MOVABLE */
+		/* IAMROOT20 20240824
+		 * zone_type이 ZONE_MOVABLE이 아닌데, ZONE_MOVABLE에 포함되는 경우
+		 * (zone_start_pfn > zone_movable_pfn)
+		 * -> 해당 영역 size를 0으로 만듦
+		 */
 		} else if (*zone_start_pfn >= zone_movable_pfn[nid])
 			*zone_start_pfn = *zone_end_pfn;
 	}
@@ -1267,11 +1284,17 @@ static unsigned long __init zone_spanned_pages_in_node(int nid,
 	/* Get the start and end of the zone */
 	*zone_start_pfn = clamp(node_start_pfn, zone_low, zone_high);
 	*zone_end_pfn = clamp(node_end_pfn, zone_low, zone_high);
+	/* IAMROOT20 20240824
+	 * ZONE_MOVABLE을 고려하여 zone_start_pfn, zone_end_pfn을 조정한다
+	 */
 	adjust_zone_range_for_zone_movable(nid, zone_type,
 				node_start_pfn, node_end_pfn,
 				zone_start_pfn, zone_end_pfn);
 
 	/* Check that this node has pages within the zone's required range */
+	/* IAMROOT20 20240824
+	 * zone이 node 영역을 벗어난 경우, return 0
+	 */
 	if (*zone_end_pfn < node_start_pfn || *zone_start_pfn > node_end_pfn)
 		return 0;
 
@@ -1296,11 +1319,17 @@ static void __init calculate_node_totalpages(struct pglist_data *pgdat,
 		unsigned long spanned, absent;
 		unsigned long size, real_size;
 
+		/* IAMROOT20 20240824
+		 * node 영역 안에 있는 zone영역을 구함(hole 포함)
+		 */
 		spanned = zone_spanned_pages_in_node(pgdat->node_id, i,
 						     node_start_pfn,
 						     node_end_pfn,
 						     &zone_start_pfn,
 						     &zone_end_pfn);
+		/* IAMROOT20 20240824
+		 * (node 영역 안에 있는) zone 영역에서 hole의 크기를 구함
+		 */
 		absent = zone_absent_pages_in_node(pgdat->node_id, i,
 						   node_start_pfn,
 						   node_end_pfn);
@@ -1339,6 +1368,10 @@ static unsigned long __init calc_memmap_size(unsigned long spanned_pages,
 	 * memmap pages due to alignment because memmap pages for each
 	 * populated regions may not be naturally aligned on page boundary.
 	 * So the (present_pages >> 4) heuristic is a tradeoff for that.
+	 */
+	/* IAMROOT20 20240824
+	 * spanned_pages가 present_pages 보다 25% 이상 큰 경우,
+	 * pages를 present_pages로 변경
 	 */
 	if (spanned_pages > present_pages + (present_pages >> 4) &&
 	    IS_ENABLED(CONFIG_SPARSEMEM))
@@ -1576,6 +1609,9 @@ static void __init free_area_init_core(struct pglist_data *pgdat)
 		 * is used by this zone for memmap. This affects the watermark
 		 * and per-cpu initialisations
 		 */
+		/* IAMROOT20 20240824
+		 * 현재 zone의 모든 page의 디스크립터(struct page) 크기의 합을  구함(page 단위)
+		 */
 		memmap_pages = calc_memmap_size(size, freesize);
 		if (!is_highmem_idx(j)) {
 			if (freesize >= memmap_pages) {
@@ -1588,6 +1624,7 @@ static void __init free_area_init_core(struct pglist_data *pgdat)
 					zone_names[j], memmap_pages, freesize);
 		}
 
+		/* IAMROOT20_END 20240824 */
 		/* Account for reserved pages */
 		if (j == 0 && freesize > dma_reserve) {
 			freesize -= dma_reserve;
@@ -1741,6 +1778,9 @@ static void __init free_area_init_node(int nid)
 
 	calculate_node_totalpages(pgdat, start_pfn, end_pfn);
 
+	/* IAMROOT20 20240824
+	 * FLATMEM인 경우여서 분석x
+	 */
 	alloc_node_mem_map(pgdat);
 	pgdat_set_deferred_range(pgdat);
 
@@ -1872,6 +1912,10 @@ void __init free_area_init(unsigned long *max_zone_pfn)
 	 * enable future "sub-section" extensions of the memory map.
 	 */
 	pr_info("Early memory node ranges\n");
+	/* IAMROOT20 20240824
+	 * 모든 mem range를 돌면서, 
+	 * subsection 단위(2M)로 mem_section->usage->subsection_map에 set
+	 */
 	for_each_mem_pfn_range(i, MAX_NUMNODES, &start_pfn, &end_pfn, &nid) {
 		pr_info("  node %3d: [mem %#018Lx-%#018Lx]\n", nid,
 			(u64)start_pfn << PAGE_SHIFT,
@@ -1885,6 +1929,10 @@ void __init free_area_init(unsigned long *max_zone_pfn)
 	for_each_node(nid) {
 		pg_data_t *pgdat;
 
+		/* IAMROOT20 20240824
+		 * node online이 아닌 경우 -> memory-less node로 설정
+		 * node online인 경우 -> N_MEMORY 설정, check_for_memory() 호출
+		 */
 		if (!node_online(nid)) {
 			pr_info("Initializing node %d as memoryless\n", nid);
 

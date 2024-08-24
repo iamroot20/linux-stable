@@ -108,6 +108,14 @@
  * This macro does strict typechecking of @lo/@hi to make sure they are of the
  * same type as @val.  See the unnecessary pointer comparisons.
  */
+/* IAMROOT20 20240824
+ * clamp(val, lo, hi)      min((typeof(val))max(val, lo), hi)
+ * - val이 [lo, hi] 영역을 벗어나면 lo로 올리거나 hi로 내림
+ * - val이 [lo, hi] 사이에 있는 경우 변경 x
+ * ex) clamp(1, 10, 20) = 10
+ *     clamp(22, 10, 20) = 20
+ *     clamp(15, 10, 20) = 15
+ */
 #define clamp(val, lo, hi) __careful_clamp(val, lo, hi)
 
 /*
