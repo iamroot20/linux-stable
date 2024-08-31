@@ -15,6 +15,12 @@
 
 ## History
 
+### 71 주차
+- 2024.08.31 2명(임채훈, 최경건)
+- free_area_init_core
+  - zone_init_innternals
+  - set_pageblock_order
+
 ### 70 주차
 - 2024.08.24 3명(이대로, 임채훈, 최경건)
 - free_area_init
