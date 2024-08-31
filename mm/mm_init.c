@@ -1624,13 +1624,19 @@ static void __init free_area_init_core(struct pglist_data *pgdat)
 					zone_names[j], memmap_pages, freesize);
 		}
 
-		/* IAMROOT20_END 20240824 */
+		/* IAMROOT20_END 20240824 */ /* IAMROOT20_START 20240831 */
 		/* Account for reserved pages */
 		if (j == 0 && freesize > dma_reserve) {
 			freesize -= dma_reserve;
 			pr_debug("  %s zone: %lu pages reserved\n", zone_names[0], dma_reserve);
 		}
 
+		/* IAMROOT20 20240831
+		 * 위에서 freesize를 모두 계산하고,
+		 * highmem이 아닌 zone인 경우, 전역 변수 nr_kernel_pages에 freesize를 더한다.
+		 * 
+		 * memmap한 페이지와 dma_reserve를 제외한 freesize를 nr_all_pages에 더한다.
+		 */
 		if (!is_highmem_idx(j))
 			nr_kernel_pages += freesize;
 		/* Charge for highmem memmap if there are enough kernel pages */
@@ -1648,6 +1654,7 @@ static void __init free_area_init_core(struct pglist_data *pgdat)
 		if (!size)
 			continue;
 
+		/* IAMROOT20_END 20240831 */
 		set_pageblock_order();
 		setup_usemap(zone);
 		init_currently_empty_zone(zone, zone->zone_start_pfn, size);

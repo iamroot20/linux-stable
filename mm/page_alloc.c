@@ -5938,6 +5938,18 @@ void __ref build_all_zonelists(pg_data_t *pgdat)
 #endif
 }
 
+/* IAMROOT20 20240831
+ * zone_managed_pages = 4GB로 가정할 경우,
+ * batch = min(a ^ 32 >> 10, 2 ^ 20 / 2 ^ 12)
+ * batch = min(2048, 256)
+ * batch = 256
+ * batch = 64 (batch /= 4)
+ * batch = rounddown_pow_of_two(64 + 32) - 1
+ *        (1UL << (fls(96) - 1)) - 1
+ *        (1UL << (7 - 1)) - 1
+ *        (64 - 1)
+ * batch = 63
+ */
 static int zone_batchsize(struct zone *zone)
 {
 #ifdef CONFIG_MMU
