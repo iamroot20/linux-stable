@@ -388,6 +388,9 @@ EXPORT_SYMBOL(movable_zone);
 /* IAMROOT20 20240525
  * nr_node_ids = 16
  */
+/* IAMROOT20 20240824
+ * setup_nr_node_ids()
+ */
 unsigned int nr_node_ids __read_mostly = MAX_NUMNODES;
 unsigned int nr_online_nodes __read_mostly = 1;
 EXPORT_SYMBOL(nr_node_ids);

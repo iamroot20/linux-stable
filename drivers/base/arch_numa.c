@@ -15,6 +15,10 @@
 
 #include <asm/sections.h>
 
+/* IAMROOT20 20240824
+ * setup_arch -> bootmem_init -> arch_numa_init -> numa_init ->
+ *	numa_register_nodes -> setup_node_data
+ */
 struct pglist_data *node_data[MAX_NUMNODES] __read_mostly;
 EXPORT_SYMBOL(node_data);
 /* IAMROOT20 20240525
