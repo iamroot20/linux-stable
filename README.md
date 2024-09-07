@@ -15,6 +15,11 @@
 
 ## History
 
+### 72 주차
+- 2024.09.07 2명(임채훈, 최경건)
+- free_area_init_node
+  - free_area_init_core
+
 ### 71 주차
 - 2024.08.31 2명(임채훈, 최경건)
 - free_area_init_core
@@ -40,17 +45,6 @@
 - 2024.08.03 4명(이대로, 임채훈, 조수민, 최경건)
 - sparse_init
 - zone_sizes_init
-  - acpi_iort_dma_get_max_cpu_address
-  - of_dma_get_max_cpu_address
-    - of_dma_range_parser_init
-    - for_each_of_range
-      - of_pci_range_parser_one
-        - of_translate_dma_address
-          - __of_get_dma_parent
-            - of_parse_phandle_with_args
-              - __of_parse_phandle_with_args
-                - of_for_each_phandle
-                  - of_phandle_iterator_next
 
 ### 66 주차
 - 2024.07.27 4명(이대로, 임채훈, 조수민, 최경건)
