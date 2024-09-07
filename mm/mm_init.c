@@ -1473,6 +1473,13 @@ void __meminit init_currently_empty_zone(struct zone *zone,
  * round what is now in bits to nearest long in bits, then return it in
  * bytes.
  */
+/* IAMROOT20 20240907
+ * zone_start_pfn이 페이지 블록 경계에 맞도록 조정한 값이 zonesize.
+ * zonesize를 바탕으로 전체 페이지 개수를 구한 다음, 4bit를 곱해
+ * usemap을 담을 공간을 bit 단위로 계산한다.
+ * 그리고 8 bytes(64) 단위로 올림하여, usemap을 담을 공간을 넉넉하게 계산하고,
+ * 이를 bytes 단위로 변환 후, 그 갯수를 반환한다.
+ */
 static unsigned long __init usemap_size(unsigned long zone_start_pfn, unsigned long zonesize)
 {
 	unsigned long usemapsize;
@@ -1486,6 +1493,10 @@ static unsigned long __init usemap_size(unsigned long zone_start_pfn, unsigned l
 	return usemapsize / 8;
 }
 
+/* IAMROOT20 20240907
+ * __ref : .ref.text 섹션에 함수를 만들되, inline이 안되게 한다.
+ *         커널 초기화 이후에도 참조될 수 있게 된다.
+ */
 static void __ref setup_usemap(struct zone *zone)
 {
 	unsigned long usemapsize = usemap_size(zone->zone_start_pfn,
@@ -1654,7 +1665,7 @@ static void __init free_area_init_core(struct pglist_data *pgdat)
 		if (!size)
 			continue;
 
-		/* IAMROOT20_END 20240831 */
+		/* IAMROOT20_END 20240831 */ /* IAMROOT20_START 20240907 */
 		set_pageblock_order();
 		setup_usemap(zone);
 		init_currently_empty_zone(zone, zone->zone_start_pfn, size);
@@ -1791,6 +1802,7 @@ static void __init free_area_init_node(int nid)
 	alloc_node_mem_map(pgdat);
 	pgdat_set_deferred_range(pgdat);
 
+	/* IAMROOT20_END 20240907 */
 	free_area_init_core(pgdat);
 	lru_gen_init_pgdat(pgdat);
 }
