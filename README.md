@@ -15,6 +15,13 @@
 
 ## History
 
+### 73 주차
+- 2024.09.21 2명(임채훈, 최경건)
+- free_area_init
+  - memmap_init
+    - memmap_init_range
+    - defer_init
+
 ### 72 주차
 - 2024.09.07 2명(임채훈, 최경건)
 - free_area_init_node
