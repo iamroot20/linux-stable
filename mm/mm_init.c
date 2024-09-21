@@ -711,6 +711,7 @@ defer_init(int nid, unsigned long pfn, unsigned long end_pfn)
 		nr_initialised = 0;
 	}
 
+	/* IAMROOT20_END 20240921 */
 	/* Always populate low zones for address-constrained allocations */
 	if (end_pfn < pgdat_end_pfn(NODE_DATA(nid)))
 		return false;
@@ -907,6 +908,9 @@ void __meminit memmap_init_range(unsigned long size, int nid, unsigned long zone
 		 * function.  They do not exist on hotplugged memory.
 		 */
 		if (context == MEMINIT_EARLY) {
+			/* IAMROOT20 20240921
+			 * mirrored_kernelcore이고 ZONE_MOVABLE인 경우만 true
+			 */
 			if (overlap_memmap_init(zone, &pfn))
 				continue;
 			if (defer_init(nid, pfn, zone_end_pfn)) {
@@ -1802,11 +1806,15 @@ static void __init free_area_init_node(int nid)
 	alloc_node_mem_map(pgdat);
 	pgdat_set_deferred_range(pgdat);
 
-	/* IAMROOT20_END 20240907 */
+	/* IAMROOT20_END 20240907 */ /* IAMROOT20_START 20240921 */
 	free_area_init_core(pgdat);
 	lru_gen_init_pgdat(pgdat);
 }
 
+/* IAMROOT20 20240921
+ * N_MEMORY : 일반적인 물리 메모리 블록.
+ * N_NORMAL_MEMORY : CPU에서 접근 가능한 물리 메모리 블록. DMA는 제외.
+ */
 /* Any regular or high memory on that node ? */
 static void check_for_memory(pg_data_t *pgdat, int nid)
 {
