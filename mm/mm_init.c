@@ -713,6 +713,10 @@ defer_init(int nid, unsigned long pfn, unsigned long end_pfn)
 
 	/* IAMROOT20_END 20240921 */
 	/* Always populate low zones for address-constrained allocations */
+	/* IAMROOT20 20240928
+	 * zone end_pfn < node end_pfn -> return false
+	 * node에서 마지막 zone(ZONE_NORMAL)의 경우에만, if문을 통과함
+	 */
 	if (end_pfn < pgdat_end_pfn(NODE_DATA(nid)))
 		return false;
 
@@ -721,6 +725,10 @@ defer_init(int nid, unsigned long pfn, unsigned long end_pfn)
 	/*
 	 * We start only with one section of pages, more pages are added as
 	 * needed until the rest of deferred pages are initialized.
+	 */
+	/* IAMROOT20 20240928
+	 * defer init이 필요한 page(pfn) 개수가 PAGES_PER_SECTION(0x8000)을 넘으면,
+	 * SECTION 단위로 정렬되어 있는지 확인하고 first_deferred_pfn에 저장
 	 */
 	nr_initialised++;
 	if ((nr_initialised > PAGES_PER_SECTION) &&
@@ -918,6 +926,7 @@ void __meminit memmap_init_range(unsigned long size, int nid, unsigned long zone
 				break;
 			}
 		}
+		/* IAMROOT20_END 20240928 */
 
 		page = pfn_to_page(pfn);
 		__init_single_page(page, pfn, zone, nid);
@@ -946,6 +955,11 @@ static void __init memmap_init_zone_range(struct zone *zone,
 	unsigned long zone_end_pfn = zone_start_pfn + zone->spanned_pages;
 	int nid = zone_to_nid(zone), zone_id = zone_idx(zone);
 
+	/* IAMROOT20_START 20240928 */
+	/* IAMROOT20 20240928
+	 * start_pfn ~ end_pfn
+	 *  - 각 memory pfn range에서 zone pfn range로 clamp 된 영역
+	 */
 	start_pfn = clamp(start_pfn, zone_start_pfn, zone_end_pfn);
 	end_pfn = clamp(end_pfn, zone_start_pfn, zone_end_pfn);
 
