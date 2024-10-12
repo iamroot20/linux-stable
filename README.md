@@ -16,7 +16,7 @@
 ## History
 
 ### 76 주차
-- 2024.10.05 2명(임채훈, 최경건)
+- 2024.10.12 2명(임채훈, 최경건)
 - setup_arch
   - bootmem_init
     - zone_sizes_init
