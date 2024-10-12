@@ -444,6 +444,9 @@ static inline unsigned long *get_pageblock_bitmap(const struct page *page,
 static inline int pfn_to_bitidx(const struct page *page, unsigned long pfn)
 {
 #ifdef CONFIG_SPARSEMEM
+	/* IAMROOT20 20241005
+	 * 한 SECTION(128M) 안에서 몇 번 째 pfn 인지를 구함
+	 */
 	pfn &= (PAGES_PER_SECTION-1);
 #else
 	pfn = pfn - pageblock_start_pfn(page_zone(page)->zone_start_pfn);

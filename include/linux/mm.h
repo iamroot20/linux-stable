@@ -1569,6 +1569,10 @@ static inline bool is_nommu_shared_mapping(vm_flags_t flags)
 }
 #endif
 
+/* IAMROOT20 20241005
+ * SPARSEMEM 이지만 VMEMMAP을 사용하지 않는 경우에만,
+ * page flags에 SECTION 정보를 저장
+ */
 #if defined(CONFIG_SPARSEMEM) && !defined(CONFIG_SPARSEMEM_VMEMMAP)
 #define SECTION_IN_PAGE_FLAGS
 #endif

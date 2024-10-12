@@ -1022,6 +1022,12 @@ static inline bool zone_is_empty(struct zone *zone)
  */
 
 /* Page flags: | [SECTION] | [NODE] | ZONE | [LAST_CPUPID] | ... | FLAGS | */
+/* IAMROOT20 20241005
+ * SECTION_PGOFF		64 (vmemmap 사용, vmemmap 사용 x : 43)
+ * NODE_PGOFF			62
+ * ZONES_PGOFF			58
+ * LAST_CPUID_PGOFF		42
+ */
 #define SECTIONS_PGOFF		((sizeof(unsigned long)*8) - SECTIONS_WIDTH)
 #define NODES_PGOFF		(SECTIONS_PGOFF - NODES_WIDTH)
 #define ZONES_PGOFF		(NODES_PGOFF - ZONES_WIDTH)
@@ -1054,6 +1060,17 @@ static inline bool zone_is_empty(struct zone *zone)
 
 #define ZONEID_PGSHIFT		(ZONEID_PGOFF * (ZONEID_SHIFT != 0))
 
+/* IAMROOT20 20241005
+ * ZONES_WIDTH		2
+ * NODES_WIDTH		4
+ * SECTION_WIDTH	0 (vmemmap 사용, vmemmap 사용 x : 21)
+ * LAST_CPUID_SHIFT	16
+ *
+ * ZONES_MASK 		0x3
+ * NODES_MASK		0xF
+ * SECTION_MASK		0x1F_FFFF
+ * LAST_CPUID_MASK	0xFFFF
+ */
 #define ZONES_MASK		((1UL << ZONES_WIDTH) - 1)
 #define NODES_MASK		((1UL << NODES_WIDTH) - 1)
 #define SECTIONS_MASK		((1UL << SECTIONS_WIDTH) - 1)

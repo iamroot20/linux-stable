@@ -695,6 +695,11 @@ static inline bool __meminit early_page_initialised(unsigned long pfn)
  * Returns true when the remaining initialisation should be deferred until
  * later in the boot cycle when it can be parallelised.
  */
+/* IAMROOT20 20241005
+ * 나중에 처리할 pfn을 구해서 first_deferred_pfn에 저장
+ * - node의 마지막 zone(보통은 ZONE_NORMAL)일 때만, 
+ *   처음 한 SECTION(128M)을 초기화하고 나머지는 나중에 처리(defer)
+ */
 static bool __meminit
 defer_init(int nid, unsigned long pfn, unsigned long end_pfn)
 {
@@ -921,6 +926,7 @@ void __meminit memmap_init_range(unsigned long size, int nid, unsigned long zone
 			 */
 			if (overlap_memmap_init(zone, &pfn))
 				continue;
+			/* IAMROOT20_START 20241005 */
 			if (defer_init(nid, pfn, zone_end_pfn)) {
 				deferred_struct_pages = true;
 				break;
@@ -937,6 +943,9 @@ void __meminit memmap_init_range(unsigned long size, int nid, unsigned long zone
 		 * Usually, we want to mark the pageblock MIGRATE_MOVABLE,
 		 * such that unmovable allocations won't be scattered all
 		 * over the place during system boot.
+		 */
+		/* IAMROOT20 20241005
+		 * pageblock 단위(512개 page)로 migratetype을 지정 
 		 */
 		if (pageblock_aligned(pfn)) {
 			set_pageblock_migratetype(page, migratetype);
@@ -968,6 +977,7 @@ static void __init memmap_init_zone_range(struct zone *zone,
 
 	memmap_init_range(end_pfn - start_pfn, nid, zone_id, start_pfn,
 			  zone_end_pfn, MEMINIT_EARLY, NULL, MIGRATE_MOVABLE);
+	/* IAMROOT20_END 20241005 */
 
 	if (*hole_pfn < start_pfn)
 		init_unavailable_range(*hole_pfn, start_pfn, zone_id, nid);
