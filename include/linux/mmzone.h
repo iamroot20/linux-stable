@@ -2079,6 +2079,7 @@ static inline int pfn_valid(unsigned long pfn)
 
 	if (pfn_to_section_nr(pfn) >= NR_MEM_SECTIONS)
 		return 0;
+	/* IAMROOT20_END 20241012 */
 	ms = __pfn_to_section(pfn);
 	if (!valid_section(ms))
 		return 0;

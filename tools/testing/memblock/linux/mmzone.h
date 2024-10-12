@@ -23,6 +23,10 @@ enum zone_type {
 #define pageblock_order		MAX_ORDER
 #define pageblock_nr_pages	BIT(pageblock_order)
 #define pageblock_align(pfn)	ALIGN((pfn), pageblock_nr_pages)
+/* IAMROOT20 20241012
+ * pageblock_nr_pages : 1024
+ * pageblock_start_pfn : pfn 주소의 하위 10개의 비트를 0으로 설정 -> align down
+*/
 #define pageblock_start_pfn(pfn)	ALIGN_DOWN((pfn), pageblock_nr_pages)
 
 struct zone {

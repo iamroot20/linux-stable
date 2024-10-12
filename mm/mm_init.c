@@ -855,6 +855,11 @@ overlap_memmap_init(unsigned long zone, unsigned long *pfn)
  *   zone/node above the hole except for the trailing pages in the last
  *   section that will be appended to the zone/node below.
  */
+/* IAMROOT20 20241012
+ * spfn : hole의 시작 주소
+ * epfn : hole의 끝 주소
+ * pgcnt : hole로 설정할 수 있는 valid한 page의 개수
+ */
 static void __init init_unavailable_range(unsigned long spfn,
 					  unsigned long epfn,
 					  int zone, int node)
@@ -977,7 +982,7 @@ static void __init memmap_init_zone_range(struct zone *zone,
 
 	memmap_init_range(end_pfn - start_pfn, nid, zone_id, start_pfn,
 			  zone_end_pfn, MEMINIT_EARLY, NULL, MIGRATE_MOVABLE);
-	/* IAMROOT20_END 20241005 */
+	/* IAMROOT20_END 20241005 */ /* IAMROOT20_START 20241012 */
 
 	if (*hole_pfn < start_pfn)
 		init_unavailable_range(*hole_pfn, start_pfn, zone_id, nid);
