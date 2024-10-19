@@ -2033,6 +2033,10 @@ static inline struct mem_section *__pfn_to_section(unsigned long pfn)
 
 extern unsigned long __highest_present_section_nr;
 
+/* IAMROOT20 20241019
+ * ~(PAGE_SECTION_MASK): 0x7fff = 2^15 = PAGES_PER_SECTION
+ * PAGES_PER_SUBSECTION: 2^9
+ */
 static inline int subsection_map_index(unsigned long pfn)
 {
 	return (pfn & ~(PAGE_SECTION_MASK)) / PAGES_PER_SUBSECTION;
@@ -2079,7 +2083,7 @@ static inline int pfn_valid(unsigned long pfn)
 
 	if (pfn_to_section_nr(pfn) >= NR_MEM_SECTIONS)
 		return 0;
-	/* IAMROOT20_END 20241012 */
+	/* IAMROOT20_END 20241012 */ /* IAMROOT20_START 20241019 */
 	ms = __pfn_to_section(pfn);
 	if (!valid_section(ms))
 		return 0;
