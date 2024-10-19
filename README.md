@@ -15,6 +15,16 @@
 
 ## History
 
+### 77 주차
+- 2024.10.19 2명(임채훈, 최경건)
+- setup_arch
+  - bootmem_init
+    - zone_sizes_init
+      - free_area_init
+        - memmap_init
+          - memmap_init_zone_range
+	    - init_unavailable_range
+
 ### 76 주차
 - 2024.10.12 2명(임채훈, 최경건)
 - setup_arch
